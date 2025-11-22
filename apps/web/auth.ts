@@ -24,14 +24,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 
   callbacks: {
-    async session({ session, user }) {
+    async session({ session, user, token }) {
       if (session.user) {
-        session.user.id = user.id;
-        session.user.role = (user as any).role;
+        // session.user.id = user.id;
+        // session.user.role = (user as any).role;
+        session.user.role = token.role as string;
+        session.user.id = token.id as string;
       }
       return session;
     },
+    async jwt({ token, account, profile, user }) {
+      console.log(token);
+      console.log("User  ", user);
+      if (user) {
+        token.role = user.role;
+        token.id = user.id;
+      }
+      return token;
+    },
   },
-
+  session: {
+    strategy: "jwt",
+    maxAge: 60 * 60 * 24 * 7,
+  },
+  jwt: {
+    maxAge: 60 * 60 * 24 * 7,
+  },
   secret: process.env.NEXTAUTH_SECRET,
 });
