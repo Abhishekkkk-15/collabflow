@@ -1,0 +1,64 @@
+# ===============================
+# Node.js
+# ===============================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+package-lock.json
+
+# ===============================
+# Next.js
+# ===============================
+.next/
+out/
+*.next/
+.next/cache/
+.next/static/
+.next/server/
+
+# ===============================
+# NestJS
+# ===============================
+dist/
+*.tsbuildinfo
+
+# ===============================
+# Prisma
+# ===============================
+prisma/generated/
+prisma/migrations/
+.prisma/
+*.db
+
+# ===============================
+# Docker
+# ===============================
+docker-compose.override.yml
+*.env
+*.env.local
+*.env.development
+*.env.production
+*.env.test
+
+# ===============================
+# VSCode / IDE
+# ===============================
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ===============================
+# System / OS
+# ===============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===============================
+# Logs
+# ===============================
+logs/
+*.log

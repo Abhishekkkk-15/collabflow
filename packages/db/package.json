@@ -1,0 +1,21 @@
+{
+  "name": "@collabflow/db",
+  "version": "1.0.0",
+  "private": false,
+  "main": "src/client.js",
+  "types": "src/client.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "generate": "prisma generate",
+    "studio":"prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "prisma": "^6.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
