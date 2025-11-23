@@ -1,3 +1,4 @@
+"use client"
 import * as React from "react"
 import { ChevronRight } from "lucide-react"
 
@@ -19,167 +20,99 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
 } from "@/components/ui/sidebar"
+import UserProfileCard from "./self/UserProfileCard"
 
-// This is sample data.
+
+// CollabFlow Sidebar Dummy Data
 const data = {
-  versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
+  versions: ["v0.1.0", "v0.2.0-alpha", "v1.0.0"],
   navMain: [
     {
-      title: "Getting Started",
+      title: "Fun E-commerce Team",
       url: "#",
       items: [
         {
-          title: "Installation",
-          url: "#",
-        },
-        {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Building Your Application",
-      url: "#",
-      items: [
-        {
-          title: "Routing",
-          url: "#",
-        },
-        {
-          title: "Data Fetching",
-          url: "#",
+          title: "Frontend Redesign",
+          url: "dashboard/Fun E-commerce Team/frontend/tasks",
           isActive: true,
+
         },
         {
-          title: "Rendering",
-          url: "#",
+          title: "Backend API",
+          url: "dashboard/Fun-E-commerce-Team/backend/tasks",
         },
         {
-          title: "Caching",
-          url: "#",
-        },
-        {
-          title: "Styling",
-          url: "#",
-        },
-        {
-          title: "Optimizing",
-          url: "#",
-        },
-        {
-          title: "Configuring",
-          url: "#",
-        },
-        {
-          title: "Testing",
-          url: "#",
-        },
-        {
-          title: "Authentication",
-          url: "#",
-        },
-        {
-          title: "Deploying",
-          url: "#",
-        },
-        {
-          title: "Upgrading",
-          url: "#",
-        },
-        {
-          title: "Examples",
-          url: "#",
+          title: "UI Overhaul",
+          url: "dashboard/Fun-E-commerce-Team/ui-overhaul/tasks",
         },
       ],
     },
     {
-      title: "API Reference",
+      title: "Blogging App Team",
       url: "#",
       items: [
         {
-          title: "Components",
-          url: "#",
-        },
-        {
-          title: "File Conventions",
-          url: "#",
-        },
-        {
-          title: "Functions",
-          url: "#",
-        },
-        {
-          title: "next.config.js Options",
-          url: "#",
-        },
-        {
-          title: "CLI",
-          url: "#",
-        },
-        {
-          title: "Edge Runtime",
-          url: "#",
+          title: "Dashboard Rewrite",
+          url: "dashboard/Dashboard-Rewrite/dashboard/tasks",
         },
       ],
     },
     {
-      title: "Architecture",
+      title: "College Final Year",
       url: "#",
       items: [
         {
-          title: "Accessibility",
-          url: "#",
-        },
-        {
-          title: "Fast Refresh",
-          url: "#",
-        },
-        {
-          title: "Next.js Compiler",
-          url: "#",
-        },
-        {
-          title: "Supported Browsers",
-          url: "#",
-        },
-        {
-          title: "Turbopack",
-          url: "#",
+          title: "DB Schema",
+          url: "dashboard/College-Final-Year/db-schema/tasks",
         },
       ],
     },
     {
-      title: "Community",
+      title: "Personal Notes",
       url: "#",
       items: [
         {
-          title: "Contribution Guide",
-          url: "#",
+          title: "Ideas",
+          url: "dashboard/Personal-Notes/ideas/tasks",
+        },
+        {
+          title: "Planning",
+          url: "dashboard/Personal-Notes/planning/tasks",
         },
       ],
     },
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type IProps = React.ComponentProps<typeof Sidebar> & {
+  user: any; // add user here
+};
+export  function  AppSidebar({ user,...props}: IProps) {
+  // const user =  await auth()
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <VersionSwitcher
+        {/* <VersionSwitcher
           versions={data.versions}
           defaultVersion={data.versions[0]}
-        />
+          user={user}
+        /> */}
+        <UserProfileCard user={user} />
         <SearchForm />
       </SidebarHeader>
+      <h4 className="px-4 py-2 text-xs font-semibold text-muted-foreground tracking-wide">
+  Workspace's
+</h4>
+        <SidebarSeparator  className="mx-auto w-3/4" />
       <SidebarContent className="gap-0">
         {/* We create a collapsible SidebarGroup for each parent. */}
         {data.navMain.map((item) => (
           <Collapsible
             key={item.title}
             title={item.title}
-            defaultOpen
+            
             className="group/collapsible"
           >
             <SidebarGroup>
@@ -193,7 +126,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </CollapsibleTrigger>
               </SidebarGroupLabel>
               <CollapsibleContent>
-                <SidebarGroupContent>
+                <SidebarGroupContent className="pl-4" >
                   <SidebarMenu>
                     {item.items.map((item) => (
                       <SidebarMenuItem key={item.title}>
