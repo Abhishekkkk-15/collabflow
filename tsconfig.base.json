@@ -2,7 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@collabflow/db": ["packages/db/src"]
+      "@collabflow/db": ["packages/db"],
+      "@collabflow/types": ["packages/types"]
     }
   },
   "include": ["packages", "apps"]

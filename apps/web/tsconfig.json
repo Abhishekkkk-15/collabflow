@@ -1,6 +1,8 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2017",
+    "ignoreDeprecations": "6.0",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -13,14 +15,17 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+
     "plugins": [
       {
         "name": "next"
       }
     ],
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@collabflow/db": ["../../packages/db/src"]
+      "@collabflow/db": ["../../packages/db/src"],
+      "@collabflow/types": ["../../packages/types/src"]
     }
   },
   "include": [
@@ -29,7 +34,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
-, "authConfig.js", "server.js"  ],
+    "**/*.mts",
+    "authConfig.js",
+    "server.js"
+  ],
   "exclude": ["node_modules"]
 }

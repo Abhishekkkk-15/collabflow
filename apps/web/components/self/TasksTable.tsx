@@ -21,11 +21,10 @@ import {
   Loader2,
   Circle,
 } from "lucide-react";
-import { User } from "./PageWithSidebarClient";
+import { Status, Task, TaskPriority, type User } from "@collabflow/types";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 
 export default function TasksTable({ user }: { user: User }) {
-  const [view, setView] = useState("Table");
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [visibleFields, setVisibleFields] = useState<string[]>([
@@ -43,15 +42,7 @@ export default function TasksTable({ user }: { user: User }) {
     "Done",
     "Canceled",
   ];
-  const priorities = ["All", "Low", "Medium", "High"] as const;
-  type TPriority = (typeof priorities)[number];
-  type Task = {
-    id: string;
-    tag: string;
-    title: string;
-    status: Status;
-    priority: TPriority;
-  };
+  const priorities = ["All", "Low", "Medium", "High"];
   const tasks: Task[] = [
     {
       id: "TASK-8782",
@@ -171,7 +162,6 @@ export default function TasksTable({ user }: { user: User }) {
     { key: "status", label: "Status" },
     { key: "priority", label: "Priority" },
   ];
-  type Status = "Todo" | "In Progress" | "Backlog" | "Done" | "Canceled";
 
   const statusIcons: Record<Status, JSX.Element> = {
     Todo: (

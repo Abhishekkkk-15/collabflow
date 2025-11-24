@@ -1,14 +1,14 @@
-"use client"
-import * as React from "react"
-import { ChevronRight } from "lucide-react"
+"use client";
+import * as React from "react";
+import { ChevronRight } from "lucide-react";
 
-import { SearchForm } from "@/components/search-form"
-import { VersionSwitcher } from "@/components/version-switcher"
+import { SearchForm } from "@/components/search-form";
+import { VersionSwitcher } from "@/components/version-switcher";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -21,9 +21,9 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
-} from "@/components/ui/sidebar"
-import UserProfileCard from "./self/UserProfileCard"
-
+} from "@/components/ui/sidebar";
+import UserProfileCard from "./self/UserProfileCard";
+import axios from "axios";
 
 // CollabFlow Sidebar Dummy Data
 const data = {
@@ -37,7 +37,6 @@ const data = {
           title: "Frontend Redesign",
           url: "dashboard/Fun E-commerce Team/frontend/tasks",
           isActive: true,
-
         },
         {
           title: "Backend API",
@@ -84,13 +83,23 @@ const data = {
       ],
     },
   ],
-}
+};
 
 type IProps = React.ComponentProps<typeof Sidebar> & {
   user: any; // add user here
 };
-export  function  AppSidebar({ user,...props}: IProps) {
+export function AppSidebar({ user, ...props }: IProps) {
   // const user =  await auth()
+  async function fetchUserWorkspaces() {
+    return axios.get("http://localhost:3001/workspace", {
+      withCredentials: true,
+    });
+  }
+  React.useEffect(() => {
+    fetchUserWorkspaces().then((d) => console.log(d.data));
+
+    return () => {};
+  }, []);
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -103,30 +112,27 @@ export  function  AppSidebar({ user,...props}: IProps) {
         <SearchForm />
       </SidebarHeader>
       <h4 className="px-4 py-2 text-xs font-semibold text-muted-foreground tracking-wide">
-  Workspace's
-</h4>
-        <SidebarSeparator  className="mx-auto w-3/4" />
+        Workspace's
+      </h4>
+      <SidebarSeparator className="mx-auto w-3/4" />
       <SidebarContent className="gap-0">
         {/* We create a collapsible SidebarGroup for each parent. */}
         {data.navMain.map((item) => (
           <Collapsible
             key={item.title}
             title={item.title}
-            
-            className="group/collapsible"
-          >
+            className="group/collapsible">
             <SidebarGroup>
               <SidebarGroupLabel
                 asChild
-                className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              >
+                className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm">
                 <CollapsibleTrigger>
                   {item.title}{" "}
                   <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
                 </CollapsibleTrigger>
               </SidebarGroupLabel>
               <CollapsibleContent>
-                <SidebarGroupContent className="pl-4" >
+                <SidebarGroupContent className="pl-4">
                   <SidebarMenu>
                     {item.items.map((item) => (
                       <SidebarMenuItem key={item.title}>
@@ -144,5 +150,5 @@ export  function  AppSidebar({ user,...props}: IProps) {
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

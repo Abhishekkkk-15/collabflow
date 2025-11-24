@@ -1,6 +1,13 @@
 {
   "compilerOptions": {
     "module": "nodenext",
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["*"],
+      "@collabflow/db": ["../../packages/db"],
+      "@collabflow/types": ["../../packages/types"],
+      "src/*": ["*"]
+    },
     "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,
     "esModuleInterop": true,

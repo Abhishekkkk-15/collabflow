@@ -2,20 +2,25 @@
   "name": "@collabflow/db",
   "version": "1.0.0",
   "private": false,
-  "main": "src/client.js",
-  "types": "src/client.d.ts",
+  "main": "dist/client.js",
+  "types": "dist/client.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "generate": "prisma generate",
-    "studio":"prisma studio"
-  },
-  "dependencies": {
-    "@prisma/client": "^6.19.0",
-    "prisma": "^6.19.0"
+    "studio": "prisma studio",
+    "migrate": "prisma migrate dev ",
+    "format": "prisma format",
+    "push": "prisma db push"
   },
   "devDependencies": {
+    "@prisma/client": "^6.19.0",
     "@types/node": "^24.10.1",
+    "prisma": "^6.19.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "@prisma/client": "^6.19.0",
+    "prisma": "^6.19.0"
   }
 }

@@ -1,6 +1,7 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
-import { AuthGuard } from './guards/authGuard';
+import { AuthGuard } from './common/guards/AuthGuard';
+import type { ExtendedRequest } from './workspace/workspace.controller';
 
 @Controller()
 export class AppController {
@@ -8,11 +9,7 @@ export class AppController {
 
   @Get()
   @UseGuards(AuthGuard)
-  getData(@Req() req: any) {
-    console.log(req.user);
-    return {
-      message: 'Its protected route',
-      user: req.user,
-    };
+  getHello(@Req() req: ExtendedRequest) {
+    return this.appService.getHello(req.user.id);
   }
 }

@@ -5,57 +5,200 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    image         String?
-    role          String    @default("USER")
-    accounts      Account[]
-    sessions      Session[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("USER")
+
+  accounts Account[]
+  sessions Session[]
+
+  workspaceMemberships WorkspaceMember[] // workspaces the user belongs to
+  projectMemberships   ProjectMember[] // projects the user belongs to
+  ownedWorkspaces      Workspace[]       @relation("workspaceOwner") // workspaces created/owned by user
+  ownedProjects        Project[]         @relation("projectOwner") // projects created/owned by user
+  notifications        Notification[] // user's notifications
 }
 
 model Account {
-    id                String  @id @default(cuid())
-    userId            String
-    type              String
-    provider          String
-    providerAccountId String
-    refresh_token     String?
-    access_token      String?
-    expires_at        Int?
-    token_type        String?
-    scope             String?
-    id_token          String?
-    session_state     String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@unique([provider, providerAccountId])
+  @@unique([provider, providerAccountId])
 }
 
 model Session {
-    id           String   @id @default(cuid())
-    sessionToken String   @unique
-    userId       String
-    expires      DateTime
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
-    identifier String
-    token      String   @unique
-    expires    DateTime
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
-    @@unique([identifier, token])
+  @@unique([identifier, token])
+}
+
+// Workspace models
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String?  @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true)
+
+  ownerId String?
+  owner   User?   @relation("workspaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  members  WorkspaceMember[]
+  projects Project[]
+
+  notifications Notification[]
+
+  @@index([ownerId])
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@index([workspaceId])
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+  GUEST
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  slug        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isArchived  Boolean  @default(false)
+
+  ownerId String
+  owner   User   @relation("projectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  members       ProjectMember[]
+  notifications Notification[]
+  // attach arbitrary json for settings, extra data
+  meta          Json?
+
+  @@index([workspaceId])
+  @@index([ownerId])
+}
+
+model ProjectMember {
+  id        String      @id @default(cuid())
+  projectId String
+  userId    String
+  role      ProjectRole @default(CONTRIBUTOR)
+  joinedAt  DateTime    @default(now())
+
+  meta Json?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@index([projectId])
+}
+
+enum ProjectRole {
+  OWNER
+  MAINTAINER
+  CONTRIBUTOR
+  VIEWER
+}
+
+enum ProjectStatus {
+  DRAFT
+  isActive
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+// nOTIFICATION MODEL   
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  workspaceId String?
+  projectId   String?
+  title       String
+  body        String?
+  type        NotificationType @default(GENERAL)
+
+  link String
+
+  meta      Json?
+  isRead    Boolean  @default(false)
+  actedAt   DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project   Project?   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([projectId])
+  @@index([isRead, createdAt])
+}
+
+enum NotificationType {
+  GENERAL
+  INVITE
+  MENTION
+  TASK_ASSIGNED
+  TASK_UPDATED
+  PROJECT_UPDATED
+  SYSTEM
 }
