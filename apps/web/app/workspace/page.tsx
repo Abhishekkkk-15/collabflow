@@ -6,18 +6,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { InviteMembers } from "@/components/self/InviteMembers";
-import type { WorkspaceRole } from "@collabflow/types";
-
+import type { ProjectRole, WorkspaceRole } from "@collabflow/types";
+import { toast } from "sonner";
 import axios from "axios";
-import { WorkspaceMember } from "@prisma/client";
+import WorkspaceSchema from "@/lib/validator/WorkspaceSchema";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import z from "zod";
+import { ValidationAlert } from "@/components/self/ValidationAlert";
 export default function page() {
+  console.log("Client component");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [validationIssues, setValidationIssues] = useState<z.ZodIssue[] | null>(
+    null
+  );
   const [members, setMembers] = useState<
     {
       userId: string;
-      role: WorkspaceRole;
+      role: WorkspaceRole | ProjectRole;
     }[]
   >([]);
   const [loading, setLoading] = useState(false);
@@ -25,30 +32,60 @@ export default function page() {
   const handleSubmit = async () => {
     try {
       setLoading(true);
+
       const payload = {
         name,
         slug,
         description,
         members,
       };
-      if (!name) {
+      console.log("Payload", payload);
+      // 🔥 Zod validation
+      const parsed = WorkspaceSchema.safeParse(payload);
+      console.log("Parsed Data", parsed.data);
+      if (!parsed.success) {
         setLoading(false);
+        const issue = parsed.error.issues;
+        setValidationIssues(issue);
+        toast.error("Please fix validation errors", {
+          position: "top-center",
+          richColors: true,
+        });
+
         return;
       }
+
+      const dataToSend = parsed.data;
+
       const res = await axios.post(
         "http://localhost:3001/workspace",
-        {
-          ...payload,
-        },
-        {
-          withCredentials: true,
-        }
+        dataToSend,
+        { withCredentials: true }
       );
-      setLoading(false);
-      console.log("Workspace Created:", res);
-    } catch (error) {
-      setLoading(false);
+
+      toast.success(`${res.data.name} Workspace created`, {
+        position: "top-center",
+        richColors: true,
+      });
+    } catch (error: any) {
       console.log(error);
+
+      const errorMessage = error?.response?.data?.message;
+      const errorDetails = error?.response?.data?.details;
+      const errorStatusCode = error?.response?.data?.statusCode;
+
+      if (errorStatusCode == 400) {
+        toast.error(errorMessage, {
+          position: "top-center",
+          description: <AlertDescripition descripition={errorDetails} />,
+          richColors: true,
+        });
+        return;
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,7 +99,6 @@ export default function page() {
       </div>
 
       <div className="grid gap-6 bg-card border rounded-xl p-8">
-        {/* Workspace Name */}
         <div className="grid gap-2">
           <Label>Name</Label>
           <Input
@@ -72,7 +108,6 @@ export default function page() {
           />
         </div>
 
-        {/* Slug */}
         <div className="grid gap-2">
           <Label>Slug</Label>
           <Input
@@ -82,7 +117,6 @@ export default function page() {
           />
         </div>
 
-        {/* Description */}
         <div className="grid gap-2">
           <Label>Description</Label>
           <Textarea
@@ -92,13 +126,18 @@ export default function page() {
           />
         </div>
 
-        {/* Invite Members */}
         <div className="grid gap-2">
           <Label>Invite Members</Label>
-          <InviteMembers onChange={(val) => setMembers(val)} />
+          <InviteMembers
+            onChange={(val) => setMembers(val)}
+            roleType="WORKSPACE"
+          />
         </div>
-
-        {/* Submit */}
+        {validationIssues?.length ? (
+          <div>
+            <ValidationAlert issues={validationIssues} />
+          </div>
+        ) : null}
         <div>
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? "Creating..." : "Create Workspace"}
@@ -106,5 +145,19 @@ export default function page() {
         </div>
       </div>
     </div>
+  );
+}
+
+function AlertDescripition({ descripition }: { descripition: any[] }) {
+  return (
+    <Alert className="bg-transparent border-0">
+      <AlertDescription>
+        <ul className="list-inside list-disc">
+          {descripition.map((item, index) => (
+            <li key={index}>{item.message}</li>
+          ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
   );
 }

@@ -1,9 +1,8 @@
 import { auth } from "@/auth";
 import { LoginForm } from "@/components/login-form";
 import { redirect } from "next/navigation";
-import { type Session } from "@collabflow/types";
 export default async function LoginPage() {
-  const session: Session = await auth();
+  const session: any = await auth();
   if (session) redirect("/dashboard");
   console.log("session : ", session);
   return (

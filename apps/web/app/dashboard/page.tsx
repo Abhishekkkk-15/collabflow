@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { Session } from "@collabflow/types";
 
 async function Page() {
-  const session: Session = await auth();
+  const session = await auth();
   if (!session) redirect("/login");
   return (
     <div>

@@ -25,58 +25,30 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Check, MoreHorizontal, UserPlus } from "lucide-react";
-import type { User, UserRole, WorkspaceRole } from "@collabflow/types";
+import type {
+  ProjectRole,
+  User,
+  UserRole,
+  WorkspaceRole,
+  PROJECT_ROLE_VALUES,
+} from "@collabflow/types";
 import axios from "axios";
-import { WorkspaceMember } from "@prisma/client";
-// user type
 
-// Example mock users — replace with your API data
-const MOCK_USERS: User[] = [
-  {
-    id: "1",
-    name: "Olivia Martin",
-    email: "o@example.com",
-    image: "/mnt/data/invitemem.jpg",
-    role: "USER",
-  },
-  {
-    id: "2",
-    name: "Isabella Nguyen",
-    email: "b@example.com",
-    image: "/mnt/data/invitemem.jpg",
-    role: "USER",
-  },
-  {
-    id: "3",
-    name: "Sofia Davis",
-    email: "p@example.com",
-    image: "/mnt/data/invitemem.jpg",
-    role: "USER",
-  },
-  {
-    id: "4",
-    name: "Ethan Thompson",
-    email: "e@example.com",
-    image: "/mnt/data/invitemem.jpg",
-    role: "USER",
-  },
-  {
-    id: "5",
-    name: "Demo User",
-    email: "demo@example.com",
-    image: "/mnt/data/invitemem.jpg",
-    role: "USER",
-  },
-];
-
-type Selected = Record<string, { user: User; role: WorkspaceRole }>;
+type Selected = Record<
+  string,
+  { user: User; role: WorkspaceRole | ProjectRole }
+>;
 
 export function InviteMembers({
   onChange,
   initialSelected = [],
+  roleType = "WORKSPACE",
 }: {
   initialSelected?: User[];
-  onChange?: (members: { userId: string; role: WorkspaceRole }[]) => void;
+  onChange?: (
+    members: { userId: string; role: WorkspaceRole | ProjectRole }[]
+  ) => void;
+  roleType: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -87,7 +59,9 @@ export function InviteMembers({
     return map;
   });
   async function fetchUsers() {
-    return await axios.get("http://localhost:3001/", { withCredentials: true });
+    return await axios.get("http://localhost:3001/user", {
+      withCredentials: true,
+    });
   }
   useEffect(() => {
     (async () => {
@@ -122,8 +96,29 @@ export function InviteMembers({
       return copy;
     });
   };
+  const WORKSPACE_ROLES = [
+    { value: "OWNER", label: "Owner" },
+    { value: "ADMIN", label: "Admin" },
+    { value: "MEMBER", label: "Member" },
+    { value: "GUEST", label: "Guest" },
+  ] as const;
 
-  const setRole = (id: string, role: WorkspaceRole) => {
+  const PROJECT_ROLES = [
+    { value: "OWNER", label: "Owner" },
+    { value: "MAINTAINER", label: "Maintainer" },
+    { value: "CONTRIBUTOR", label: "Contributor" },
+    { value: "VIEWER", label: "Viewer" },
+  ] as const;
+  // map value → label
+  function getRoleLabel(role: string) {
+    return (
+      WORKSPACE_ROLES.find((r) => r.value === role)?.label ??
+      PROJECT_ROLES.find((r) => r.value === role)?.label ??
+      "Unknown"
+    );
+  }
+
+  const setRole = (id: string, role: WorkspaceRole | ProjectRole) => {
     setSelected((prev) => {
       const next = { ...prev, [id]: { ...prev[id], role } };
 
@@ -255,31 +250,24 @@ export function InviteMembers({
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button size="sm" variant="outline">
-                            {role === "MEMBER"
-                              ? "Admin"
-                              : role === "ADMIN"
-                              ? "Admin"
-                              : "Owner"}
+                            {getRoleLabel(role)}
                           </Button>
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onSelect={() => setRole(user.id, "MEMBER")}>
-                            Member
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => setRole(user.id, "ADMIN")}>
-                            Admin
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => setRole(user.id, "OWNER")}>
-                            Owner
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => setRole(user.id, "GUEST")}>
-                            Owner
-                          </DropdownMenuItem>
+                          {(roleType === "WORKSPACE"
+                            ? WORKSPACE_ROLES
+                            : PROJECT_ROLES
+                          ).map((r) => (
+                            <DropdownMenuItem
+                              key={r.value}
+                              onClick={(e) => {
+                                e.preventDefault(); // keep dropdown smooth
+                                setRole(user.id, r.value);
+                              }}>
+                              {r.label}
+                            </DropdownMenuItem>
+                          ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

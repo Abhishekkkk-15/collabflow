@@ -8,3 +8,4 @@ export * from "./workspace";
 export * from "./workspaceMember";
 export * from "./enum";
 export * from "./task";
+export * from "./values/enum";

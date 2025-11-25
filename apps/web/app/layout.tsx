@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
+import { Toaster } from "@/components/ui/sonner";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "CollabFlow",
   description: "CollabFlow a collabrative notion app",
 };
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "@/components/theme-provider";
 
 export default function RootLayout({
   children,
@@ -26,16 +26,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      > <ThemeProvider
-            attribute="class"
-            defaultTheme="violet"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-        
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {" "}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="violet"
+          enableSystem
+          disableTransitionOnChange>
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

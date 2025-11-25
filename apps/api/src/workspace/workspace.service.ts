@@ -7,7 +7,7 @@ import { Workspace } from '@collabflow/types';
 @Injectable()
 export class WorkspaceService {
   async create(createWorkspaceDto: CreateWorkspaceDto, ownerId: string) {
-    const slug = createSlug(createWorkspaceDto.name);
+    const slug = createSlug(createWorkspaceDto.slug || createWorkspaceDto.name);
     console.log('MEMBER', createWorkspaceDto.members);
 
     const workspace = await prisma.workspace.create({
@@ -47,19 +47,25 @@ export class WorkspaceService {
     return await prisma.workspace.findMany({
       where: {
         OR: [
-          { ownerId: ownerId }, // user is the owner
+          { ownerId: ownerId },
           {
             members: {
-              // user is a member
               some: { userId: ownerId },
             },
           },
         ],
       },
+
       include: {
         owner: true,
         members: true,
-        projects: true,
+        projects: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
       },
     });
   }

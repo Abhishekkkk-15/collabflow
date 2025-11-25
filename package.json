@@ -9,7 +9,8 @@
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
     "web": "pnpm --filter web run dev",
-    "api": "pnpm --filter api dev"
+    "api": "pnpm --filter api dev",
+    "studio": "pnpm --filter @collabflow/db studio "
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@prisma/client": "6.19.0",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
     "prisma": "^6.19.0"

@@ -120,7 +120,9 @@ model Project {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   isArchived  Boolean  @default(false)
-
+  status      ProjectStatus @default(isActive)
+  priority    Priority @default(LOW) 
+  dueDate     DateTime
   ownerId String
   owner   User   @relation("projectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
 
@@ -201,4 +203,10 @@ enum NotificationType {
   TASK_UPDATED
   PROJECT_UPDATED
   SYSTEM
+}
+
+enum Priority {
+  HIGH
+  LOW 
+  MEDIUM
 }

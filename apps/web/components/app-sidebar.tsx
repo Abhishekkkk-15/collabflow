@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 
 import { SearchForm } from "@/components/search-form";
 import { VersionSwitcher } from "@/components/version-switcher";
+
 import {
   Collapsible,
   CollapsibleContent,
@@ -24,6 +25,10 @@ import {
 } from "@/components/ui/sidebar";
 import UserProfileCard from "./self/UserProfileCard";
 import axios from "axios";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
+import { Spinner } from "./ui/spinner";
+import Link from "next/link";
 
 // CollabFlow Sidebar Dummy Data
 const data = {
@@ -90,24 +95,32 @@ type IProps = React.ComponentProps<typeof Sidebar> & {
 };
 export function AppSidebar({ user, ...props }: IProps) {
   // const user =  await auth()
+  const [workSpaces, setWorkSpaces] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   async function fetchUserWorkspaces() {
-    return axios.get("http://localhost:3001/workspace", {
-      withCredentials: true,
-    });
+    try {
+      const res = await api.get("/workspace");
+      setWorkSpaces(res.data);
+      console.log(res.data);
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || "Failed to fetch workspaces.",
+        {
+          position: "top-center",
+          richColors: true,
+        }
+      );
+    } finally {
+      setLoading(false);
+    }
   }
   React.useEffect(() => {
-    fetchUserWorkspaces().then((d) => console.log(d.data));
-
-    return () => {};
+    fetchUserWorkspaces();
   }, []);
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        {/* <VersionSwitcher
-          versions={data.versions}
-          defaultVersion={data.versions[0]}
-          user={user}
-        /> */}
         <UserProfileCard user={user} />
         <SearchForm />
       </SidebarHeader>
@@ -115,39 +128,48 @@ export function AppSidebar({ user, ...props }: IProps) {
         Workspace's
       </h4>
       <SidebarSeparator className="mx-auto w-3/4" />
-      <SidebarContent className="gap-0">
-        {/* We create a collapsible SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <Collapsible
-            key={item.title}
-            title={item.title}
-            className="group/collapsible">
-            <SidebarGroup>
-              <SidebarGroupLabel
-                asChild
-                className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm">
-                <CollapsibleTrigger>
-                  {item.title}{" "}
-                  <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                </CollapsibleTrigger>
-              </SidebarGroupLabel>
-              <CollapsibleContent>
-                <SidebarGroupContent className="pl-4">
-                  <SidebarMenu>
-                    {item.items.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={item.isActive}>
-                          <a href={item.url}>{item.title}</a>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </SidebarGroup>
-          </Collapsible>
-        ))}
-      </SidebarContent>
+      {loading ? (
+        <div className="h-full w-full flex justify-center items-center">
+          <Spinner className="size-6" />
+        </div>
+      ) : (
+        <SidebarContent className="gap-0">
+          {/* We create a collapsible SidebarGroup for each parent. */}
+          {workSpaces?.map((workspace) => (
+            <Collapsible
+              key={workspace.id}
+              title={workspace.name}
+              className="group/collapsible">
+              <SidebarGroup>
+                <SidebarGroupLabel
+                  asChild
+                  className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm">
+                  <CollapsibleTrigger>
+                    {workspace.name}
+                    <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                  </CollapsibleTrigger>
+                </SidebarGroupLabel>
+                <CollapsibleContent>
+                  <SidebarGroupContent className="pl-4">
+                    <SidebarMenu>
+                      {workspace?.projects?.map((item: any) => (
+                        <SidebarMenuItem key={item?.name}>
+                          <SidebarMenuButton asChild isActive={item?.isActive}>
+                            <Link
+                              href={`/dashboard/${workspace.slug}/${item.slug}/tasks`}>
+                              <span>{item?.name}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </SidebarGroup>
+            </Collapsible>
+          ))}
+        </SidebarContent>
+      )}
       <SidebarRail />
     </Sidebar>
   );
