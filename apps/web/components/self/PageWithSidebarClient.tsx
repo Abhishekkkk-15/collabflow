@@ -15,7 +15,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { ComponentProps, ComponentType, useState } from "react";
+import React, { ComponentProps, ComponentType, useState } from "react";
 import { ChevronDownIcon, SlashIcon } from "lucide-react";
 import { AppSidebar } from "../app-sidebar";
 import { ModeToggle } from "../ModeToggle";
@@ -29,6 +29,8 @@ import {
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu";
 import { CreateProjectDialog } from "./CreateProjectDialog";
+import { normalizeString } from "@/lib/slugToTitle";
+import { SidebarSheet } from "./DraggableSidebar";
 type IProps = ComponentProps<typeof Sidebar> & { user: User };
 type Props = {
   user: any;
@@ -56,7 +58,7 @@ export default function PageWithSidebarClient({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <span className="flex items-center gap-1 text-sm font-medium">
-                      {params.workspace?.replace("-", " ")}
+                      {normalizeString(params.workspace!)}
                       <ChevronDownIcon className="h-4 w-4 opacity-70" />
                     </span>
                   </DropdownMenuTrigger>
@@ -104,7 +106,7 @@ export default function PageWithSidebarClient({
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbPage>
-                  {params.project?.replace("-", " ")}
+                  {normalizeString(params.project!)}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>

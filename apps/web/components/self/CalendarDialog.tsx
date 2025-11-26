@@ -50,7 +50,7 @@ export function CalendarDialog({
       </DialogTrigger>
 
       {/* Modal Content */}
-      <DialogContent className="max-w-sm">
+      <DialogContent className="w-auto">
         <DialogHeader>
           <DialogTitle>Select Due Date</DialogTitle>
         </DialogHeader>
@@ -63,7 +63,7 @@ export function CalendarDialog({
             selected={date}
             onSelect={setDate}
             captionLayout={dropdown}
-            className="rounded-lg border shadow-sm"
+            className="rounded-lg border shadow-sm size-fit"
           />
 
           {/* Dropdown */}
@@ -79,7 +79,7 @@ export function CalendarDialog({
                   >["captionLayout"]
                 )
               }>
-              <SelectTrigger id="dropdown" className="w-full">
+              <SelectTrigger id="dropdown" className="w-auto">
                 <SelectValue placeholder="Dropdown" />
               </SelectTrigger>
 

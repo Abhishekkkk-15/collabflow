@@ -5,9 +5,10 @@ import { WorkspaceModule } from './workspace/workspace.module';
 import { ProjectModule } from './project/project.module';
 import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
+import { WebsocketModule } from './websocket/websocket.module';
 
 @Module({
-  imports: [WorkspaceModule, ProjectModule, UserModule, NotificationModule],
+  imports: [WorkspaceModule, ProjectModule, UserModule, NotificationModule, WebsocketModule],
   controllers: [AppController],
   providers: [AppService],
 })

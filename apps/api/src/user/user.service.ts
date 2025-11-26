@@ -16,7 +16,6 @@ export class UserService {
         },
       },
     });
-    console.log(users);
     return users.map((u) => ({
       ...u,
       role: u.role as UserRole,

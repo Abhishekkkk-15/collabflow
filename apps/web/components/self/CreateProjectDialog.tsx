@@ -28,14 +28,14 @@ import {
 } from "@/components/ui/select";
 
 import { InviteMembers } from "@/components/self/InviteMembers";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircleIcon, CalendarIcon } from "lucide-react";
 
-import { PROJECT_ROLE_VALUES, ProjectRole } from "@collabflow/types";
+import { ProjectRole } from "@collabflow/types";
 import { ProjectSchema } from "@/lib/validator/projectSchema";
 import { CalendarDialog } from "./CalendarDialog";
 import { ValidationAlert } from "./ValidationAlert";
 import { useParams } from "next/navigation";
+import { CalendarIcon } from "lucide-react";
+import { normalizeString } from "@/lib/slugToTitle";
 
 type ProjectInput = z.infer<typeof ProjectSchema>;
 
@@ -67,9 +67,8 @@ export function CreateProjectDialog({
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const { workspace } = useParams();
-  console.log(workspace?.toString(), useParams());
   const [workspaceId, setWorkspaceId] = useState<string>(
-    initialWorkspaceId || ""
+    normalizeString(workspace as string) || ""
   );
   const [priority, setPriority] = useState<ProjectInput["priority"]>("MEDIUM");
   const [status, setStatus] = useState<ProjectInput["status"]>("isActive");
@@ -97,12 +96,21 @@ export function CreateProjectDialog({
   };
   useEffect(() => {
     if (workspace) {
-      setWorkspaceId(workspace.toString());
+      setWorkspaceId(normalizeString(workspace as string));
       setMockWorkspaces((prev) => {
-        return [...prev, { id: "2342342", name: initialWorkspaceId }];
+        return [
+          {
+            id: initialWorkspaceId,
+            name: normalizeString(initialWorkspaceId!),
+          },
+          ...prev,
+        ];
       });
     }
-  }, []);
+    return () => {
+      setWorkspaceId("");
+    };
+  }, [workspace]);
   const handleAutoSlug = () => setSlug(slugify(name));
 
   const handleSubmit = async () => {
@@ -241,14 +249,12 @@ export function CreateProjectDialog({
               <Select onValueChange={setWorkspaceId}>
                 <SelectTrigger className="w-auto">
                   <SelectValue
-                    placeholder={mockWorkspaces[mockWorkspaces.length - 1].name}
-                    defaultChecked={
-                      mockWorkspaces[mockWorkspaces.length - 1].name
-                    }
-                    defaultValue={"some"}
+                    // placeholder={mockWorkspaces[0].name}
+                    defaultChecked={true}
+                    defaultValue={workspaceId}
                   />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent defaultChecked={true} defaultValue={workspaceId}>
                   {mockWorkspaces.map((ws) => (
                     <SelectItem key={ws.id} value={ws.id}>
                       {ws.name}
