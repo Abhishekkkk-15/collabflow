@@ -141,8 +141,14 @@ export class ProjectService {
     }
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} project`;
+  async findOne(id: string, slug: string, userId: string) {
+    const project = await prisma.project.findFirst({
+      where: {
+        OR: [{ id }, { slug }],
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+    return project;
   }
 
   update(id: number, updateProjectDto: UpdateProjectDto) {

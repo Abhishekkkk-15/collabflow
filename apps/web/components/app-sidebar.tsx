@@ -1,15 +1,10 @@
 "use client";
+
 import * as React from "react";
-import { ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { ChevronRight, MoreHorizontal } from "lucide-react";
 
-import { SearchForm } from "@/components/search-form";
-import { VersionSwitcher } from "@/components/version-switcher";
-
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -20,156 +15,217 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   SidebarSeparator,
+  SidebarRail,
 } from "@/components/ui/sidebar";
-import UserProfileCard from "./self/UserProfileCard";
-import axios from "axios";
-import { api } from "@/lib/api";
-import { toast } from "sonner";
+
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import {
+  fetchWorkspaces,
+  setActiveWorkspace,
+  TProject,
+  TWorkspace,
+} from "@/lib/redux/slices/workspace";
+
 import { Spinner } from "./ui/spinner";
-import Link from "next/link";
+import UserProfileCard from "./self/UserProfileCard";
+import { SearchForm } from "@/components/search-form";
+import { SessionContext } from "next-auth/react";
 
-// CollabFlow Sidebar Dummy Data
-const data = {
-  versions: ["v0.1.0", "v0.2.0-alpha", "v1.0.0"],
-  navMain: [
-    {
-      title: "Fun E-commerce Team",
-      url: "#",
-      items: [
-        {
-          title: "Frontend Redesign",
-          url: "dashboard/Fun E-commerce Team/frontend/tasks",
-          isActive: true,
-        },
-        {
-          title: "Backend API",
-          url: "dashboard/Fun-E-commerce-Team/backend/tasks",
-        },
-        {
-          title: "UI Overhaul",
-          url: "dashboard/Fun-E-commerce-Team/ui-overhaul/tasks",
-        },
-      ],
-    },
-    {
-      title: "Blogging App Team",
-      url: "#",
-      items: [
-        {
-          title: "Dashboard Rewrite",
-          url: "dashboard/Dashboard-Rewrite/dashboard/tasks",
-        },
-      ],
-    },
-    {
-      title: "College Final Year",
-      url: "#",
-      items: [
-        {
-          title: "DB Schema",
-          url: "dashboard/College-Final-Year/db-schema/tasks",
-        },
-      ],
-    },
-    {
-      title: "Personal Notes",
-      url: "#",
-      items: [
-        {
-          title: "Ideas",
-          url: "dashboard/Personal-Notes/ideas/tasks",
-        },
-        {
-          title: "Planning",
-          url: "dashboard/Personal-Notes/planning/tasks",
-        },
-      ],
-    },
-  ],
-};
+export function AppSidebar({ ...props }: any) {
+  const params = useParams();
+  const activeWorkspace = params.workspace?.toString();
+  const activeProject = params.project?.toString();
+  const [activeWsProjects, setActiveWsProjects] = React.useState<TProject[]>(
+    []
+  );
+  const dispatch = useAppDispatch();
+  const { workspaces, status } = useAppSelector((s: any) => s?.workspace!);
 
-type IProps = React.ComponentProps<typeof Sidebar> & {
-  user: any; // add user here
-};
-export function AppSidebar({ user, ...props }: IProps) {
-  // const user =  await auth()
-  const [workSpaces, setWorkSpaces] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  async function fetchUserWorkspaces() {
-    try {
-      const res = await api.get("/workspace");
-      setWorkSpaces(res.data);
-      console.log(res.data);
-    } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message || "Failed to fetch workspaces.",
-        {
-          position: "top-center",
-          richColors: true,
-        }
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
   React.useEffect(() => {
-    fetchUserWorkspaces();
-  }, []);
+    dispatch(fetchWorkspaces());
+  }, [dispatch]);
+
+  function getActiveWorkspaceProjects() {
+    let activeWs = workspaces.find(
+      (ws: TWorkspace) => ws.slug === activeWorkspace
+    ) as TWorkspace;
+    console.log(activeWs.projects);
+    setActiveWsProjects(activeWs.projects);
+  }
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <UserProfileCard user={user} />
+        <UserProfileCard />
         <SearchForm />
       </SidebarHeader>
-      <h4 className="px-4 py-2 text-xs font-semibold text-muted-foreground tracking-wide">
-        Workspace's
+
+      {/* Section Title */}
+      <h4 className="px-4 py-2 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+        Workspaces
       </h4>
-      <SidebarSeparator className="mx-auto w-3/4" />
-      {loading ? (
+      <SidebarSeparator className="mx-auto w-4/5 opacity-50" />
+
+      {status === "loading" ? (
         <div className="h-full w-full flex justify-center items-center">
           <Spinner className="size-6" />
         </div>
       ) : (
-        <SidebarContent className="gap-0">
-          {/* We create a collapsible SidebarGroup for each parent. */}
-          {workSpaces?.map((workspace) => (
-            <Collapsible
-              key={workspace.id}
-              title={workspace.name}
-              className="group/collapsible">
-              <SidebarGroup>
-                <SidebarGroupLabel
-                  asChild
-                  className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm">
-                  <CollapsibleTrigger>
-                    {workspace.name}
-                    <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                  </CollapsibleTrigger>
-                </SidebarGroupLabel>
-                <CollapsibleContent>
-                  <SidebarGroupContent className="pl-4">
-                    <SidebarMenu>
-                      {workspace?.projects?.map((item: any) => (
-                        <SidebarMenuItem key={item?.name}>
-                          <SidebarMenuButton asChild isActive={item?.isActive}>
-                            <Link
-                              href={`/dashboard/${workspace.slug}/${item.slug}/tasks`}>
-                              <span>{item?.name}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
-              </SidebarGroup>
-            </Collapsible>
-          ))}
+        <SidebarContent className="gap-1 pt-1">
+          {workspaces?.map((workspace: any) => {
+            const isActiveWS = activeWorkspace === workspace.slug;
+
+            return (
+              <Collapsible
+                key={workspace.id}
+                defaultOpen={isActiveWS}
+                className="group/collapsible"
+                onClick={() => {
+                  dispatch(setActiveWorkspace(activeWorkspace!));
+                  getActiveWorkspaceProjects();
+                }}>
+                <SidebarGroup>
+                  {/* WORKSPACE ITEM */}
+                  <SidebarGroupLabel
+                    className={`
+                      flex items-center px-3 py-2 rounded-md cursor-pointer transition-all
+                      border-l-4
+                      ${
+                        isActiveWS
+                          ? "bg-accent text-accent-foreground font-semibold border-primary"
+                          : "hover:bg-accent/40 border-transparent"
+                      }
+                    `}>
+                    {/* Workspace redirect */}
+                    <Link
+                      href={`/dashboard/${workspace.slug}`}
+                      className="flex-1 truncate"
+                      onClick={() => {
+                        dispatch(
+                          setActiveWorkspace(
+                            workspace.id || useParams().workspace
+                          ),
+                          getActiveWorkspaceProjects()
+                        );
+                      }}>
+                      {workspace.name}
+                    </Link>
+
+                    {/* Unread count */}
+                    {workspace.unreadCount > 0 && (
+                      <span className="ml-2 text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full shadow">
+                        {workspace.unreadCount}
+                      </span>
+                    )}
+
+                    {/* Dropdown arrow */}
+                    <CollapsibleTrigger asChild>
+                      <button className="p-1 ml-2 rounded hover:bg-accent transition">
+                        <ChevronRight
+                          className={`
+                            size-4 text-muted-foreground
+                            transition-transform
+                            group-data-[state=open]/collapsible:rotate-90
+                          `}
+                        />
+                      </button>
+                    </CollapsibleTrigger>
+                  </SidebarGroupLabel>
+
+                  {/* PROJECT LIST */}
+                  <CollapsibleContent>
+                    <SidebarGroupContent className="mt-1 space-y-1 pl-3">
+                      <SidebarMenu>
+                        {workspace.projects?.map((p: any) => {
+                          const isActiveProject = p.slug === activeProject;
+
+                          return (
+                            <SidebarMenuItem
+                              key={p.id}
+                              className="flex items-center group">
+                              {/* Project Link */}
+                              <SidebarMenuButton
+                                asChild
+                                className={`
+                                  flex-1 text-sm rounded-md transition-all px-2 py-1.5
+                                  border-l-4
+                                  ${
+                                    isActiveProject
+                                      ? "bg-accent border-primary font-semibold"
+                                      : "hover:bg-accent/40 border-transparent"
+                                  }
+                                `}>
+                                <Link
+                                  href={`/dashboard/${workspace.slug}/${p.slug}/tasks`}>
+                                  {p.name}
+                                </Link>
+                              </SidebarMenuButton>
+
+                              {/* Project unread */}
+                              {p.unreadCount > 0 && (
+                                <span className="ml-2 text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full shadow">
+                                  {p.unreadCount}
+                                </span>
+                              )}
+
+                              {/* ... menu */}
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button className="ml-2 p-1 rounded hover:bg-accent/40 transition">
+                                    <MoreHorizontal className="size-4 text-muted-foreground" />
+                                  </button>
+                                </PopoverTrigger>
+
+                                <PopoverContent
+                                  className="w-44 p-0 overflow-hidden rounded-md border bg-popover shadow-md"
+                                  align="start">
+                                  <div className="py-1 text-sm">
+                                    <Link
+                                      href={`/dashboard/${workspace.slug}/${p.slug}/tasks`}
+                                      className="block px-3 py-2 hover:bg-muted">
+                                      Tasks
+                                    </Link>
+
+                                    <Link
+                                      href={`/dashboard/${workspace.slug}/${p.slug}/chat`}
+                                      className="block px-3 py-2 hover:bg-muted">
+                                      Chat
+                                    </Link>
+
+                                    <Link
+                                      href={`/dashboard/${workspace.slug}/${p.slug}/settings`}
+                                      className="block px-3 py-2 hover:bg-muted">
+                                      Settings
+                                    </Link>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </CollapsibleContent>
+                </SidebarGroup>
+              </Collapsible>
+            );
+          })}
         </SidebarContent>
       )}
+
       <SidebarRail />
     </Sidebar>
   );

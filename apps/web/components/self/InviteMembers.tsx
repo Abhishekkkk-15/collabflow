@@ -43,12 +43,14 @@ export function InviteMembers({
   onChange,
   initialSelected = [],
   roleType = "WORKSPACE",
+  workspaceId,
 }: {
   initialSelected?: User[];
   onChange?: (
     members: { userId: string; role: WorkspaceRole | ProjectRole }[]
   ) => void;
   roleType: string;
+  workspaceId: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");

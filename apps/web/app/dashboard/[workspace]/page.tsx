@@ -1,7 +1,6 @@
-import { auth } from "@/auth";
 import PageWithSidebarClient from "@/components/self/PageWithSidebarClient";
-import TasksTable from "@/components/self/TasksTable";
-import { redirect } from "next/navigation";
+import WorkspaceDetails from "@/components/workspace/WorkspaceDetails";
+import React from "react";
 
 async function page({
   params,
@@ -12,14 +11,10 @@ async function page({
 
   return (
     <div>
-      {/* <PageWithSidebarServer/>
-      
-    <PageWithSidebarClient Component={TasksTable} /> */}
       <PageWithSidebarClient
-        params={{ workspace, project }}
-        Component={TasksTable}
+        Component={WorkspaceDetails}
+        params={{ project: "", workspace: "" }}
       />
-      ;
     </div>
   );
 }

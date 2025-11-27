@@ -20,16 +20,35 @@ export const metadata: Metadata = {
 import { ThemeProvider } from "@/components/theme-provider";
 import SocketProvider from "@/components/providers/SocketProvider";
 import { auth } from "@/auth";
-import { Provider } from "react-redux";
 import ReduxProvider from "@/lib/redux/provider";
+import ClientSessionSync from "@/components/helper/ClientSessionSync";
+import { redirect } from "next/navigation";
+import axios from "axios";
+import { cookies } from "next/headers";
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
+  const cookieStore = cookies();
 
+  const session = await auth();
+  if (!session) redirect("/login");
+  let userRoles = null;
+  try {
+    const res = await axios.get(`http://localhost:3001/user/roles`, {
+      headers: {
+        Cookie: (await cookieStore).toString(),
+      },
+      withCredentials: true,
+    });
+    console.log(res);
+    userRoles = res?.data ?? null;
+  } catch (err) {
+    console.error("Could not fetch user roles:", err);
+  }
+  console.log("ROLES ", userRoles);
   return (
     <html lang="en">
       <body
@@ -39,10 +58,12 @@ export default async function RootLayout({
           <SocketProvider userId={session?.user?.id}>
             <ThemeProvider
               attribute="class"
-              defaultTheme="violet"
+              defaultTheme="dark"
               enableSystem
               disableTransitionOnChange>
               {children}
+
+              <ClientSessionSync session={session} userRoles={userRoles} />
               <Toaster />
             </ThemeProvider>
           </SocketProvider>

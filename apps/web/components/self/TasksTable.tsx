@@ -23,8 +23,11 @@ import {
 } from "lucide-react";
 import { Status, Task, TaskPriority, type User } from "@collabflow/types";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import { useSelector } from "react-redux";
 
-export default function TasksTable({ user }: { user: User }) {
+export default function TasksTable() {
+  const user = useSelector((state: any) => state?.user.userRoles);
+  console.log("ii", user);
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [visibleFields, setVisibleFields] = useState<string[]>([
@@ -308,7 +311,7 @@ export default function TasksTable({ user }: { user: User }) {
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
-              disabled={user.role == "USER"}
+              disabled={user?.role == "USER" || undefined}
               className="bg-primary text-primary-foreground hover:bg-primary/90  flex gap-2">
               <Plus size={16} /> Add Task
             </Button>

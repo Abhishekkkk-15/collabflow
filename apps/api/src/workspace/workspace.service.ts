@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { prisma } from '@collabflow/db';
@@ -44,10 +44,10 @@ export class WorkspaceService {
   }
 
   async findAll(ownerId: string): Promise<any> {
-    return await prisma.workspace.findMany({
+    const workspaces = await prisma.workspace.findMany({
       where: {
         OR: [
-          { ownerId: ownerId },
+          { ownerId },
           {
             members: {
               some: { userId: ownerId },
@@ -55,10 +55,11 @@ export class WorkspaceService {
           },
         ],
       },
-
-      include: {
-        owner: true,
-        members: true,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        ownerId: true,
         projects: {
           select: {
             id: true,
@@ -66,19 +67,34 @@ export class WorkspaceService {
             slug: true,
           },
         },
+        owner: {
+          select: {
+            name: true,
+            id: true,
+            image: true,
+            email: true,
+          },
+        },
       },
     });
+
+    return { workspaces };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} workspace`;
-  }
-
-  update(id: number, updateWorkspaceDto: UpdateWorkspaceDto) {
-    return `This action updates a #${id} workspace`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} workspace`;
+  async getWorkspaceMembers(id: string) {
+    const members = await prisma.workspaceMember.findMany({
+      where: {
+        workspaceId: id,
+      },
+      include: {
+        user: {
+          select: { name: true, image: true, id: true, email: true },
+        },
+      },
+      take: 8,
+    });
+    console.log(members);
+    if (!members) throw new NotFoundException('Members not found');
+    return members;
   }
 }

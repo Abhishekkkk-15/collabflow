@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
+import { api } from "@/lib/api";
 
 export type TProject = {
   id: string;
@@ -12,17 +13,46 @@ export type TWorkspace = {
   name: string;
   ownerId: string;
   projects: TProject[];
+  owner: TOwnerType;
+};
+
+export type TOwnerType = {
+  id: string;
+  name: string;
+  email: string;
+  image: string;
 };
 
 type TWorkspaceState = {
   workspaces: TWorkspace[];
   activeWorkspaceId: string | null;
+  status: "idle" | "loading" | "succeeded" | "failed";
+  error: string | null;
 };
 
 const initialState: TWorkspaceState = {
   workspaces: [],
   activeWorkspaceId: null,
+  status: "idle",
+  error: null,
 };
+
+export const fetchWorkspaces = createAsyncThunk<
+  TWorkspace[],
+  void,
+  { rejectValue: string }
+>("workspace/fetchWorkspaces", async (_, { rejectWithValue }) => {
+  try {
+    const res = await api.get("/workspace");
+    return res.data.workspaces as TWorkspace[];
+  } catch (err: any) {
+    const message =
+      err?.response?.data?.message ||
+      err?.message ||
+      "Failed to load workspaces";
+    return rejectWithValue(message);
+  }
+});
 
 const workspaceSlice = createSlice({
   name: "workspace",
@@ -38,7 +68,10 @@ const workspaceSlice = createSlice({
 
     updateWorkspace(
       state,
-      action: PayloadAction<{ id: string; data: Partial<TWorkspace> }>
+      action: PayloadAction<{
+        id: string;
+        data: any;
+      }>
     ) {
       const ws = state.workspaces.find((w) => w.id === action.payload.id);
       if (ws) Object.assign(ws, action.payload.data);
@@ -101,6 +134,21 @@ const workspaceSlice = createSlice({
         (p) => p.id !== action.payload.projectId
       );
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchWorkspaces.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchWorkspaces.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.workspaces = action.payload;
+      })
+      .addCase(fetchWorkspaces.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload ?? "Failed to fetch workspaces";
+      });
   },
 });
 

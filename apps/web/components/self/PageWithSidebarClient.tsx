@@ -15,13 +15,18 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import React, { ComponentProps, ComponentType, useState } from "react";
+import React, {
+  ComponentProps,
+  ComponentType,
+  useEffect,
+  useState,
+} from "react";
 import { ChevronDownIcon, SlashIcon } from "lucide-react";
 import { AppSidebar } from "../app-sidebar";
 import { ModeToggle } from "../ModeToggle";
 import NotificationDropdown from "./NotificationDropdown";
 export type UserRole = "USER" | "ADMIN" | "OWNER";
-import { type User } from "@collabflow/types";
+import { Workspace, type User } from "@collabflow/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,22 +36,42 @@ import {
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import { normalizeString } from "@/lib/slugToTitle";
 import { SidebarSheet } from "./DraggableSidebar";
-type IProps = ComponentProps<typeof Sidebar> & { user: User };
-type Props = {
-  user: any;
-  Component: ComponentType<{ user: any }>;
+import { useAppSelector } from "@/lib/redux/hooks";
+import { useSelector } from "react-redux";
+import { TProject, TWorkspace } from "@/lib/redux/slices/workspace";
+import { se } from "date-fns/locale";
+import { useParams } from "next/navigation";
+type Props<T> = {
+  Component: ComponentType<any>;
   params: { workspace?: string; project?: string };
+  componentProps?: Record<string, any>;
 };
-export default function PageWithSidebarClient({
-  params,
-  user,
+export default function PageWithSidebarClient<T>({
   Component,
-}: Props) {
+  componentProps,
+  params,
+}: Props<any>) {
   const [openCreateProject, setOpenCreateProject] = useState(false);
-
+  const [activeWsProjects, setActiveWsProjects] = React.useState<TProject[]>(
+    []
+  );
+  const selectedWorkspaces = useSelector(
+    (state: any) => state?.workspace?.activeWorkspaceId
+  );
+  const { workspaces, status } = useAppSelector((s: any) => s?.workspace!);
+  function getActiveWorkspaceProjects() {
+    let activeWs = workspaces.find(
+      (ws: TWorkspace) => ws.slug === params.workspace
+    ) as TWorkspace;
+    console.log(activeWs?.projects);
+    setActiveWsProjects(activeWs?.projects);
+  }
+  useEffect(() => {
+    getActiveWorkspaceProjects();
+  }, [openCreateProject]);
   return (
     <SidebarProvider>
-      <AppSidebar user={user} /> {/* now inside provider */}
+      <AppSidebar />
       <SidebarInset>
         <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
@@ -65,27 +90,20 @@ export default function PageWithSidebarClient({
 
                   <DropdownMenuContent
                     align="start"
-                    sideOffset={4}
-                    className="
-      w-40 
-      bg-[#1f1f1f] 
-      text-white 
-      rounded-lg 
-      shadow-lg 
-      border border-[#2a2a2a]
-      p-1
-    ">
-                    <DropdownMenuItem className="px-3 py-2 rounded-md hover:bg-[#2a2a2a] cursor-pointer">
-                      Project1
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="px-3 py-2 rounded-md hover:bg-[#2a2a2a] cursor-pointer">
-                      Project1
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="px-3 py-2 rounded-md hover:bg-[#2a2a2a] cursor-pointer">
-                      Details
-                    </DropdownMenuItem>
+                    sideOffset={8}
+                    className={`
+          w-40 rounded-lg p-1 shadow-lg border bg-popover
+        `}>
+                    {activeWsProjects?.map((p) => (
+                      <DropdownMenuItem
+                        className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
+          hover:bg-muted hover:text-foreground transition">
+                        {normalizeString(p.slug)}
+                      </DropdownMenuItem>
+                    ))}
                     <DropdownMenuItem
-                      className="px-3 py-2 rounded-md hover:bg-[#2a2a2a] cursor-pointer"
+                      className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
+          hover:bg-muted hover:text-foreground transition"
                       onClick={() => setOpenCreateProject(true)}>
                       Create Project
                     </DropdownMenuItem>
@@ -119,7 +137,7 @@ export default function PageWithSidebarClient({
         </header>
 
         <div className="flex flex-1 flex-col gap-4 p-4">
-          <Component user={user} />
+          <Component componentProps={componentProps} />
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -36,6 +36,8 @@ import { ValidationAlert } from "./ValidationAlert";
 import { useParams } from "next/navigation";
 import { CalendarIcon } from "lucide-react";
 import { normalizeString } from "@/lib/slugToTitle";
+import { TWorkspace } from "@/lib/redux/slices/workspace";
+import { useSelector } from "react-redux";
 
 type ProjectInput = z.infer<typeof ProjectSchema>;
 
@@ -82,10 +84,15 @@ export function CreateProjectDialog({
     null
   );
 
-  const [mockWorkspaces, setMockWorkspaces] = useState<any[]>([
-    { id: "cmidjdqcc0001wghcvxgmrcwo", name: "CollabFlow" },
-    { id: "cmiemowug0001wg5o1kzetg94", name: "Testing" },
-  ]);
+  // const [userWorkspaces, setUserWorkspaces] = useState<
+  //   Pick<TWorkspace, "id" | "name" | "slug">[]
+  // >([]);
+
+  const {
+    workspaces: userWorkspaces,
+    activeWorkspaceId,
+  }: { workspaces: TWorkspace[]; activeWorkspaceId: string | null } =
+    useSelector((state: any) => state.workspace);
 
   const handleInviteChange = (selected: InviteUser[]) => {
     const normalized = selected.map((u) => ({
@@ -94,18 +101,20 @@ export function CreateProjectDialog({
     }));
     setMembers(normalized);
   };
+
   useEffect(() => {
     if (workspace) {
       setWorkspaceId(normalizeString(workspace as string));
-      setMockWorkspaces((prev) => {
-        return [
-          {
-            id: initialWorkspaceId,
-            name: normalizeString(initialWorkspaceId!),
-          },
-          ...prev,
-        ];
-      });
+      // setUserWorkspaces((prev) => {
+      //   return [
+      //     {
+      //       id: initialWorkspaceId,
+      //       name: normalizeString(initialWorkspaceId!),
+      //       slug:
+      //     },
+      //     ...prev,
+      //   ];
+      // });
     }
     return () => {
       setWorkspaceId("");
@@ -255,7 +264,7 @@ export function CreateProjectDialog({
                   />
                 </SelectTrigger>
                 <SelectContent defaultChecked={true} defaultValue={workspaceId}>
-                  {mockWorkspaces.map((ws) => (
+                  {userWorkspaces?.map((ws) => (
                     <SelectItem key={ws.id} value={ws.id}>
                       {ws.name}
                     </SelectItem>

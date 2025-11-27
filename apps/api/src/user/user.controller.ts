@@ -28,10 +28,11 @@ export class UserController {
   findAll(@Req() req: any) {
     return this.userService.findAll(req.user.id);
   }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  @Get('roles')
+  @UseGuards(AuthGuard)
+  currentUserRoles(@Req() req: any) {
+    console.log('user comming here', req.user.id);
+    return this.userService.currentUserRoles(req.user.id);
   }
 
   @Patch(':id')

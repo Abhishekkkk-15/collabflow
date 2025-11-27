@@ -15,9 +15,7 @@ async function Page() {
       <PageWithSidebarClient
         Component={DefaultDashboard}
         params={{ project: "", workspace: "" }}
-        user={session?.user}
       />
-      <ClientSessionSync session={session} />
     </div>
   );
 }

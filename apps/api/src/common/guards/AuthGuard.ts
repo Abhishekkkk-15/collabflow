@@ -10,7 +10,7 @@ export class AuthGuard implements CanActivate {
     const tokenCookie =
       req.cookies['authjs.session-token'] ||
       req.cookies['__Secure-authjs.session-token'];
-
+    console.log('req cookies ', tokenCookie);
     if (!tokenCookie) return false;
 
     try {

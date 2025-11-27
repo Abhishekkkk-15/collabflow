@@ -22,8 +22,33 @@ export class UserService {
     }));
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async currentUserRoles(id: string) {
+    try {
+      const workspaceRoles = await prisma.workspaceMember.findMany({
+        where: {
+          userId: id,
+        },
+        select: {
+          id: true,
+          role: true,
+          workspaceId: true,
+        },
+      });
+      const projectRoles = await prisma.projectMember.findMany({
+        where: {
+          userId: id,
+        },
+        select: {
+          id: true,
+          meta: true,
+          role: true,
+          projectId: true,
+        },
+      });
+      return { workspaceRoles, projectRoles };
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {

@@ -1,27 +1,42 @@
+// components/helper/ClientSessionSync.tsx
 "use client";
 
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useAppDispatch } from "@/lib/redux/hooks"; // typed hook
 import { setUser, clearUser } from "@/lib/redux/slices/userSlice";
 
-export default function ClientSessionSync({ session }: { session: any }) {
-  const dispatch = useDispatch();
+export default function ClientSessionSync({
+  session,
+  userRoles,
+}: {
+  session: any;
+  userRoles: any;
+}) {
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (session?.user) {
       dispatch(
         setUser({
-          id: session.user.id,
-          name: session.user.name,
-          email: session.user.email,
-          image: session.user.image,
-          role: session.user.role,
+          user: {
+            id: session.user.id,
+            name: session.user.name,
+            email: session.user.email,
+            image: session.user.image,
+            role: session.user.role,
+          },
+          roles: {
+            workspaceRoles: userRoles?.workspaceRoles ?? null,
+            projectRoles: userRoles?.projectRoles ?? null,
+          },
         })
       );
-    } else {
-      dispatch(clearUser());
+      return;
     }
-  }, [session]);
 
-  return null; // no UI
+    // no session -> clear user (runs once)
+    dispatch(clearUser());
+  }, [dispatch, session?.user, userRoles]);
+
+  return null;
 }
