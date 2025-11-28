@@ -36,7 +36,7 @@ export default function ClientSessionSync({
 
     // no session -> clear user (runs once)
     dispatch(clearUser());
-  }, [dispatch, session?.user, userRoles]);
+  }, []);
 
   return null;
 }

@@ -37,22 +37,42 @@ const initialState: TWorkspaceState = {
   error: null,
 };
 
-export const fetchWorkspaces = createAsyncThunk<
-  TWorkspace[],
-  void,
-  { rejectValue: string }
->("workspace/fetchWorkspaces", async (_, { rejectWithValue }) => {
-  try {
-    const res = await api.get("/workspace");
-    return res.data.workspaces as TWorkspace[];
-  } catch (err: any) {
-    const message =
-      err?.response?.data?.message ||
-      err?.message ||
-      "Failed to load workspaces";
-    return rejectWithValue(message);
-  }
-});
+// export const fetchWorkspaces = createAsyncThunk<
+//   TWorkspace[],
+//   void,
+//   { rejectValue: string }
+// >(
+//   "workspace/fetchWorkspaces",
+//   async (_, { rejectWithValue }) => {
+//     try {
+//       const res = await api.get("/workspace"); // api has baseURL
+//       // server should return { workspaces: [...] } or array — adapt as needed
+//       const data = res.data?.workspaces ?? res.data;
+//       return data as TWorkspace[];
+//     } catch (err: any) {
+//       const message =
+//         err?.response?.data?.message ||
+//         err?.message ||
+//         "Failed to load workspaces";
+//       return rejectWithValue(message);
+//     }
+//   },
+//   {
+//     // condition runs before payloadCreator; if false, action is skipped
+//     condition: (_, { getState }) => {
+//       try {
+//         const state = getState() as { workspace: TWorkspaceState };
+//         // only fetch if not already loading and we have no workspaces
+//         if (state.workspace.status === "loading") return false;
+//         if (state.workspace.workspaces && state.workspace.workspaces.length > 0)
+//           return false;
+//         return true;
+//       } catch {
+//         return true;
+//       }
+//     },
+//   }
+// );
 
 const workspaceSlice = createSlice({
   name: "workspace",
@@ -135,21 +155,21 @@ const workspaceSlice = createSlice({
       );
     },
   },
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchWorkspaces.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-      })
-      .addCase(fetchWorkspaces.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.workspaces = action.payload;
-      })
-      .addCase(fetchWorkspaces.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload ?? "Failed to fetch workspaces";
-      });
-  },
+  // extraReducers: (builder) => {
+  //   builder
+  //     .addCase(fetchWorkspaces.pending, (state) => {
+  //       state.status = "loading";
+  //       state.error = null;
+  //     })
+  //     .addCase(fetchWorkspaces.fulfilled, (state, action) => {
+  //       state.status = "succeeded";
+  //       state.workspaces = action.payload;
+  //     })
+  //     .addCase(fetchWorkspaces.rejected, (state, action) => {
+  //       state.status = "failed";
+  //       state.error = action.payload ?? "Failed to fetch workspaces";
+  //     });
+  // },
 });
 
 export const {

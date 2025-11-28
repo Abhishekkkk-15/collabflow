@@ -289,6 +289,7 @@ export default function CreateProjectPage() {
           <InviteMembers
             onChange={(val) => handleInviteChange(val as InviteUser[])}
             roleType="PROJECT"
+            workspaceId={workspaceId}
           />
           <p className="text-xs text-muted-foreground">
             Selected: {members.length} member(s)

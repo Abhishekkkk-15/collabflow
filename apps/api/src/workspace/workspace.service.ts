@@ -3,12 +3,14 @@ import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { prisma } from '@collabflow/db';
 import { createSlug } from '../common/utils/slug-helper';
-import { Workspace } from '@collabflow/types';
+import { Workspace } from '@prisma/client';
 @Injectable()
 export class WorkspaceService {
-  async create(createWorkspaceDto: CreateWorkspaceDto, ownerId: string) {
+  async create(
+    createWorkspaceDto: CreateWorkspaceDto,
+    ownerId: string,
+  ): Promise<Workspace> {
     const slug = createSlug(createWorkspaceDto.slug || createWorkspaceDto.name);
-    console.log('MEMBER', createWorkspaceDto.members);
 
     const workspace = await prisma.workspace.create({
       data: {
@@ -34,7 +36,6 @@ export class WorkspaceService {
         ...m,
         workspaceId: workspace.id,
       }));
-      console.log('Workspace members getting created ', members);
 
       await prisma.workspaceMember.createMany({
         data: members,

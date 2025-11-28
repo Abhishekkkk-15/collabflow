@@ -1,3 +1,4 @@
+import { ProjectMember, ProjectRole } from "@collabflow/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export type AppUser = {
@@ -10,7 +11,7 @@ export type AppUser = {
 
 export type UserProjectRoles = {
   id: string;
-  role: string;
+  role: ProjectRole;
   projectId: string;
   meta: any;
 };
@@ -20,7 +21,7 @@ export type UserWorkspaceRoles = {
   role: string;
   workspaceId: string;
 };
-type UserState = {
+export type UserState = {
   user: AppUser | null;
   authenticated: boolean;
   userRoles: {

@@ -13,7 +13,7 @@ type TScoketProp = {
 };
 export default function SocketProvider({ userId, children }: TScoketProp) {
   const [socket, setSocket] = useState<Socket | null>(null);
-
+  console.log("rerendering fomr socketprovider");
   useEffect(() => {
     if (!userId) return;
     const s = getSocket(userId);

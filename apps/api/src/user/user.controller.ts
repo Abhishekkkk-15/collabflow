@@ -13,6 +13,7 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '../common/guards/AuthGuard';
+import { WsAuthorizationGuard } from '../common/guards/ws-authorization.guard';
 
 @Controller('user')
 export class UserController {
@@ -28,11 +29,23 @@ export class UserController {
   findAll(@Req() req: any) {
     return this.userService.findAll(req.user.id);
   }
-  @Get('roles')
+
+  @Get('/roles')
   @UseGuards(AuthGuard)
   currentUserRoles(@Req() req: any) {
     console.log('user comming here', req.user.id);
     return this.userService.currentUserRoles(req.user.id);
+  }
+
+  @Get('/workspaces/:wsId/users')
+  @UseGuards(WsAuthorizationGuard)
+  usersNotInWs(@Param('wsId') wsId: string) {
+    return this.userService.findAllUserNotInWs(wsId);
+  }
+  @Get('/project/:pId/users')
+  // @UseGuards()
+  usersNotInP(@Param('pId') wsId: string) {
+    return this.userService.findAllUserNotInP(wsId);
   }
 
   @Patch(':id')

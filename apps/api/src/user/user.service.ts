@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { prisma } from '@collabflow/db';
@@ -22,6 +22,44 @@ export class UserService {
     }));
   }
 
+  async findAllUserNotInWs(wsId: string) {
+    const wsExist = await prisma.workspace.findUnique({
+      where: {
+        id: wsId,
+      },
+    });
+    if (!wsExist) throw new NotFoundException('Workspace not found');
+    return await prisma.user.findMany({
+      where: {
+        NOT: {
+          workspaceMemberships: {
+            some: {
+              workspaceId: wsId,
+            },
+          },
+        },
+      },
+    });
+  }
+  async findAllUserNotInP(pId: string) {
+    const wsExist = await prisma.project.findUnique({
+      where: {
+        id: pId,
+      },
+    });
+    if (!wsExist) throw new NotFoundException('Project not found');
+    return await prisma.user.findMany({
+      where: {
+        NOT: {
+          projectMemberships: {
+            some: {
+              projectId: pId,
+            },
+          },
+        },
+      },
+    });
+  }
   async currentUserRoles(id: string) {
     try {
       const workspaceRoles = await prisma.workspaceMember.findMany({

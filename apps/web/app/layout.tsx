@@ -25,6 +25,7 @@ import ClientSessionSync from "@/components/helper/ClientSessionSync";
 import { redirect } from "next/navigation";
 import axios from "axios";
 import { cookies } from "next/headers";
+import { api } from "@/lib/api";
 
 export default async function RootLayout({
   children,
@@ -34,21 +35,19 @@ export default async function RootLayout({
   const cookieStore = cookies();
 
   const session = await auth();
-  if (!session) redirect("/login");
+  // if (!session) redirect("/login");
   let userRoles = null;
   try {
-    const res = await axios.get(`http://localhost:3001/user/roles`, {
+    const res = await api.get(`/user/roles`, {
       headers: {
         Cookie: (await cookieStore).toString(),
       },
       withCredentials: true,
     });
-    console.log(res);
     userRoles = res?.data ?? null;
   } catch (err) {
-    console.error("Could not fetch user roles:", err);
+    console.log("Could not fetch user roles:");
   }
-  console.log("ROLES ", userRoles);
   return (
     <html lang="en">
       <body

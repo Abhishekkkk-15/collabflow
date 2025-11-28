@@ -1,4 +1,3 @@
-import PageWithSidebarClient from "@/components/self/PageWithSidebarClient";
 import WorkspaceDetails from "@/components/workspace/WorkspaceDetails";
 import React from "react";
 
@@ -11,10 +10,7 @@ async function page({
 
   return (
     <div>
-      <PageWithSidebarClient
-        Component={WorkspaceDetails}
-        params={{ project: "", workspace: "" }}
-      />
+      <WorkspaceDetails />
     </div>
   );
 }

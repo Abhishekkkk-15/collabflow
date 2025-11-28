@@ -1,4 +1,4 @@
-export type WorkspaceRole = "OWNER" | "ADMIN" | "MEMBER" | "GUEST";
+export type WorkspaceRole = "OWNER" | "MAINTAINER" | "CONTRIBUTOR" | "VIEWER";
 export type ProjectRole = "OWNER" | "MAINTAINER" | "CONTRIBUTOR" | "VIEWER";
 export type UserRole = "USER" | "ADMIN";
 export type NotificationType =

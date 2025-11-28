@@ -25,14 +25,9 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Check, MoreHorizontal, UserPlus } from "lucide-react";
-import type {
-  ProjectRole,
-  User,
-  UserRole,
-  WorkspaceRole,
-  PROJECT_ROLE_VALUES,
-} from "@collabflow/types";
+import type { ProjectRole, User } from "@collabflow/types";
 import axios from "axios";
+import { WorkspaceMember, WorkspaceRole } from "@prisma/client";
 
 type Selected = Record<
   string,
@@ -57,11 +52,13 @@ export function InviteMembers({
   const [allUsers, setAllUsers] = useState<User[]>();
   const [selected, setSelected] = useState<Selected>(() => {
     const map: Selected = {};
-    initialSelected.forEach((u) => (map[u.id] = { user: u, role: "MEMBER" }));
+    initialSelected.forEach(
+      (u) => (map[u.id] = { user: u, role: "CONTRIBUTOR" })
+    );
     return map;
   });
   async function fetchUsers() {
-    return await axios.get("http://localhost:3001/user", {
+    return await axios.get(`http://localhost:3001/user/${workspaceId}`, {
       withCredentials: true,
     });
   }
@@ -86,7 +83,7 @@ export function InviteMembers({
       const copy = { ...prev };
 
       if (copy[user.id]) delete copy[user.id];
-      else copy[user.id] = { user, role: "MEMBER" };
+      else copy[user.id] = { user, role: "CONTRIBUTOR" };
 
       const members = Object.values(copy).map((s) => ({
         userId: s.user.id,
@@ -100,9 +97,9 @@ export function InviteMembers({
   };
   const WORKSPACE_ROLES = [
     { value: "OWNER", label: "Owner" },
-    { value: "ADMIN", label: "Admin" },
-    { value: "MEMBER", label: "Member" },
-    { value: "GUEST", label: "Guest" },
+    { value: "MAINTAINER", label: "Maintainer" },
+    { value: "CONTRIBUTOR", label: "Contributor" },
+    { value: "VIEWER", label: "Viewer" },
   ] as const;
 
   const PROJECT_ROLES = [

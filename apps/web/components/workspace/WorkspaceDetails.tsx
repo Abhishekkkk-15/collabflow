@@ -23,13 +23,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+
 import { Badge } from "@/components/ui/badge";
 import {
   Popover,
@@ -37,13 +31,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Separator } from "@/components/ui/separator";
 
 import {
@@ -57,7 +45,9 @@ import {
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
 import { useParams } from "next/navigation";
 import { EmptyDemo } from "../project/EmptyProjects";
-import { useSelector } from "react-redux";
+import { User } from "@prisma/client";
+import InviteMemberSheet from "./InviteMemberSheet";
+import { UserWorkspaceRoles } from "@/lib/redux/slices/userSlice";
 
 export default function WorkspaceDetails() {
   const params = useParams();
@@ -65,16 +55,15 @@ export default function WorkspaceDetails() {
   const { workspaces, activeWorkspaceId } = useAppSelector(
     (s: any) => s.workspace
   );
-  const { workspaceRoles } = useAppSelector((s: any) => s.user.userRoles);
-  console.log("Ws ", workspaceRoles);
+  console.log(params);
+  const { workspaceRoles }: { workspaceRoles: UserWorkspaceRoles[] } =
+    useAppSelector((s: any) => s.user.userRoles);
   const workspace = useMemo(
     () =>
       workspaces?.find((w: any) => w.slug === params.workspace?.toString()) ??
       null,
-    [workspaces, activeWorkspaceId, params]
+    []
   );
-
-  console.log("c", workspace);
 
   // ui state
   const [editing, setEditing] = useState(false);
@@ -82,7 +71,6 @@ export default function WorkspaceDetails() {
   const [transferOpen, setTransferOpen] = useState(false);
   const [addingProject, setAddingProject] = useState(false);
   const [loadingAction, setLoadingAction] = useState(false);
-
   // form states
   const [formName, setFormName] = useState("");
   const [formSlug, setFormSlug] = useState("");
@@ -99,19 +87,25 @@ export default function WorkspaceDetails() {
 
   // new project name
   const [newProjectName, setNewProjectName] = useState("");
-  const userRole =
+  const userRole = !(
     workspaceRoles?.find((ws: any) => ws.workspaceId == workspace?.id)?.role ===
       "ADMIN" ||
-    "OWNER" ||
-    "MAINTAINER";
-  console.log("Role", userRole);
+    workspaceRoles?.find((ws: any) => ws.workspaceId == workspace?.id)?.role ===
+      "OWNER" ||
+    workspaceRoles?.find((ws: any) => ws.workspaceId == workspace?.id)?.role ===
+      "MAINTAINER"
+  );
+
   useEffect(() => {
     if (!workspace) return;
     setFormName(workspace.name ?? "");
     setFormSlug(workspace.slug ?? "");
     setFormDescription(workspace.description ?? "");
-    fetchWorkspaceMembers();
-  }, [workspace?.id]);
+  });
+
+  useEffect(() => {
+    // fetchWorkspaceMembers();
+  });
 
   async function fetchWorkspaceMembers() {
     if (!workspace) return;
@@ -119,7 +113,6 @@ export default function WorkspaceDetails() {
       const res = await api.get(`/workspace/${workspace.id}/members`, {
         withCredentials: true,
       });
-      console.log("res", res);
       setAllMembers(res.data || workspace.members || []);
     } catch (err) {
       setAllMembers(workspace.members || []);
@@ -477,114 +470,18 @@ export default function WorkspaceDetails() {
               </DialogContent>
             </Dialog>
 
-            <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setInviteOpen(true)}
-                  disabled={userRole}>
-                  <UserPlus size={14} /> Invite
-                </Button>
-              </SheetTrigger>
-
-              <SheetContent side="right" className="w-[520px]">
-                <SheetHeader>
-                  <SheetTitle>Invite members</SheetTitle>
-                </SheetHeader>
-
-                <div className="p-4 space-y-4">
-                  {/* prefer to use your InviteMembers if available */}
-                  <div className="text-sm text-muted-foreground">
-                    Select users to invite and assign roles
-                  </div>
-
-                  <div className="max-h-[48vh] overflow-auto border rounded p-2 space-y-2">
-                    {(allMembers || []).map((m) => {
-                      const selected = inviteSelected.some(
-                        (s) => s.userId === m.id
-                      );
-                      return (
-                        <div
-                          key={m.id}
-                          className="flex items-center gap-3 p-2 rounded hover:bg-muted/40">
-                          <div className="flex items-center gap-3 flex-1">
-                            <Avatar className="h-8 w-8">
-                              {m.user.image ? (
-                                <AvatarImage src={m.user.image} />
-                              ) : (
-                                <AvatarFallback>
-                                  {m.user.name?.[0]}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                            <div className="min-w-0">
-                              <div className="font-medium truncate">
-                                {m.user.name}
-                              </div>
-                              <div className="text-xs text-muted-foreground truncate">
-                                {m.user.email}
-                              </div>
-                            </div>
-                          </div>
-
-                          <Select
-                            value={
-                              selected
-                                ? inviteSelected.find((s) => s.userId === m.id)
-                                    ?.role || "member"
-                                : undefined
-                            }
-                            onValueChange={(val) => {
-                              if (selected) {
-                                setInviteSelected((prev) =>
-                                  prev.map((p) =>
-                                    p.userId === m.id ? { ...p, role: val } : p
-                                  )
-                                );
-                              } else {
-                                setInviteSelected((prev) => [
-                                  ...prev,
-                                  { userId: m.id, role: val },
-                                ]);
-                              }
-                            }}>
-                            <SelectTrigger className="w-32 h-8">
-                              <SelectValue placeholder="Member" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="member">Member</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="owner">Owner</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setInviteOpen(false);
-                        setInviteSelected([]);
-                      }}>
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={inviteMembers}
-                      disabled={loadingAction || userRole}>
-                      {loadingAction ? (
-                        <Loader2 className="animate-spin mr-2" />
-                      ) : null}{" "}
-                      Invite ({inviteSelected.length})
-                    </Button>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-
+            <InviteMemberSheet
+              open={inviteOpen}
+              onOpenChange={setInviteOpen}
+              workspaceId={workspace.id}
+              onInvite={async (members) => {
+                await api.post(`/workspace/${workspace.id}/invite`, {
+                  members,
+                });
+              }}
+              disabled={userRole}
+              currentPath="WORKSPACE"
+            />
             <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
               <DialogTrigger asChild>
                 <Button
@@ -668,9 +565,11 @@ export default function WorkspaceDetails() {
           </div>
         ) : (
           <div className="grid">
-            <div className="grid place-items-center">
-              <EmptyDemo />
-            </div>
+            {!userRole && (
+              <div className="grid place-items-center">
+                <EmptyDemo />
+              </div>
+            )}
           </div>
         )}
       </div>

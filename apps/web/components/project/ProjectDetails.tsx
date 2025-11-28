@@ -53,15 +53,7 @@ import {
   Trash,
 } from "lucide-react";
 import { mockProject } from "@/app/dashboard/[workspace]/[project]/mockdata";
-
-/**
- * ProjectDetails
- * - Layout & styling inspired by WorkspaceDetails
- * - Subcomponents: Header, MetaPanel, MembersGrid, DangerZone, EditDialog, InviteSheet
- *
- * Props: accepts `project` object and `members` list OR reads from redux (example supports both).
- * Adjust API endpoints & redux actions to your app.
- */
+import InviteMemberSheet from "../workspace/InviteMemberSheet";
 
 type Member = {
   id: string;
@@ -139,7 +131,7 @@ export default function ProjectDetails({
     // lazy fetch; adjust endpoint
     async function loadUsers() {
       try {
-        const res = await axios.get("/users?limit=200", {
+        const res = await axios.get("/user?limit=200", {
           withCredentials: true,
         });
         setAllUsers(res.data || []);
@@ -303,7 +295,7 @@ export default function ProjectDetails({
             <EditDialog />
           </Dialog>
 
-          <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
+          {/* <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="secondary"
@@ -311,9 +303,15 @@ export default function ProjectDetails({
                 onClick={() => setInviteOpen(true)}>
                 <UserPlus className="mr-2 h-4 w-4" /> Invite
               </Button>
-            </SheetTrigger>
-            <InviteSheet />
-          </Sheet>
+            </SheetTrigger> */}
+          <InviteMemberSheet
+            open={inviteOpen}
+            workspaceId={project.id}
+            disabled={false}
+            onOpenChange={setInviteOpen}
+            currentPath="PROJECT"
+          />
+          {/* </Sheet> */}
 
           <Popover>
             <PopoverTrigger asChild>

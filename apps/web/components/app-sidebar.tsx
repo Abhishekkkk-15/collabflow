@@ -33,7 +33,6 @@ import {
 
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
-  fetchWorkspaces,
   setActiveWorkspace,
   TProject,
   TWorkspace,
@@ -53,10 +52,6 @@ export function AppSidebar({ ...props }: any) {
   );
   const dispatch = useAppDispatch();
   const { workspaces, status } = useAppSelector((s: any) => s?.workspace!);
-
-  React.useEffect(() => {
-    dispatch(fetchWorkspaces());
-  }, [dispatch]);
 
   function getActiveWorkspaceProjects() {
     let activeWs = workspaces.find(
@@ -95,7 +90,6 @@ export function AppSidebar({ ...props }: any) {
                 className="group/collapsible"
                 onClick={() => {
                   dispatch(setActiveWorkspace(activeWorkspace!));
-                  getActiveWorkspaceProjects();
                 }}>
                 <SidebarGroup>
                   {/* WORKSPACE ITEM */}
@@ -117,8 +111,7 @@ export function AppSidebar({ ...props }: any) {
                         dispatch(
                           setActiveWorkspace(
                             workspace.id || useParams().workspace
-                          ),
-                          getActiveWorkspaceProjects()
+                          )
                         );
                       }}>
                       {workspace.name}

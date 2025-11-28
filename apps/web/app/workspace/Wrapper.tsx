@@ -39,8 +39,6 @@ export default function CreateWorkspace() {
         description,
         members,
       };
-      console.log("Payload", payload);
-      // 🔥 Zod validation
       const parsed = WorkspaceSchema.safeParse(payload);
       console.log("Parsed Data", parsed.data);
       if (!parsed.success) {
@@ -131,6 +129,7 @@ export default function CreateWorkspace() {
           <InviteMembers
             onChange={(val) => setMembers(val)}
             roleType="WORKSPACE"
+            workspaceId=""
           />
         </div>
         {validationIssues?.length ? (

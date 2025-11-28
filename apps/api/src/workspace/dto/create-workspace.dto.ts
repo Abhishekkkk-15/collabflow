@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
-import type { Workspace, WorkspaceRole } from '@collabflow/types';
+import type { Workspace } from '@collabflow/types';
+import type { WorkspaceRole } from '@prisma/client';
 import { Type } from 'class-transformer';
 export class CreateWorkspaceDto {
   @IsNotEmpty({ message: "Name can't be empty" })

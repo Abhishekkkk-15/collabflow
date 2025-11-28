@@ -1,5 +1,3 @@
-// import ChatLayout from "@/components/chat/ChatLayout";
-import PageWithSidebarClient from "@/components/self/PageWithSidebarClient";
 import Wrapper from "./wrapper";
 
 async function page({
@@ -9,13 +7,7 @@ async function page({
 }) {
   const { project, workspace } = await params;
 
-  return (
-    <PageWithSidebarClient
-      Component={Wrapper}
-      componentProps={{ project, workspace }}
-      params={{ project, workspace }}
-    />
-  );
+  return <Wrapper params={{ project, workspace }} />;
 }
 
 export default page;

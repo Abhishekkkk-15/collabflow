@@ -4,3 +4,5 @@ export const PROJECT_ROLE_VALUES = [
   "CONTRIBUTOR",
   "VIEWER",
 ] as const;
+
+export const AUTHORIZED_ROLES = ["OWNER", "MAINTAINER"];
