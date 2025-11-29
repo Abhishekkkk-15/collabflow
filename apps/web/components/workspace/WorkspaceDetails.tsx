@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api } from "@/lib/api/api";
 import { toast } from "sonner";
 
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -45,11 +45,22 @@ import {
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
 import { useParams } from "next/navigation";
 import { EmptyDemo } from "../project/EmptyProjects";
-import { User } from "@prisma/client";
+import { Project, User, Workspace, WorkspaceMember } from "@prisma/client";
 import InviteMemberSheet from "./InviteMemberSheet";
 import { UserWorkspaceRoles } from "@/lib/redux/slices/userSlice";
 
-export default function WorkspaceDetails() {
+interface IExtendedWorkspceMembers extends WorkspaceMember {
+  user: User;
+}
+interface IProp extends Workspace {
+  owner: User;
+  projects: Project[];
+  unreadCount?: number;
+  members: IExtendedWorkspceMembers[];
+  _count: { members: number };
+}
+
+export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
   const params = useParams();
   const dispatch = useAppDispatch();
   const { workspaces, activeWorkspaceId } = useAppSelector(
@@ -58,12 +69,12 @@ export default function WorkspaceDetails() {
   console.log(params);
   const { workspaceRoles }: { workspaceRoles: UserWorkspaceRoles[] } =
     useAppSelector((s: any) => s.user.userRoles);
-  const workspace = useMemo(
-    () =>
-      workspaces?.find((w: any) => w.slug === params.workspace?.toString()) ??
-      null,
-    []
-  );
+  // const workspace = useMemo(
+  //   () =>
+  //     workspaces?.find((w: any) => w.slug === params.workspace?.toString()) ??
+  //     null,
+  //   [params]
+  // );
 
   // ui state
   const [editing, setEditing] = useState(false);
@@ -101,11 +112,11 @@ export default function WorkspaceDetails() {
     setFormName(workspace.name ?? "");
     setFormSlug(workspace.slug ?? "");
     setFormDescription(workspace.description ?? "");
-  });
+  }, [fetchWorkspaceMembers]);
 
-  useEffect(() => {
-    // fetchWorkspaceMembers();
-  });
+  // useEffect(() => {
+  //   fetchWorkspaceMembers();
+  // });
 
   async function fetchWorkspaceMembers() {
     if (!workspace) return;
@@ -113,9 +124,10 @@ export default function WorkspaceDetails() {
       const res = await api.get(`/workspace/${workspace.id}/members`, {
         withCredentials: true,
       });
-      setAllMembers(res.data || workspace.members || []);
+      console.log(res.data);
+      setAllMembers(res.data.members);
     } catch (err) {
-      setAllMembers(workspace.members || []);
+      setAllMembers([]);
     }
   }
 
@@ -150,52 +162,6 @@ export default function WorkspaceDetails() {
     } catch (err: any) {
       console.error(err);
       toast.error(err?.response?.data?.message || "Failed to update workspace");
-      fetchWorkspaceMembers();
-    } finally {
-      setLoadingAction(false);
-    }
-  }
-
-  async function createProject() {
-    if (!newProjectName.trim()) {
-      toast.error("Project name required");
-      return;
-    }
-    setLoadingAction(true);
-    const optimistic = {
-      id: `p_local_${Date.now()}`,
-      name: newProjectName.trim(),
-      slug: slugify(newProjectName),
-    };
-    try {
-      dispatch(
-        addProjectToWorkspace({
-          workspaceId: workspace.id,
-          project: optimistic,
-        })
-      );
-      setNewProjectName("");
-      setAddingProject(false);
-      const res = await api.post(
-        `/workspace/${workspace.id}/projects`,
-        { name: optimistic.name, slug: optimistic.slug },
-        { withCredentials: true }
-      );
-      // replace optimistic with server response
-      dispatch(
-        updateWorkspace({
-          id: workspace.id,
-          data: {
-            projects: (workspace.projects || [])
-              .filter((p: any) => p.id !== optimistic.id)
-              .concat(res.data),
-          },
-        })
-      );
-      toast.success("Project created");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to create project");
     } finally {
       setLoadingAction(false);
     }
@@ -226,7 +192,6 @@ export default function WorkspaceDetails() {
       toast.success("Invitations sent");
       setInviteOpen(false);
       setInviteSelected([]);
-      fetchWorkspaceMembers();
     } catch (err) {
       console.error(err);
       toast.error("Failed to invite members");
@@ -251,7 +216,6 @@ export default function WorkspaceDetails() {
       toast.success("Ownership transferred");
       setTransferOpen(false);
       setNewOwnerId(null);
-      fetchWorkspaceMembers();
     } catch (err) {
       console.error(err);
       toast.error("Failed to transfer ownership");
@@ -308,21 +272,23 @@ export default function WorkspaceDetails() {
                     className="px-3 py-2 hover:bg-muted rounded">
                     Open Chat
                   </Link>
-                  <ProjectSettingsDialog
-                    disable={userRole}
-                    project={proj}
-                    onUpdated={(updated) => {}}
-                    onDeleted={(id) => {}}>
-                    <button
-                      className="
+                  {!userRole && (
+                    <ProjectSettingsDialog
+                      disable={userRole}
+                      project={proj}
+                      onUpdated={(updated) => {}}
+                      onDeleted={(id) => {}}>
+                      <button
+                        className="
       w-full flex items-center justify-between 
       px-3 py-2 text-sm rounded 
       hover:bg-muted transition
     ">
-                      <span>Settings</span>
-                      <MoreHorizontal className="h-4 w-4 opacity-70" />
-                    </button>
-                  </ProjectSettingsDialog>
+                        <span>Settings</span>
+                        <MoreHorizontal className="h-4 w-4 opacity-70" />
+                      </button>
+                    </ProjectSettingsDialog>
+                  )}
                 </div>
               </PopoverContent>
             </Popover>
@@ -352,7 +318,7 @@ export default function WorkspaceDetails() {
           ))}
           {rest > 0 && (
             <div className="h-9 w-9 rounded-full bg-muted text-xs grid place-items-center">
-              +{rest}
+              +{workspace._count.members}
             </div>
           )}
         </div>
@@ -366,7 +332,7 @@ export default function WorkspaceDetails() {
       {/* MAIN: overview + projects */}
       <div className="lg:col-span-2 space-y-6">
         {/* Header */}
-        <div className="bg-card border rounded-md p-5 flex items-start justify-between gap-6">
+        <div className="bg-card border gap-6 grid sm:grid-rows-2 rounded-md p-5 lg:flex items-start justify-between ">
           <div className="flex items-start gap-4">
             <div>
               <div className="bg-gradient-to-br from-primary/40 to-primary/20 rounded-full h-14 w-14 grid place-items-center">
@@ -381,7 +347,7 @@ export default function WorkspaceDetails() {
                 <h1 className="text-2xl font-semibold truncate">
                   {workspace.name}
                 </h1>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground hidden lg:block ">
                   /{workspace.slug}
                 </div>
               </div>
@@ -400,15 +366,15 @@ export default function WorkspaceDetails() {
 
                 <div className="text-xs text-muted-foreground">Members</div>
                 <div className="text-sm font-medium">
-                  {allMembers ? allMembers.length : 0}
+                  {workspace._count.members}
                 </div>
 
-                {workspace.unreadCount > 0 && (
+                {workspace.unreadCount! > 0 && (
                   <>
                     <Separator orientation="vertical" className="h-5 mx-2" />
                     <div className="text-xs text-muted-foreground">Unread</div>
                     <div className="text-sm font-medium text-destructive">
-                      {workspace.unreadCount}
+                      {workspace?.unreadCount || 0}
                     </div>
                   </>
                 )}
@@ -416,143 +382,149 @@ export default function WorkspaceDetails() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Dialog open={editing} onOpenChange={setEditing}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditing(true)}
-                  disabled={userRole}>
-                  <Pencil size={14} /> Edit
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Edit workspace</DialogTitle>
-                </DialogHeader>
-
-                <div className="grid gap-3 py-2">
-                  <label className="text-xs text-muted-foreground">Name</label>
-                  <Input
-                    value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                  />
-
-                  <label className="text-xs text-muted-foreground">Slug</label>
-                  <Input
-                    value={formSlug}
-                    onChange={(e) => setFormSlug(e.target.value)}
-                  />
-
-                  <label className="text-xs text-muted-foreground">
-                    Description
-                  </label>
-                  <Textarea
-                    value={formDescription}
-                    onChange={(e) => setFormDescription(e.target.value)}
-                  />
-                </div>
-
-                <DialogFooter className="flex gap-2">
-                  <Button variant="ghost" onClick={() => setEditing(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={saveWorkspace}
-                    disabled={loadingAction || userRole}>
-                    {loadingAction ? (
-                      <Loader2 className="animate-spin mr-2" />
-                    ) : null}
-                    Save
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            <InviteMemberSheet
-              open={inviteOpen}
-              onOpenChange={setInviteOpen}
-              workspaceId={workspace.id}
-              onInvite={async (members) => {
-                await api.post(`/workspace/${workspace.id}/invite`, {
-                  members,
-                });
-              }}
-              disabled={userRole}
-              currentPath="WORKSPACE"
-            />
-            <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTransferOpen(true)}
-                  disabled={userRole}>
-                  <Forward size={14} /> Transfer
-                </Button>
-              </DialogTrigger>
-
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Transfer ownership</DialogTitle>
-                </DialogHeader>
-
-                <div className="grid gap-3 py-2">
-                  <div className="text-sm text-muted-foreground">
-                    Choose a new owner
-                  </div>
-                  <div className="max-h-[40vh] overflow-auto border rounded p-2">
-                    {(allMembers || [])
-                      .filter((m) => m.id !== workspace.ownerId)
-                      .map((m) => (
-                        <label
-                          key={m.id}
-                          className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-muted/30 ${
-                            newOwnerId === m.id ? "bg-accent/30" : ""
-                          }`}>
-                          <input
-                            type="radio"
-                            name="newOwner"
-                            checked={newOwnerId === m.id}
-                            onChange={() => setNewOwnerId(m.id)}
-                          />
-                          <Avatar className="h-8 w-8">
-                            {m.user.image ? (
-                              <AvatarImage src={m.user.image} />
-                            ) : (
-                              <AvatarFallback>
-                                {m.user.name?.[0]}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{m.user.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {m.user.email}
-                            </div>
-                          </div>
-                        </label>
-                      ))}
-                  </div>
-                </div>
-
-                <DialogFooter className="flex gap-2">
+          {!userRole && (
+            <div className="flex items-center gap-2 h-fit">
+              <Dialog open={editing} onOpenChange={setEditing}>
+                <DialogTrigger asChild>
                   <Button
                     variant="ghost"
-                    onClick={() => setTransferOpen(false)}>
-                    Cancel
+                    size="sm"
+                    onClick={() => setEditing(true)}
+                    disabled={userRole}>
+                    <Pencil size={14} /> Edit
                   </Button>
-                  <Button onClick={transferOwner} disabled={loadingAction}>
-                    {loadingAction ? (
-                      <Loader2 className="animate-spin mr-2" />
-                    ) : null}{" "}
-                    Transfer
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit workspace</DialogTitle>
+                  </DialogHeader>
+
+                  <div className="grid gap-3 py-2">
+                    <label className="text-xs text-muted-foreground">
+                      Name
+                    </label>
+                    <Input
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                    />
+
+                    <label className="text-xs text-muted-foreground">
+                      Slug
+                    </label>
+                    <Input
+                      value={formSlug}
+                      onChange={(e) => setFormSlug(e.target.value)}
+                    />
+
+                    <label className="text-xs text-muted-foreground">
+                      Description
+                    </label>
+                    <Textarea
+                      value={formDescription}
+                      onChange={(e) => setFormDescription(e.target.value)}
+                    />
+                  </div>
+
+                  <DialogFooter className="flex gap-2">
+                    <Button variant="ghost" onClick={() => setEditing(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={saveWorkspace}
+                      disabled={loadingAction || userRole}>
+                      {loadingAction ? (
+                        <Loader2 className="animate-spin mr-2" />
+                      ) : null}
+                      Save
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <InviteMemberSheet
+                open={inviteOpen}
+                onOpenChange={setInviteOpen}
+                workspaceId={workspace.id}
+                onInvite={async (members) => {
+                  await api.post(`/workspace/${workspace.id}/invite`, {
+                    members,
+                  });
+                }}
+                disabled={userRole}
+                currentPath="WORKSPACE"
+              />
+              <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTransferOpen(true)}
+                    disabled={userRole}>
+                    <Forward size={14} /> Transfer
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+                </DialogTrigger>
+
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Transfer ownership</DialogTitle>
+                  </DialogHeader>
+
+                  <div className="grid gap-3 py-2">
+                    <div className="text-sm text-muted-foreground">
+                      Choose a new owner
+                    </div>
+                    <div className="max-h-[40vh] overflow-auto border rounded p-2">
+                      {(workspace.members || [])
+                        .filter((m) => m.id !== workspace.ownerId)
+                        .map((m) => (
+                          <label
+                            key={m.id}
+                            className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-muted/30 ${
+                              newOwnerId === m.id ? "bg-accent/30" : ""
+                            }`}>
+                            <input
+                              type="radio"
+                              name="newOwner"
+                              checked={newOwnerId === m.id}
+                              onChange={() => setNewOwnerId(m.id)}
+                            />
+                            <Avatar className="h-8 w-8">
+                              {m.user.image ? (
+                                <AvatarImage src={m.user.image} />
+                              ) : (
+                                <AvatarFallback>
+                                  {m.user.name?.[0]}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{m.user.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {m.user.email}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+
+                  <DialogFooter className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setTransferOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={transferOwner} disabled={loadingAction}>
+                      {loadingAction ? (
+                        <Loader2 className="animate-spin mr-2" />
+                      ) : null}{" "}
+                      Transfer
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
         </div>
 
         {workspace.projects.length > 0 ? (
@@ -594,23 +566,25 @@ export default function WorkspaceDetails() {
           <div className="mt-4">
             <div className="flex items-center justify-between">
               <div className="text-xs text-muted-foreground">Members</div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setInviteOpen(true)}>
-                Invite
-              </Button>
+              {!userRole && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setInviteOpen(true)}>
+                  Invite
+                </Button>
+              )}
             </div>
 
             <div className="mt-3">
-              <MemberAvatarGrid members={allMembers || []} />
+              <MemberAvatarGrid members={workspace.members || []} />
             </div>
           </div>
 
           <div className="mt-4 text-xs text-muted-foreground">Owner</div>
           <div className="mt-2 flex items-center gap-3">
             <Avatar className="h-9 w-9">
-              {workspace.owner?.avatar ? (
+              {workspace.owner?.image ? (
                 <AvatarImage src={workspace.owner.image} />
               ) : (
                 <AvatarFallback>{workspace.owner?.name?.[0]}</AvatarFallback>

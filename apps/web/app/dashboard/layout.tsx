@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cookies } from "next/headers";
 
-import { api } from "@/lib/api";
+import { api } from "@/lib/api/api";
 import { TWorkspace } from "@/lib/redux/slices/workspace";
 import { ModeToggle } from "@/components/ModeToggle";
 import NotificationDropdown from "@/components/self/NotificationDropdown";

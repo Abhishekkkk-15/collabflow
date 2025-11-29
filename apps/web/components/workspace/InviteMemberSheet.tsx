@@ -23,7 +23,7 @@ import {
 import { Input } from "../ui/input";
 
 import { WorkspaceRole, User } from "@prisma/client";
-import { api } from "@/lib/api";
+import { api } from "@/lib/api/api";
 
 type InviteEntry = {
   userId: string;

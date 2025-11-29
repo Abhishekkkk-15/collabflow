@@ -22,18 +22,18 @@ export function useUserRoles(): {
   workspaceRoles: UserWorkspaceRoles[];
   projectRoles: UserProjectRoles[];
 } {
-  return useAppSelector((state: any) => state.user.user);
+  return useAppSelector((state: any) => state.user.userRoles);
 }
 export function useRolesforProject(id: string): UserProjectRoles | undefined {
-  if (!id) return;
   const { userRoles } = useUserDetails();
+  if (!id) return;
   if (!userRoles.projectRoles) return;
-  return userRoles?.projectRoles.find((p) => p.id === id);
+  return userRoles?.projectRoles.find((p) => p.projectId === id);
 }
 
 export function useRolesforWs(id: string): UserWorkspaceRoles | undefined {
-  if (!id) return;
   const { userRoles } = useUserDetails();
-  if (!userRoles) return;
-  return userRoles?.workspaceRoles.find((ws) => ws.id === id);
+  if (!id) return;
+  if (!userRoles.workspaceRoles) return;
+  return userRoles?.workspaceRoles.find((ws) => ws.workspaceId == id);
 }

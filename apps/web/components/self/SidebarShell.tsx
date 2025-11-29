@@ -28,7 +28,11 @@ import {
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useWorkspace, useWorkspaces } from "@/lib/redux/hooks/use-workspaces";
 import { TProject, TWorkspace } from "@/lib/redux/slices/workspace";
-import { useRolesforProject, useUserRoles } from "@/lib/redux/hooks/use-user";
+import {
+  useRolesforProject,
+  useRolesforWs,
+  useUserRoles,
+} from "@/lib/redux/hooks/use-user";
 import { AUTHORIZED_ROLES, type PROJECT_ROLE_VALUES } from "@collabflow/types";
 function SidebarShell({
   children,
@@ -44,28 +48,21 @@ function SidebarShell({
   const [activeWsProjects, setActiveWsProjects] = React.useState<TProject[]>(
     []
   );
-  const project = useWorkspaces()
+  const workspaces = useWorkspaces();
+  let roles = useUserRoles();
+
+  const project = workspaces
     .find((ws) => ws.slug == params.workspace?.toString())
-    ?.projects?.find((p) => p.slug == params.project?.toString())?.slug;
-  const workspace = useWorkspaces().find(
+    ?.projects.find((p) => p.slug == params.project?.toString());
+  const workspace = workspaces.find(
     (ws) => ws.slug == params.workspace?.toString()
   );
   let userRolesForCurrentProject;
-  if (params.project?.toString()) {
-    userRolesForCurrentProject = useRolesforProject(project!);
-  }
-  const userRolesForCurrentWs = useRolesforProject(workspace?.slug!);
-  console.log("ROLESSSS", userRolesForCurrentWs, workspace?.slug);
-  const workspaces = useWorkspaces();
-  console.log(
-    "user workspaces",
-    project,
-    userRolesForCurrentProject,
-    useWorkspaces()
-  );
-  const isAuthorized = AUTHORIZED_ROLES.includes(
-    userRolesForCurrentProject?.role as string
-  );
+  userRolesForCurrentProject = useRolesforProject(project?.id!);
+  const userRolesForCurrentWs = useRolesforWs(workspace?.id!);
+  const isAuthorized =
+    AUTHORIZED_ROLES.includes(userRolesForCurrentWs?.role as string) ||
+    AUTHORIZED_ROLES.includes(userRolesForCurrentProject?.role as string);
   function getActiveWorkspaceProjects() {
     let activeWs = workspaces!.find(
       (ws: TWorkspace) => ws.slug === params.workspace?.toString()

@@ -53,7 +53,7 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
           <Collapsible key={item?.name} asChild>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={item?.name}>
-                <Link href={`dashboard/${item?.slug} ` as string}>
+                <Link href={`/dashboard/${item?.slug} ` as string}>
                   <AppWindow />
                   <span>
                     {item?.name.length >= 20
@@ -76,7 +76,7 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
                         <SidebarMenuSubItem key={subItem?.id}>
                           <SidebarMenuSubButton asChild>
                             <Link
-                              href={`dashboard/${item?.slug}/${subItem?.slug}`}>
+                              href={`/dashboard/${item?.slug}/${subItem?.slug}`}>
                               <span>{subItem?.name}</span>
                             </Link>
                           </SidebarMenuSubButton>

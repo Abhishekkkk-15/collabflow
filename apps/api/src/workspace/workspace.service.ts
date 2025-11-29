@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { prisma } from '@collabflow/db';
@@ -82,7 +86,73 @@ export class WorkspaceService {
     return { workspaces };
   }
 
-  async getWorkspaceMembers(id: string) {
+  async findOne(slug: string): Promise<Workspace> {
+    if (!slug) throw new BadRequestException('Slug not provided');
+    const workspace = await prisma.workspace.findUnique({
+      where: {
+        slug,
+      },
+      include: {
+        projects: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            ownerId: true,
+            owner: {
+              select: {
+                name: true,
+                image: true,
+                id: true,
+              },
+            },
+          },
+        },
+
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            email: true,
+          },
+        },
+
+        // 🔥 MEMBERS with LIMIT
+        members: {
+          take: 5, // limit
+          select: {
+            userId: true,
+            role: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                email: true,
+              },
+            },
+          },
+        },
+
+        // 🔥 MEMBERS TOTAL COUNT
+        _count: {
+          select: {
+            members: true,
+          },
+        },
+      },
+    });
+    if (!workspace) throw new NotFoundException('workspace not found');
+    return workspace;
+  }
+
+  async getWorkspaceMembers(id: string, limit: number) {
+    const count = await prisma.workspaceMember.count({
+      where: {
+        workspaceId: id,
+      },
+    });
     const members = await prisma.workspaceMember.findMany({
       where: {
         workspaceId: id,
@@ -96,6 +166,6 @@ export class WorkspaceService {
     });
     console.log(members);
     if (!members) throw new NotFoundException('Members not found');
-    return members;
+    return { members, count };
   }
 }

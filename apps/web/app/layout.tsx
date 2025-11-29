@@ -25,7 +25,7 @@ import ClientSessionSync from "@/components/helper/ClientSessionSync";
 import { redirect } from "next/navigation";
 import axios from "axios";
 import { cookies } from "next/headers";
-import { api } from "@/lib/api";
+import { api } from "@/lib/api/api";
 
 export default async function RootLayout({
   children,

@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { WorkspaceService } from './workspace.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
@@ -36,9 +37,13 @@ export class WorkspaceController {
   findAll(@Req() req: ExtendedRequest) {
     return this.workspaceService.findAll(req.user.id);
   }
+  @Get(':slug')
+  findOne(@Param('slug') slug: string) {
+    return this.workspaceService.findOne(slug);
+  }
 
   @Get(':id/members')
-  getWorkspaceMembers(@Param('id') id: string) {
-    return this.workspaceService.getWorkspaceMembers(id);
+  getWorkspaceMembers(@Param('id') id: string, @Query('limit') limit: string) {
+    return this.workspaceService.getWorkspaceMembers(id, +limit);
   }
 }

@@ -80,13 +80,15 @@ model Workspace {
 
   ownerId String?
   owner   User?   @relation("workspaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-
-  members  WorkspaceMember[]
+  status ProjectStatus @default(isActive)
+  memberss  WorkspaceMember[]
   projects Project[]
+  priority    Priority @default(LOW) 
 
   notifications Notification[]
 
   @@index([ownerId])
+  @@index([slug])
 }
 
 model WorkspaceMember {
@@ -134,6 +136,7 @@ model Project {
 
   @@index([workspaceId])
   @@index([ownerId])
+  @@index([slug])
 }
 
 model ProjectMember {
