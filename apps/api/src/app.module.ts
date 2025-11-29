@@ -8,6 +8,8 @@ import { NotificationModule } from './notification/notification.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { NextFunction } from 'express';
 import { CurrentMiddleaware } from './common/middleware/current-user.middleware';
+import { QueuesModule } from './queues/queues.module';
+import { BullModule } from '@nestjs/bullmq';
 @Module({
   imports: [
     WorkspaceModule,
@@ -15,6 +17,8 @@ import { CurrentMiddleaware } from './common/middleware/current-user.middleware'
     UserModule,
     NotificationModule,
     WebsocketModule,
+    QueuesModule,
+    BullModule,
   ],
   controllers: [AppController],
   providers: [AppService],

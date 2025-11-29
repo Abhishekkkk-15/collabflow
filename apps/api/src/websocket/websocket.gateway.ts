@@ -9,6 +9,7 @@ import { CreateWebsocketDto } from './dto/create-websocket.dto';
 import { UpdateWebsocketDto } from './dto/update-websocket.dto';
 import { Server, Socket } from 'socket.io';
 import { prisma } from '@collabflow/db';
+import { createClient } from 'redis';
 
 @WebSocketGateway({
   cors: {
@@ -21,9 +22,16 @@ export class WebsocketGateway {
   io!: Server;
   constructor(private readonly websocketService: WebsocketService) {}
 
-  afterInit() {
+  async afterInit() {
     this.websocketService.setServer(this.io);
-    console.log('Socket.io Initialized');
+    const sub = createClient({ url: 'redis://localhost:6379' });
+    await sub.connect();
+
+    await sub.subscribe('socket-events', (msg) => {
+      const { event, room, payload } = JSON.parse(msg);
+      console.log('socket evets', event, room, payload);
+      this.io.to(room).emit(event, payload);
+    });
   }
 
   async handleConnection(socket: Socket) {
@@ -32,7 +40,7 @@ export class WebsocketGateway {
     if (!userId) {
       console.log('Socket connected without userId');
     }
-
+    console.log('userid', userId);
     this.websocketService.joinUserRoom(socket, userId);
 
     const workspaces = await prisma.workspace.findMany({
@@ -57,8 +65,14 @@ export class WebsocketGateway {
           this.websocketService.joinProjectRoom(socket, p.id);
         });
       }
+      console.log(`User's connection has been made`);
       return `User's connection has been made`;
     }
+  }
+
+  @SubscribeMessage('ws')
+  testing() {
+    return 'hey there from ws';
   }
 
   handleDisconnect(socket: Socket) {

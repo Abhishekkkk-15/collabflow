@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src/",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@collabflow/db": ["../../packages/db"],
+      "@collabflow/types": ["../../packages/types"]
+    }
+  },
+  "include": ["src"]
+}

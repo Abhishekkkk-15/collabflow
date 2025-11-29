@@ -8,8 +8,12 @@ import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { prisma } from '@collabflow/db';
 import { createSlug } from '../common/utils/slug-helper';
 import { Workspace } from '@prisma/client';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 @Injectable()
 export class WorkspaceService {
+  constructor(@InjectQueue('workspaceQueue') private workspaceQueue: Queue) {}
+
   async create(
     createWorkspaceDto: CreateWorkspaceDto,
     ownerId: string,
@@ -31,20 +35,11 @@ export class WorkspaceService {
         workspaceId: workspace.id,
       },
     });
+    this.workspaceQueue.add('workspace:create', {
+      workspace,
+      members: createWorkspaceDto.members,
+    });
 
-    if (
-      createWorkspaceDto?.members != undefined &&
-      createWorkspaceDto.members.length > 0
-    ) {
-      const members = createWorkspaceDto.members.map((m) => ({
-        ...m,
-        workspaceId: workspace.id,
-      }));
-
-      await prisma.workspaceMember.createMany({
-        data: members,
-      });
-    }
     return workspace;
   }
 

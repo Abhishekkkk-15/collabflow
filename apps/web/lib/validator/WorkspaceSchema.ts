@@ -8,6 +8,7 @@ const WorkspaceSchema = z.object({
       z.object({
         userId: z.string(),
         role: z.enum(["OWNER", "VIEWER", "MAINTAINER", "CONTRIBUTOR"]),
+        email: z.email(),
       })
     )
     .optional(),

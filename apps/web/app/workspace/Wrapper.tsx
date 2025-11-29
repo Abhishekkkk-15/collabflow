@@ -25,6 +25,7 @@ export default function CreateWorkspace() {
     {
       userId: string;
       role: WorkspaceRole | ProjectRole;
+      email: string;
     }[]
   >([]);
   const [loading, setLoading] = useState(false);
@@ -54,13 +55,11 @@ export default function CreateWorkspace() {
       }
 
       const dataToSend = parsed.data;
-
       const res = await axios.post(
         "http://localhost:3001/workspace",
         dataToSend,
         { withCredentials: true }
       );
-
       toast.success(`${res.data.name} Workspace created`, {
         position: "top-center",
         richColors: true,

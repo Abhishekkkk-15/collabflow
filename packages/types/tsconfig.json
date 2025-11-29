@@ -7,7 +7,8 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "strict": true,
-    "declaration": true
+    "declaration": true,
+    "composite": true
   },
   "include": ["src"]
 }

@@ -4,10 +4,11 @@ import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { ValidationExceptionFilter } from './common/filter/validation-exception.filter';
 import { AllExceptionFilter } from './common/filter/all-exception.filter';
+import { RedisIoAdapter } from './redis-io.adapter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: 'http://localhost:3000', // Your frontend URL
+    origin: 'http://localhost:3000',
     credentials: true,
   });
   app.useGlobalPipes(
@@ -25,6 +26,9 @@ async function bootstrap() {
   );
 
   app.use(cookieParser());
+  const redisAdapter = new RedisIoAdapter(app);
+  await redisAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisAdapter);
   await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();

@@ -28,6 +28,7 @@ import { Check, MoreHorizontal, UserPlus } from "lucide-react";
 import type { ProjectRole, User } from "@collabflow/types";
 import axios from "axios";
 import { WorkspaceMember, WorkspaceRole } from "@prisma/client";
+import { email } from "zod";
 
 type Selected = Record<
   string,
@@ -42,7 +43,11 @@ export function InviteMembers({
 }: {
   initialSelected?: User[];
   onChange?: (
-    members: { userId: string; role: WorkspaceRole | ProjectRole }[]
+    members: {
+      userId: string;
+      role: WorkspaceRole | ProjectRole;
+      email: string;
+    }[]
   ) => void;
   roleType: string;
   workspaceId: string;
@@ -88,8 +93,9 @@ export function InviteMembers({
       const members = Object.values(copy).map((s) => ({
         userId: s.user.id,
         role: s.role,
+        email: s.user.email!,
       }));
-
+      console.log("seneding", members);
       onChange?.(members);
 
       return copy;
@@ -124,6 +130,7 @@ export function InviteMembers({
       const members = Object.values(next).map((s) => ({
         userId: s.user.id,
         role: s.role,
+        email: s.user.email!,
       }));
 
       onChange?.(members);

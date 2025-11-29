@@ -11,8 +11,15 @@ import {
 import { Bell, CheckCircle2, MessageCircle, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "../ui/button";
-
+import { useEffect } from "react";
+import { getSocket } from "@/lib/socket";
 export default function NotificationDropdown() {
+  useEffect(() => {
+    let io = getSocket();
+    io.on("notification", (msg) => {
+      console.log("noticication", msg);
+    });
+  }, []);
   const notifications = [
     {
       id: 1,
@@ -38,8 +45,11 @@ export default function NotificationDropdown() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild >
-        <Button size="icon" variant="outline" className="relative p-2 rounded-lg hover:bg-accent transition">
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="outline"
+          className="relative p-2 rounded-lg hover:bg-accent transition">
           {/* BADGE */}
           {unreadCount > 0 && (
             <Badge className="absolute -top-1 -right-1 text-[10px] px-1 py-0.5 rounded-full bg-red-500 text-white">
@@ -55,8 +65,7 @@ export default function NotificationDropdown() {
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="w-80 rounded-xl shadow-md p-2"
-      >
+        className="w-80 rounded-xl shadow-md p-2">
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           Notifications
         </DropdownMenuLabel>
@@ -66,8 +75,7 @@ export default function NotificationDropdown() {
         {notifications.map((note) => (
           <DropdownMenuItem
             key={note.id}
-            className="flex items-start gap-3 py-3 px-2 cursor-pointer"
-          >
+            className="flex items-start gap-3 py-3 px-2 cursor-pointer">
             <div>{note.icon}</div>
             <div>
               <p className="text-sm font-medium">{note.title}</p>

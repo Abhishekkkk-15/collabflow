@@ -21,4 +21,6 @@ export class MemberDto {
 
   @IsString()
   role!: WorkspaceRole;
+  @IsString()
+  email!: WorkspaceRole;
 }

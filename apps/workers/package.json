@@ -1,0 +1,30 @@
+{
+  "name": "@collabflow/workers",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "dev:workspace": "ts-node-dev --respawn --transpile-only src/workspace/index.ts",
+    "dev:invite": "ts-node-dev --respawn --transpile-only src/invite/index.ts",
+    "dev:email": "ts-node-dev --respawn --transpile-only src/email/index.ts",
+    "dev:notification": "ts-node-dev --respawn --transpile-only src/notification/index.ts",
+    "dev:all": "concurrently \"pnpm dev:workspace\" \"pnpm dev:invite\" \"pnpm dev:email\"",
+    "build": "tsc -p tsconfig.json",
+    "start:workspace": "node dist/workspace/workspace.worker.js",
+    "start:invite": "node dist/invite/invite.worker.js",
+    "start:email": "node dist/email/email.worker.js",
+    "start:notification": "node dist/notification/email.worker.js",
+    "start:all": "concurrently \"pnpm start:workspace\" \"pnpm start:invite\" \"pnpm start:email\""
+  },
+  "dependencies": {
+    "bullmq": "5.65.0",
+    "redis": "5.10.0"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^2.0.0",
+    "concurrently": "^7.0.0",
+    "typescript": "^5.9.3",
+    "@collabflow/db": "workspace:*",
+    "@collabflow/types": "workspace:*"
+  }
+}

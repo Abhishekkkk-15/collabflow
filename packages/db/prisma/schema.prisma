@@ -79,9 +79,9 @@ model Workspace {
   isActive    Boolean  @default(true)
 
   ownerId String?
-  owner   User?   @relation("workspaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  owner   User?   @relation("workspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   status ProjectStatus @default(isActive)
-  memberss  WorkspaceMember[]
+  members  WorkspaceMember[]
   projects Project[]
   priority    Priority @default(LOW) 
 

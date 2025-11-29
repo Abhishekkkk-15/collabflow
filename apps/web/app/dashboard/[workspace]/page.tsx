@@ -1,5 +1,4 @@
-import WorkspaceDetails from "@/components/workspace/WorkspaceDetails";
-// import WorkspaceDetails from "@/components/workspace/workspaceDetails/WorkspaceDetails";
+import WorkspaceDetails from "@/components/workspace/workspaceDetails/WorkspaceDetails";
 import { api } from "@/lib/api/api";
 import React from "react";
 
@@ -12,13 +11,7 @@ async function page({
   console.log("paramssss", workspaceSlug);
   const workspace = await api.get(`/workspace/${workspaceSlug.workspace}`);
   console.log("workspace fetched", workspace.data);
-  return (
-    <div>
-      <WorkspaceDetails workspace={workspace.data} />
-
-      {/* <WorkspaceDetails workspace={workspace.data} /> */}
-    </div>
-  );
+  return <WorkspaceDetails workspace={workspace.data} />;
 }
 
 export default page;
