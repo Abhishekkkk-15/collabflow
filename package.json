@@ -10,6 +10,10 @@
     "build": "turbo run build",
     "web": "pnpm --filter web run dev",
     "api": "pnpm --filter api dev",
+    "worker:all": "pnpm --filter @collabflow/workers dev:all",
+    "worker:invite": "pnpm --filter @collabflow/workers dev:invite",
+    "worker:workspace": "pnpm --filter @collabflow/workers dev:workspace",
+    "worker:email": "pnpm --filter @collabflow/workers dev:email",
     "studio": "pnpm --filter @collabflow/db studio "
   },
   "keywords": [],

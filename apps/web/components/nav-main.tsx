@@ -50,7 +50,7 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
         {items?.map((item: TWorkspace) => (
-          <Collapsible key={item?.name} asChild>
+          <Collapsible key={item?.id} asChild>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={item?.name}>
                 <Link href={`/dashboard/${item?.slug} ` as string}>

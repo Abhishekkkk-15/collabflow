@@ -27,9 +27,13 @@ const worker = new Worker(
         event: "notification",
         room: `user:${members.userId}`,
         payload: {
-          workspaceId: workspace.id,
-          workspaceName: workspace.name,
+          id: workspace.id,
+          name: workspace.name,
+          description: workspace.description,
           workspace: workspace,
+          type: "INVITE",
+          typeMessage: "Workspace Invitation",
+          createdAt: Date.now(),
         },
       })
     );

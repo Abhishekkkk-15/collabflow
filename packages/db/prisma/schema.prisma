@@ -98,7 +98,7 @@ model WorkspaceMember {
   role        WorkspaceRole @default(VIEWER)
   joinedAt    DateTime      @default(now())
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id])
 
   @@unique([workspaceId, userId])
