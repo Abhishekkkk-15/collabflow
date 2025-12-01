@@ -30,7 +30,7 @@ export class WebsocketGateway {
     await sub.subscribe('socket-events', (msg) => {
       const { event, room, payload } = JSON.parse(msg);
       console.log('socket evets', event, room, payload);
-      this.io.to(room).emit(event, payload);
+      this.io.to(room).emit(event, { event, payload });
     });
   }
 

@@ -7,7 +7,6 @@ import {
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +14,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Bell,
-  CheckCircle2,
   MessageCircle,
   AlertTriangle,
   UserPlus,
@@ -24,6 +22,8 @@ import {
 } from "lucide-react";
 import { getSocket } from "@/lib/socket";
 import { toast } from "sonner";
+import type { Notification } from "@prisma/client";
+import { api } from "@/lib/api/api";
 
 enum NotificationType {
   GENERAL = "GENERAL",
@@ -36,20 +36,16 @@ enum NotificationType {
 }
 
 type RawNotif = {
-  id: string;
-  type: NotificationType;
-  name: string;
-  description?: string;
-  avatarUrl?: string;
-  workspace?: { id: string; name: string; slug?: string };
-  createdAt?: string;
+  event: string;
+  payload: Notification;
 };
 
-type Notif = RawNotif & { read?: boolean };
+type Notif = Notification;
 
-function timeAgo(iso?: string) {
+function timeAgo(iso?: string | Date) {
   if (!iso) return "";
-  const diff = Date.now() - new Date(iso).getTime();
+  const ts = typeof iso === "string" ? new Date(iso).getTime() : iso.getTime();
+  const diff = Date.now() - ts;
   const s = Math.floor(diff / 1000);
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);
@@ -60,66 +56,62 @@ function timeAgo(iso?: string) {
   return `${d}d`;
 }
 
-function IconForType({ type }: { type: NotificationType }) {
+/** tiny icon used inside avatar fallback */
+function IconFallback({ type }: { type?: NotificationType }) {
   switch (type) {
     case NotificationType.TASK_ASSIGNED:
     case NotificationType.TASK_UPDATED:
-      return <ClipboardList className="h-4 w-4 text-primary" />;
+      return <ClipboardList className="h-4 w-4" />;
     case NotificationType.INVITE:
-      return <UserPlus className="h-4 w-4 text-emerald-600" />;
+      return <UserPlus className="h-4 w-4" />;
     case NotificationType.MENTION:
-      return <AtSign className="h-4 w-4 text-violet-600" />;
+      return <AtSign className="h-4 w-4" />;
     case NotificationType.SYSTEM:
-      return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
-    case NotificationType.GENERAL:
+      return <AlertTriangle className="h-4 w-4" />;
     default:
-      return <MessageCircle className="h-4 w-4 text-muted-foreground" />;
+      return <MessageCircle className="h-4 w-4" />;
   }
 }
 
 export default function NotificationDropdown() {
-  const [notifications, setNotifications] = useState<Notif[]>(() => {
-    return [
-      {
-        id: "seed-1",
-        type: NotificationType.TASK_ASSIGNED,
-        name: "Task assigned: Fix header",
-        description: "You were assigned 'Fix header' in Marketing board.",
-        avatarUrl: undefined,
-        workspace: { id: "ws1", name: "Acme Workspace", slug: "acme" },
-        createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-        read: false,
-      },
-      {
-        id: "seed-2",
-        type: NotificationType.MENTION,
-        name: "You were mentioned",
-        description: "Ravi mentioned you in the comments.",
-        avatarUrl: undefined,
-        workspace: { id: "ws1", name: "Acme Workspace", slug: "acme" },
-        createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-        read: false,
-      },
-    ];
-  });
+  const [notifications, setNotifications] = useState<Notif[]>([]);
 
   const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.read).length,
+    () => notifications.filter((n) => !n.isRead).length,
     [notifications]
   );
 
+  async function fetchNotification() {
+    const notification: Notification[] = (await api.get("/notification")).data;
+    return notification;
+  }
+
   useEffect(() => {
     const io = getSocket();
+    if (!io) return;
+
     const handler = (raw: RawNotif) => {
-      const newNotif: Notif = { ...raw, read: false };
+      // worker sends { event: 'notification', payload: Notification }
+      console.log("notificaion", raw.payload);
+      const dbNotif = raw?.payload;
+      if (!dbNotif) return;
+
+      const newNotif: Notif = {
+        ...dbNotif,
+        // normalize: use DB isRead as initial local read state
+        isRead: Boolean(dbNotif.isRead),
+      };
+
       setNotifications((prev) => [newNotif, ...prev].slice(0, 50));
-      console.log("notification", raw);
-      toast(raw.name, {
+
+      // show toast
+      toast(dbNotif.title ?? "Notification", {
+        description: dbNotif.body ?? undefined,
         position: "top-center",
-        description: raw.description,
         richColors: true,
       });
     };
+
     io.on("notification", handler);
 
     return () => {
@@ -127,30 +119,53 @@ export default function NotificationDropdown() {
     };
   }, []);
 
-  function markAsRead(id: string) {
+  useEffect(() => {
+    (async () => {
+      const notificaion = await fetchNotification();
+      setNotifications(notificaion);
+    })();
+  }, []);
+
+  async function markAsRead(id: string) {
+    // optimistic update locally
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+
+    // TODO: call API to persist: POST /notifications/:id/mark-read
+    // await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
   }
 
-  function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  async function markAllRead() {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await api.patch("/notification");
+    } catch (error) {
+      console.log("error");
+    }
   }
 
   function clearAll() {
     setNotifications([]);
+    // optionally call API to clear; usually not required
   }
 
   // click handler for a notification (navigate if needed)
   function onNotifClick(n: Notif) {
     markAsRead(n.id);
-    // Example: navigate to workspace or open related item
-    // router.push(`/dashboard/${n.workspace?.slug}`);
-    // For now show toast
-    toast(n.name, {
+    // if notification has link, navigate (hook your router here)
+    if (n.link) {
+      // example using next/navigation (uncomment if available)
+      // import { useRouter } from "next/navigation"; const router = useRouter();
+      // router.push(n.link);
+      window.location.href = n.link;
+      return;
+    }
+
+    // fallback toast
+    toast(n.title ?? "Notification", {
+      description: n.body ?? undefined,
       position: "top-center",
-      description: n.description,
-      richColors: true,
     });
   }
 
@@ -177,7 +192,7 @@ export default function NotificationDropdown() {
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="w-96 rounded-xl shadow-lg p-2 bg-popover border">
+        className="w-96 rounded-xl shadow-lg p-2 bg-popover border ">
         <div className="flex items-center justify-between px-3 py-2">
           <DropdownMenuLabel className="m-0 text-sm font-semibold">
             Notifications
@@ -199,104 +214,102 @@ export default function NotificationDropdown() {
 
         <DropdownMenuSeparator />
 
-        <ScrollArea className="max-h-[360px]">
+        <ScrollArea
+          className="max-h-[360px] overflow-auto hide-scrollbar"
+          style={{ WebkitOverflowScrolling: "touch" }}>
           <div className="space-y-1 px-2 py-1">
             {notifications.length === 0 ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
                 No notifications
               </div>
             ) : (
-              notifications.map((n) => (
-                <div
-                  key={n.id}
-                  className={`flex items-start gap-3 p-2 rounded-md cursor-pointer hover:bg-muted transition ${
-                    !n.read ? "bg-muted/10" : ""
-                  }`}
-                  onClick={() => onNotifClick(n)}>
-                  <Avatar className="h-9 w-9">
-                    {n.avatarUrl ? (
-                      <AvatarImage src={n.avatarUrl} />
-                    ) : (
-                      <AvatarFallback>
-                        <IconFallback type={n.type} />
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
+              notifications.map((n) => {
+                // try to pull actor avatar from meta if available
+                const actorImage =
+                  n.meta && typeof n.meta === "object"
+                    ? (n.meta as any).actor?.image
+                    : undefined;
+                const workspaceName =
+                  n.meta && typeof n.meta === "object"
+                    ? (n.meta as any).workspaceName ?? undefined
+                    : undefined;
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="text-sm font-medium truncate">
-                        {n.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {timeAgo(n.createdAt)}
-                      </div>
-                    </div>
+                return (
+                  <div
+                    key={n.id}
+                    className={`flex items-start gap-3 p-2 rounded-md cursor-pointer hover:bg-muted transition ${
+                      !n.isRead ? "bg-muted/10" : ""
+                    }`}
+                    onClick={() => onNotifClick(n)}>
+                    <Avatar className="h-9 w-9">
+                      {actorImage ? (
+                        <AvatarImage src={actorImage} />
+                      ) : (
+                        <AvatarFallback>
+                          <IconFallback
+                            type={n.type as unknown as NotificationType}
+                          />
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
 
-                    {n.description && (
-                      <div className="text-xs text-muted-foreground mt-1 truncate">
-                        {n.description}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-medium truncate">
+                          {n.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {timeAgo(n.createdAt)}
+                        </div>
                       </div>
-                    )}
 
-                    {n.workspace && (
-                      <div className="text-xs text-[11px] text-muted-foreground mt-1">
-                        <span className="font-medium">{n.workspace.name}</span>
-                      </div>
-                    )}
+                      {n.body && (
+                        <div className="text-xs text-muted-foreground mt-1 truncate">
+                          {n.body}
+                        </div>
+                      )}
 
-                    <div className="flex items-center gap-2 mt-2">
-                      {!n.read && (
+                      {workspaceName && (
+                        <div className="text-xs text-[11px] text-muted-foreground mt-1">
+                          <span className="font-medium">{workspaceName}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 mt-2">
+                        {!n.isRead && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead(n.id);
+                            }}
+                            className="text-xs px-2 py-1 rounded bg-primary/5 hover:bg-primary/10 text-primary">
+                            Mark read
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            markAsRead(n.id);
+                            setNotifications((prev) =>
+                              prev.filter((it) => it.id !== n.id)
+                            );
                           }}
-                          className="text-xs px-2 py-1 rounded bg-primary/5 hover:bg-primary/10 text-primary">
-                          Mark read
+                          className="text-xs px-2 py-1 rounded hover:bg-muted text-muted-foreground">
+                          Dismiss
                         </button>
-                      )}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // remove the single notification
-                          setNotifications((prev) =>
-                            prev.filter((it) => it.id !== n.id)
-                          );
-                        }}
-                        className="text-xs px-2 py-1 rounded hover:bg-muted text-muted-foreground">
-                        Dismiss
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </ScrollArea>
 
         <DropdownMenuSeparator />
-        <div className="px-3 py-2 text-xs text-muted-foreground">
+        <div className="px-3 py-2 text-xs text-muted-foreground z-22">
           Notifications are kept for <strong>30 days</strong>.
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-/** Small helper to render tiny icons inside AvatarFallback */
-function IconFallback({ type }: { type: NotificationType }) {
-  switch (type) {
-    case NotificationType.TASK_ASSIGNED:
-    case NotificationType.TASK_UPDATED:
-      return <ClipboardList className="h-4 w-4" />;
-    case NotificationType.INVITE:
-      return <UserPlus className="h-4 w-4" />;
-    case NotificationType.MENTION:
-      return <AtSign className="h-4 w-4" />;
-    case NotificationType.SYSTEM:
-      return <AlertTriangle className="h-4 w-4" />;
-    default:
-      return <MessageCircle className="h-4 w-4" />;
-  }
 }

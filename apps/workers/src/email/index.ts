@@ -1,14 +1,17 @@
 import { Worker, Queue } from "bullmq";
+import { connection } from "../index";
 
-new Worker(
-  "emailQueue",
-  async (job) => {
-    const { to, subject, workspaceId } = job.data;
+export function startEmailWorker() {
+  new Worker(
+    "emailQueue",
+    async (job) => {
+      const { to, subject, workspaceId } = job.data;
 
-    // Real email or mock
-    console.log(`Email → ${to} | ${subject} | WS: ${workspaceId}`);
-  },
-  { connection: { host: "localhost", port: 6379 } }
-);
+      // Real email or mock
+      console.log(`Email → ${to} | ${subject} | WS: ${workspaceId}`);
+    },
+    { connection }
+  );
 
-console.log("email.worker running");
+  console.log("email.worker running");
+}

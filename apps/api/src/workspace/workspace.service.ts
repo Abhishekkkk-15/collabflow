@@ -7,7 +7,7 @@ import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { prisma } from '@collabflow/db';
 import { createSlug } from '../common/utils/slug-helper';
-import { Workspace } from '@prisma/client';
+import { User, Workspace } from '@prisma/client';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 @Injectable()
@@ -16,21 +16,21 @@ export class WorkspaceService {
 
   async create(
     createWorkspaceDto: CreateWorkspaceDto,
-    ownerId: string,
+    owner: User,
   ): Promise<Workspace> {
     const slug = createSlug(createWorkspaceDto.slug || createWorkspaceDto.name);
-
+    console.log('current user', owner);
     const workspace = await prisma.workspace.create({
       data: {
         name: createWorkspaceDto.name,
         description: createWorkspaceDto.description,
         slug: slug,
-        ownerId,
+        ownerId: owner.id,
       },
     });
     await prisma.workspaceMember.create({
       data: {
-        userId: ownerId,
+        userId: owner.id,
         role: 'OWNER',
         workspaceId: workspace.id,
       },
@@ -38,6 +38,7 @@ export class WorkspaceService {
     this.workspaceQueue.add('workspace:create', {
       workspace,
       members: createWorkspaceDto.members,
+      invitedBy: owner,
     });
 
     return workspace;
@@ -142,15 +143,19 @@ export class WorkspaceService {
     return workspace;
   }
 
-  async getWorkspaceMembers(id: string, limit: number) {
+  async getWorkspaceMembers(slug: string, limit: number) {
+    const ws = await prisma.workspace.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
     const count = await prisma.workspaceMember.count({
       where: {
-        workspaceId: id,
+        workspaceId: ws?.id,
       },
     });
     const members = await prisma.workspaceMember.findMany({
       where: {
-        workspaceId: id,
+        workspaceId: ws?.id,
       },
       include: {
         user: {

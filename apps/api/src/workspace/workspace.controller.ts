@@ -15,7 +15,8 @@ import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { AuthGuard } from '../common/guards/AuthGuard';
 import type { Request } from 'express';
-import { User } from '@collabflow/types';
+import { CurrentUser } from '../common/decorator/current-user.decorator';
+import type { User } from '@prisma/client';
 export interface ExtendedRequest extends Request {
   user: User;
 }
@@ -28,9 +29,9 @@ export class WorkspaceController {
   @UseGuards(AuthGuard)
   create(
     @Body() createWorkspaceDto: CreateWorkspaceDto,
-    @Req() req: ExtendedRequest,
+    @CurrentUser() user: User,
   ) {
-    return this.workspaceService.create(createWorkspaceDto, req.user.id);
+    return this.workspaceService.create(createWorkspaceDto, user);
   }
   @UseGuards(AuthGuard)
   @Get()
@@ -42,8 +43,11 @@ export class WorkspaceController {
     return this.workspaceService.findOne(slug);
   }
 
-  @Get(':id/members')
-  getWorkspaceMembers(@Param('id') id: string, @Query('limit') limit: string) {
-    return this.workspaceService.getWorkspaceMembers(id, +limit);
+  @Get(':slug/members')
+  getWorkspaceMembers(
+    @Param('slug') slug: string,
+    @Query('limit') limit: string,
+  ) {
+    return this.workspaceService.getWorkspaceMembers(slug, +limit);
   }
 }

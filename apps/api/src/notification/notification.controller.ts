@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { CurrentUser } from '../common/decorator/current-user.decorator';
+import type { User } from '@prisma/client';
 
 @Controller('notification')
 export class NotificationController {
@@ -13,8 +23,8 @@ export class NotificationController {
   }
 
   @Get()
-  findAll() {
-    return this.notificationService.findAll();
+  findAll(@CurrentUser() user: User) {
+    return this.notificationService.findAll(user);
   }
 
   @Get(':id')
@@ -22,9 +32,9 @@ export class NotificationController {
     return this.notificationService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
-    return this.notificationService.update(+id, updateNotificationDto);
+  @Patch('')
+  markAllAsRead(@CurrentUser() user: User) {
+    return this.notificationService.markAsRead(user);
   }
 
   @Delete(':id')
