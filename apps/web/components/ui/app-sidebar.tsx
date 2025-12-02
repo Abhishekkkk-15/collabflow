@@ -171,7 +171,6 @@ export function AppSidebar({ ...props }: IExtendedProp) {
   );
   const user = useAppSelector((s: any) => s.user.user);
 
-  console.log("Component rendering", user);
   function getActiveWorkspaceProjects() {
     if (!props.w || props.w.workspaces == null) return;
     let activeWs = props.w.workspaces.find(

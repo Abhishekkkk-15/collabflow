@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import MentionDropdown from "./MentionDropdown";
 import { Input } from "@/components/ui/input";
+import { Socket } from "socket.io-client";
+import { getSocket } from "@/lib/socket";
+import { useUser } from "@/lib/redux/hooks/use-user";
 
 export default function ChatInput({
   user,
@@ -11,12 +14,11 @@ export default function ChatInput({
   user: any;
   members: any;
   roomId: any;
-  socket: any;
+  socket: Socket;
 }) {
   const [text, setText] = useState("");
   const [mentionOpen, setMentionOpen] = useState(false);
   const [filteredMembers, setFilteredMembers] = useState([]);
-
   useEffect(() => {
     if (!socket) return;
     socket.emit("typing", {
@@ -47,8 +49,22 @@ export default function ChatInput({
 
   const send = () => {
     if (!text.trim()) return;
-    // socket.emit("message", { roomId, text, user });
-    console.log("message", text, user);
+    let sockett = getSocket(user.id, "/chat");
+
+    console.log("socket", sockett);
+    sockett.emit("send", {
+      payload: {
+        roomId,
+        text,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        },
+      },
+    });
+    console.log("message", user);
     setText("");
     setMentionOpen(false);
   };

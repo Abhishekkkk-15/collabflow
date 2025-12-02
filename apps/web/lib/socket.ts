@@ -1,13 +1,24 @@
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 
-let socket: ReturnType<typeof io> | null = null;
+// store sockets by namespace
+const sockets: Record<string, Socket> = {};
 
-export const getSocket = (userId?: string) => {
-  if (socket) return socket;
+export const getSocket = (userId?: string, namespace: string = "/"): Socket => {
+  if (!namespace.startsWith("/")) {
+    namespace = "/" + namespace;
+  }
 
-  socket = io(process.env.NEXT_PUBLIC_API_URL!, {
+  // if socket already exists for this namespace → return it
+  if (sockets[namespace]) return sockets[namespace];
+
+  const WEBSOCKET_URL = process.env.NEXT_PUBLIC_API_URL!;
+  const fullURL = `${WEBSOCKET_URL}${namespace}`;
+
+  console.log("Connecting to:", fullURL);
+
+  const socket = io(fullURL, {
     withCredentials: true,
-    autoConnect: false,
+    autoConnect: true,
   });
 
   if (userId) {
@@ -16,5 +27,6 @@ export const getSocket = (userId?: string) => {
 
   socket.connect();
 
+  sockets[namespace] = socket;
   return socket;
 };

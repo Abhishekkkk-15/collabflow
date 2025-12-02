@@ -23,6 +23,7 @@ export class WebsocketGateway {
   constructor(private readonly websocketService: WebsocketService) {}
 
   async afterInit() {
+    console.log('mi', this.io);
     this.websocketService.setServer(this.io);
     const sub = createClient({ url: 'redis://localhost:6379' });
     await sub.connect();
@@ -43,31 +44,8 @@ export class WebsocketGateway {
     console.log('userid', userId);
     this.websocketService.joinUserRoom(socket, userId);
 
-    const workspaces = await prisma.workspace.findMany({
-      where: {
-        OR: [{ ownerId: userId }, { members: { some: { userId } } }],
-      },
-      select: { id: true },
-    });
-    if (workspaces) {
-      workspaces.forEach((ws) => {
-        this.websocketService.joinWorkspaceRoom(socket, ws.id);
-      });
-
-      const projects = await prisma.project.findMany({
-        where: {
-          OR: [{ ownerId: userId }, { members: { some: { userId } } }],
-        },
-        select: { id: true },
-      });
-      if (projects) {
-        projects.forEach((p) => {
-          this.websocketService.joinProjectRoom(socket, p.id);
-        });
-      }
-      console.log(`User's connection has been made`);
-      return `User's connection has been made`;
-    }
+    console.log(`User's connection has been made`);
+    return `User's connection has been made`;
   }
 
   @SubscribeMessage('ws')

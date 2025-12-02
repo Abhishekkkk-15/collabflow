@@ -8,7 +8,7 @@ export default function ChatMessageItem({
   currentUserId: any;
 }) {
   const isSelf = msg.user.id === currentUserId;
-
+  console.log("from item's", msg);
   return (
     <div className={`flex gap-3 ${isSelf ? "justify-end" : ""}`}>
       {!isSelf && (

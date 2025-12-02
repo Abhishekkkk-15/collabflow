@@ -144,6 +144,7 @@ export class WorkspaceService {
   }
 
   async getWorkspaceMembers(slug: string, limit: number) {
+    console.log(slug);
     const ws = await prisma.workspace.findUnique({
       where: { slug },
       select: { id: true },
@@ -162,9 +163,9 @@ export class WorkspaceService {
           select: { name: true, image: true, id: true, email: true },
         },
       },
-      take: 8,
+      // take: 8,
     });
-    console.log(members);
+    // console.log(members);
     if (!members) throw new NotFoundException('Members not found');
     return { members, count };
   }

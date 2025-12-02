@@ -13,19 +13,19 @@ type TScoketProp = {
 };
 export default function SocketProvider({ userId, children }: TScoketProp) {
   const [socket, setSocket] = useState<Socket | null>(null);
-  console.log("rerendering fomr socketprovider");
   useEffect(() => {
     if (!userId) return;
     const s = getSocket(userId);
-
+    const chatSocket = getSocket(userId, "/chat");
     s.auth = { userId };
-
+    chatSocket.auth = { userId };
     s.connect();
-
+    chatSocket.connect();
     setSocket(s);
 
     return () => {
       s.disconnect();
+      chatSocket.disconnect();
     };
   }, [userId]);
 

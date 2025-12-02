@@ -5,18 +5,20 @@ import { Socket, Server } from 'socket.io';
 
 @Injectable()
 export class WebsocketService {
-  private io!: Server;
+  protected io!: Server;
 
   setServer(io: any) {
     this.io = io;
   }
 
-  joinWorkspaceRoom(socket: Socket, workspaceId: string) {
-    socket.join(`workspace:${workspaceId}`);
+  joinWorkspaceRoom(socket: Socket, workspaceSlug: string) {
+    console.log('Joining user to Workspace', `workspace:${workspaceSlug}`);
+    socket.join(`workspace:${workspaceSlug}`);
   }
 
-  joinProjectRoom(socket: Socket, projectId: string) {
-    socket.join(`project:${projectId}`);
+  joinProjectRoom(socket: Socket, projectSlug: string) {
+    console.log('Joining user to project');
+    socket.join(`project:${projectSlug}`);
   }
 
   joinUserRoom(socket: Socket, userId: string) {

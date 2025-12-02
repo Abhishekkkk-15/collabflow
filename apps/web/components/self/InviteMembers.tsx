@@ -25,10 +25,11 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Check, MoreHorizontal, UserPlus } from "lucide-react";
-import type { ProjectRole, User } from "@collabflow/types";
+import type { ProjectRole, User, WorkspaceMember } from "@collabflow/types";
 import axios from "axios";
-import { WorkspaceMember, WorkspaceRole } from "@prisma/client";
+import { WorkspaceRole } from "@prisma/client";
 import { email } from "zod";
+import { api } from "@/lib/api/api";
 
 type Selected = Record<
   string,
@@ -39,7 +40,7 @@ export function InviteMembers({
   onChange,
   initialSelected = [],
   roleType = "WORKSPACE",
-  workspaceId,
+  slug,
 }: {
   initialSelected?: User[];
   onChange?: (
@@ -50,11 +51,11 @@ export function InviteMembers({
     }[]
   ) => void;
   roleType: string;
-  workspaceId: string;
+  slug: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [allUsers, setAllUsers] = useState<User[]>();
+  const [allUsers, setAllUsers] = useState<WorkspaceMember[]>();
   const [selected, setSelected] = useState<Selected>(() => {
     const map: Selected = {};
     initialSelected.forEach(
@@ -63,23 +64,25 @@ export function InviteMembers({
     return map;
   });
   async function fetchUsers() {
-    return await axios.get(`http://localhost:3001/user/${workspaceId}`, {
+    return await api.get(`/workspace/${slug}/members`, {
       withCredentials: true,
     });
   }
   useEffect(() => {
     (async () => {
       let res = await fetchUsers();
-      setAllUsers(() => res.data);
+      console.log("res from init", res.data.members);
+      setAllUsers(() => res.data.members);
     })();
-  }, []);
+  }, [slug]);
 
   const users = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return allUsers;
     return allUsers?.filter(
       (u) =>
-        u.name!.toLowerCase().includes(q) || u.email!.toLowerCase().includes(q)
+        u.user?.name!.toLowerCase().includes(q) ||
+        u.user?.email!.toLowerCase().includes(q)
     );
   }, [allUsers, query]);
 
@@ -177,31 +180,31 @@ export function InviteMembers({
                   {users?.map((u) => (
                     <CommandItem
                       key={u.id}
-                      onSelect={() => toggleSelect(u)}
+                      onSelect={() => toggleSelect(u.user!)}
                       className="flex items-center gap-3 px-3 py-2 hover:bg-muted/20">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          {u.image ? (
-                            <AvatarImage src={u.image} />
+                          {u.user?.image ? (
+                            <AvatarImage src={u.user?.image} />
                           ) : (
                             <AvatarFallback>
-                              {u.name!.split(" ")[0][0]}
+                              {u.user?.name!.split(" ")[0][0]}
                             </AvatarFallback>
                           )}
                         </Avatar>
 
                         <div className="min-w-0">
                           <div className="text-sm font-medium truncate">
-                            {u.name}
+                            {u.user?.name}
                           </div>
                           <div className="text-xs text-muted-foreground truncate">
-                            {u.email}
+                            {u.user?.email}
                           </div>
                         </div>
                       </div>
 
                       <div className="ml-auto">
-                        {isSelected(u.id) ? (
+                        {isSelected(u.user!.id!) ? (
                           <Check className="h-4 w-4" />
                         ) : null}
                       </div>

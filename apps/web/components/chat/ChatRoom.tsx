@@ -5,28 +5,36 @@ import ChatHeader from "./ChatHeader";
 import ChatMessageList from "./ChatMessageList";
 import ChatInput from "./ChatInput";
 import { getSocket } from "@/lib/socket";
+import { Socket } from "socket.io-client";
+import { useUser } from "@/lib/redux/hooks/use-user";
+import { User } from "next-auth";
 
 export default function ChatRoom({
   roomId,
-  user,
   members,
+  user,
 }: {
+  user: User;
   roomId: string;
-  user: any; // { id, name, image }
   members: any[]; // array of { id, name, image }
 }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  const socketRef = useRef<any>(null);
-
+  const socketRef = useRef<Socket>(null);
+  console.log("user room", user);
   useEffect(() => {
-    const socket = getSocket();
-    socketRef.current = socket;
+    const socket = getSocket(user.id, "/chat");
+    // socket.connect();
+    if (!socket.connected) {
+      socket.connect();
+    }
 
-    socket.emit("joinRoom", { roomId, user });
-
+    console.log("WS connected");
     socket.on("message", (msg) => {
-      setMessages((prev) => [...prev, msg]);
+      if (msg.roomId === roomId) {
+        setMessages((prev) => [...prev, msg]);
+        console.log("got a message", msg);
+      }
     });
 
     socket.on("typing", ({ userId, isTyping }) => {
@@ -48,7 +56,7 @@ export default function ChatRoom({
         user={user}
         members={members}
         roomId={roomId}
-        socket={socketRef.current}
+        socket={socketRef.current!}
       />
 
       {typingUsers.length > 0 && (

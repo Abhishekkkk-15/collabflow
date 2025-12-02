@@ -13,8 +13,8 @@ export default function MemberAvatarGrid({ members }: MemberAvatarGridProps) {
   return (
     <div className="flex items-center gap-2">
       <div className="flex -space-x-3">
-        {visible.map((m: any) => (
-          <div key={m.id} className="relative">
+        {visible.map((m: any, idx: number) => (
+          <div key={idx} className="relative">
             <Avatar className="h-9 w-9 ring-2 ring-background">
               {m.user?.image ? (
                 <AvatarImage src={m.user.image} />
