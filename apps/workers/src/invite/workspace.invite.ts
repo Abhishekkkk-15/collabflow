@@ -1,6 +1,6 @@
 import { Queue, Worker } from "bullmq";
-import { redisPub } from "../";
-import { connection } from "../";
+import { redisPub } from "..";
+import { connection } from "..";
 import { NotificationType, WorkspaceRole } from "@collabflow/types";
 import { prisma } from "@collabflow/db";
 import { User } from "@prisma/client";
@@ -47,12 +47,10 @@ async function pushAndMaybeFlush(memberPayload: WorkspaceMemberPayload) {
     );
 
     try {
-      console.log("Flushing batch to DB, count:", unique.length);
       await prisma.workspaceMember.createMany({
         data: unique,
         skipDuplicates: true,
       });
-      // reset buffer after successful write
       BULK_WORKSPACE_MEMBER_STORE = [];
       console.log("Batch flush successful");
     } catch (err) {
@@ -129,9 +127,9 @@ export function startInviteWorker() {
       console.log("Invited by", invitedBy);
       const notification = await prisma.notification.create({
         data: {
-          userId: members.userId, // receiver
+          userId: members.userId,
 
-          actorId: invitedBy.id || null, // sender of invite
+          actorId: invitedBy.id || null,
           workspaceId: workspace.id,
 
           type: "INVITE",

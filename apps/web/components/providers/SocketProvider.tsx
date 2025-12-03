@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { getSocket } from "lib/socket";
 import { Socket } from "socket.io-client";
 
-const socketContext = createContext<any>(null);
+const socketContext = createContext<Socket | null>(null);
 
 export const useSocket = () => useContext(socketContext);
 
@@ -15,20 +15,16 @@ export default function SocketProvider({ userId, children }: TScoketProp) {
   const [socket, setSocket] = useState<Socket | null>(null);
   useEffect(() => {
     if (!userId) return;
-    const s = getSocket(userId);
-    const chatSocket = getSocket(userId, "/chat");
+    const s = getSocket();
     s.auth = { userId };
-    chatSocket.auth = { userId };
     s.connect();
-    chatSocket.connect();
     setSocket(s);
 
     return () => {
       s.disconnect();
-      chatSocket.disconnect();
     };
   }, [userId]);
-
+  if (!socket) return null;
   return (
     <socketContext.Provider value={socket}>{children}</socketContext.Provider>
   );

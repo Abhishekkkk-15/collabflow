@@ -1,5 +1,5 @@
 import { Queue, Worker } from "bullmq";
-import { inviteQueue } from "../invite";
+import { inviteQueue } from "../invite/workspace.invite";
 import { connection } from "../index";
 
 export function startWorkspaceWorker() {

@@ -34,6 +34,7 @@ import {
   useUserRoles,
 } from "@/lib/redux/hooks/use-user";
 import { AUTHORIZED_ROLES, type PROJECT_ROLE_VALUES } from "@collabflow/types";
+import { CreateProjectDialog } from "./CreateProjectDialog";
 function SidebarShell({
   children,
   fetchedWorkspaces,
@@ -42,7 +43,6 @@ function SidebarShell({
   fetchedWorkspaces: any;
 }) {
   const params = useParams();
-  console.log(params);
   const [openCreateProject, setOpenCreateProject] = useState(false);
   const [dropDownOpen, setDropDownOpen] = useState<boolean>(false);
   const [activeWsProjects, setActiveWsProjects] = React.useState<TProject[]>(
@@ -105,7 +105,15 @@ function SidebarShell({
                         />
                       </button>
                     </DropdownMenuTrigger>
-
+                    {openCreateProject && (
+                      <CreateProjectDialog
+                        open={openCreateProject}
+                        onOpenChange={() =>
+                          setOpenCreateProject(!openCreateProject)
+                        }
+                        workspaceId={params.workspace?.toString()}
+                      />
+                    )}
                     <DropdownMenuContent
                       align="start"
                       sideOffset={8}

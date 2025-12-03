@@ -8,10 +8,14 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { prisma } from '@collabflow/db';
 import { Project, ProjectMember, ProjectRole } from '@collabflow/types';
 import { createSlug } from '../common/utils/slug-helper';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class ProjectService {
-  async create(dto: CreateProjectDto, ownerId: string) {
+  constructor(@InjectQueue('projectQueue') private projectQueue: Queue) {}
+  async create(dto: CreateProjectDto, user: User) {
     try {
       return prisma.$transaction(async (tx) => {
         const worspaceExist = await tx.workspace.findUnique({
@@ -33,72 +37,18 @@ export class ProjectService {
             slug,
             description: dto.description || '',
             workspaceId: dto.workspaceId,
-            ownerId,
+            ownerId: user.id,
             dueDate: dto.dueDate,
           },
         });
-        const membersToCreate = [
-          {
-            projectId: project.id,
-            userId: ownerId,
-            role: 'OWNER' as ProjectRole,
-            joinedAt: new Date(),
-          },
-          ...(dto.members?.map((m) => ({
-            projectId: project.id,
-            userId: m.userId,
-            role: m.role as ProjectRole,
-            joinedAt: new Date(),
-          })) || []),
-        ];
-        await tx.projectMember.createMany({
-          data: membersToCreate,
+
+        this.projectQueue.add('project:create', {
+          project,
+          members: dto.members,
+          user,
         });
-        return await tx.project.findUnique({
-          where: {
-            id: project.id,
-          },
-          include: {
-            owner: {
-              select: {
-                name: true,
-                image: true,
-                id: true,
-                email: true,
-              },
-            },
-            members: {
-              select: {
-                id: true,
-                userId: true,
-                role: true,
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    image: true,
-                  },
-                },
-              },
-            },
-            workspace: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                owner: {
-                  select: {
-                    name: true,
-                    email: true,
-                    image: true,
-                    id: true,
-                  },
-                },
-              },
-            },
-          },
-        });
+
+        return project;
       });
     } catch (error) {
       throw error;
@@ -157,5 +107,29 @@ export class ProjectService {
 
   remove(id: number) {
     return `This action removes a #${id} project`;
+  }
+  async getProjectMembers(slug: string, limit: number) {
+    const project = await prisma.project.findFirst({
+      where: { slug: slug as string },
+      select: { id: true },
+    });
+    const count = await prisma.projectMember.count({
+      where: {
+        projectId: project?.id,
+      },
+    });
+    const members = await prisma.projectMember.findMany({
+      where: {
+        projectId: project?.id,
+      },
+      include: {
+        user: {
+          select: { name: true, image: true, id: true, email: true },
+        },
+      },
+      take: limit,
+    });
+    if (!members) throw new NotFoundException('Members not found');
+    return { members, count };
   }
 }

@@ -16,6 +16,8 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { AuthGuard } from '../common/guards/AuthGuard';
 import { ProjectMemberGuard } from '../common/guards/ProjectMemberGuard';
 import { MemberGuard } from '../common/guards/MemberGuard';
+import { CurrentUser } from '../common/decorator/current-user.decorator';
+import type { User } from '@prisma/client';
 
 @Controller('project')
 export class ProjectController {
@@ -33,8 +35,11 @@ export class ProjectController {
   }
   @Post()
   @UseGuards(MemberGuard, AuthGuard)
-  create(@Body() createProjectDto: CreateProjectDto, @Req() req: any) {
-    return this.projectService.create(createProjectDto, req.user.id);
+  create(
+    @Body() createProjectDto: CreateProjectDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.projectService.create(createProjectDto, user);
   }
 
   // @Get(':id')
@@ -42,4 +47,9 @@ export class ProjectController {
   // findAll(@Param('id') workspaceId: string, @Req() req: any) {
   //   return this.projectService.findAll(workspaceId, req.user.id);
   // }
+
+  @Get(':slug/members')
+  getProjectMembers(@Param('slug') slug: string, @Query('limit') limit = 5) {
+    return this.projectService.getProjectMembers(slug, limit);
+  }
 }

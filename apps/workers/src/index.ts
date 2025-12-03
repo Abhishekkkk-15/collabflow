@@ -1,8 +1,10 @@
 import {} from "bullmq";
 import { createClient } from "redis";
-import { startInviteWorker } from "./invite";
+import { startInviteWorker } from "./invite/workspace.invite";
+import { startProjectInviteWorker } from "./invite/project.invite";
 import { startEmailWorker } from "./email";
 import { startWorkspaceWorker } from "./workspace";
+import { startProjecteWorker } from "./project/index";
 // import { startNotificationWorker } from "./notification";
 export const connection = { host: "localhost", port: 6379 };
 export const redisPub = createClient({ url: "redis://localhost:6379" });
@@ -15,6 +17,8 @@ async function main() {
     startInviteWorker();
     startEmailWorker();
     startWorkspaceWorker();
+    startProjectInviteWorker();
+    startProjecteWorker();
     //   startNotificationWorker();
   } catch (error) {
     console.log("error");

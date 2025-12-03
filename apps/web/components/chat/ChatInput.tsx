@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import MentionDropdown from "./MentionDropdown";
 import { Input } from "@/components/ui/input";
 import { Socket } from "socket.io-client";
-import { getSocket } from "@/lib/socket";
-import { useUser } from "@/lib/redux/hooks/use-user";
 
 export default function ChatInput({
   user,
@@ -19,12 +17,11 @@ export default function ChatInput({
   const [text, setText] = useState("");
   const [mentionOpen, setMentionOpen] = useState(false);
   const [filteredMembers, setFilteredMembers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
   useEffect(() => {
     if (!socket) return;
     socket.emit("typing", {
-      roomId,
-      userId: user.id,
-      isTyping: text.length > 0,
+      payload: { roomId, userId: user.id, isTyping: text.length > 0 },
     });
   }, [text]);
 
@@ -32,7 +29,6 @@ export default function ChatInput({
     setText(val);
 
     const mentionIndex = val.lastIndexOf("@");
-    console.log("men", mentionIndex);
     if (mentionIndex !== -1) {
       const query = val.slice(mentionIndex + 1).toLowerCase();
       console.log("query", query);
@@ -49,13 +45,13 @@ export default function ChatInput({
 
   const send = () => {
     if (!text.trim()) return;
-    let sockett = getSocket(user.id, "/chat");
-
-    console.log("socket", sockett);
-    sockett.emit("send", {
+    if (!socket) return;
+    console.log("socket", socket);
+    socket.emit("send", {
       payload: {
         roomId,
         text,
+        mentionedUser: selectedUser,
         user: {
           id: user.id,
           name: user.name,
@@ -83,9 +79,10 @@ export default function ChatInput({
         <MentionDropdown
           members={filteredMembers}
           onSelect={(m: any) => {
-            // replace @query with @Name
             const lastAt = text.lastIndexOf("@");
             const updated = text.slice(0, lastAt + 1) + m.user.name + " ";
+            setSelectedUser(m.user.id);
+            console.log("selected", m);
             setText(updated);
             setMentionOpen(false);
           }}

@@ -48,6 +48,7 @@ export class WorkspaceController {
     @Param('slug') slug: string,
     @Query('limit') limit: string,
   ) {
+    console.log('Its hitting here');
     return this.workspaceService.getWorkspaceMembers(slug, +limit);
   }
 }

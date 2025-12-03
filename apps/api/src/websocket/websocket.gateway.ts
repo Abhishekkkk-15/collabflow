@@ -23,7 +23,6 @@ export class WebsocketGateway {
   constructor(private readonly websocketService: WebsocketService) {}
 
   async afterInit() {
-    console.log('mi', this.io);
     this.websocketService.setServer(this.io);
     const sub = createClient({ url: 'redis://localhost:6379' });
     await sub.connect();

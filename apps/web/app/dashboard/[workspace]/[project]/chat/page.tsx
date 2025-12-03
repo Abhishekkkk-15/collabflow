@@ -12,12 +12,13 @@ async function page({
   const { project, workspace } = await params;
   const session = await auth();
   const cookieStore = cookies();
-  // const projectMembers = await api.get(`/project/${project}/members`, {
-  //   headers: {
-  //     Cookie: (await cookieStore).toString(),
-  //   },
-  //   withCredentials: true,
-  // });
+  const projectMembers = await api.get(`/project/${project}/members`, {
+    headers: {
+      Cookie: (await cookieStore).toString(),
+    },
+    withCredentials: true,
+  });
+  console.log("p", projectMembers.data);
   let userFromSession: User;
   if (session?.user) {
     userFromSession = {
@@ -32,8 +33,7 @@ async function page({
     <ChatRoom
       roomId={`project:${project}`}
       user={userFromSession!}
-      // members={projectMembers.data.members}
-      members={[]}
+      members={projectMembers.data.members}
     />
   );
 }

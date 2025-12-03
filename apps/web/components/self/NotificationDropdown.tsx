@@ -20,10 +20,10 @@ import {
   AtSign,
   ClipboardList,
 } from "lucide-react";
-import { getSocket } from "@/lib/socket";
 import { toast } from "sonner";
 import type { Notification } from "@prisma/client";
 import { api } from "@/lib/api/api";
+import { useSocket } from "../providers/SocketProvider";
 
 enum NotificationType {
   GENERAL = "GENERAL",
@@ -86,19 +86,17 @@ export default function NotificationDropdown() {
     return notification;
   }
 
+  const io = useSocket();
   useEffect(() => {
-    const io = getSocket();
     if (!io) return;
 
     const handler = (raw: RawNotif) => {
-      // worker sends { event: 'notification', payload: Notification }
       console.log("notificaion", raw.payload);
       const dbNotif = raw?.payload;
       if (!dbNotif) return;
 
       const newNotif: Notif = {
         ...dbNotif,
-        // normalize: use DB isRead as initial local read state
         isRead: Boolean(dbNotif.isRead),
       };
 

@@ -38,6 +38,7 @@ import { CalendarIcon } from "lucide-react";
 import { normalizeString } from "@/lib/slugToTitle";
 import { TWorkspace } from "@/lib/redux/slices/workspace";
 import { useSelector } from "react-redux";
+import { api } from "@/lib/api/api";
 
 type ProjectInput = z.infer<typeof ProjectSchema>;
 
@@ -83,7 +84,7 @@ export function CreateProjectDialog({
   const [validationIssues, setValidationIssues] = useState<z.ZodIssue[] | null>(
     null
   );
-
+  console.log("init", normalizeString(initialWorkspaceId!));
   // const [userWorkspaces, setUserWorkspaces] = useState<
   //   Pick<TWorkspace, "id" | "name" | "slug">[]
   // >([]);
@@ -152,17 +153,12 @@ export function CreateProjectDialog({
         return;
       }
 
-      const res = await axios.post(
-        "http://localhost:3001/project",
-        parsed.data,
-        {
-          withCredentials: true,
-        }
-      );
+      const res = await api.post("/project", parsed.data, {
+        withCredentials: true,
+      });
 
       toast.success(`Project "${res.data.name}" created`);
 
-      // Close dialog + reset
       onOpenChange(false);
       setName("");
       setSlug("");
@@ -192,13 +188,11 @@ export function CreateProjectDialog({
         </DialogHeader>
 
         <div className="grid gap-5 max-h-[75vh] overflow-y-auto  hide-scrollbar">
-          {/* Project Name */}
           <div className="grid gap-2">
             <Label>Project Name</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
-          {/* Slug */}
           <div className="grid gap-2">
             <Label>Slug</Label>
             <div className="flex gap-2">
@@ -209,7 +203,6 @@ export function CreateProjectDialog({
             </div>
           </div>
 
-          {/* Description */}
           <div className="grid gap-2">
             <Label>Description</Label>
             <Textarea
@@ -218,7 +211,6 @@ export function CreateProjectDialog({
             />
           </div>
 
-          {/* Priority + Status + Due Date */}
           <div className="grid md:grid-cols-3 gap-2  ">
             <div className="grid gap-2">
               <Label>Priority</Label>
@@ -259,11 +251,13 @@ export function CreateProjectDialog({
                 <SelectTrigger className="w-auto">
                   <SelectValue
                     // placeholder={mockWorkspaces[0].name}
-                    defaultChecked={true}
-                    defaultValue={workspaceId}
+                    defaultChecked={false}
+                    defaultValue={normalizeString(initialWorkspaceId!)}
                   />
                 </SelectTrigger>
-                <SelectContent defaultChecked={true} defaultValue={workspaceId}>
+                <SelectContent
+                  defaultChecked={false}
+                  defaultValue={normalizeString(initialWorkspaceId!)}>
                   {userWorkspaces?.map((ws) => (
                     <SelectItem key={ws.id} value={ws.id}>
                       {ws.name}
@@ -277,7 +271,6 @@ export function CreateProjectDialog({
             <Label>Due Date</Label>
 
             <div className="relative">
-              {/* Date Input */}
               <Input
                 type="date"
                 placeholder="dd-mm-yyyy"
@@ -286,7 +279,6 @@ export function CreateProjectDialog({
                 className="pr-10 cursor-pointer"
               />
 
-              {/* Calendar Icon Button */}
               <CalendarDialog
                 onSelectDate={(d) =>
                   setDueDate(d?.toISOString().slice(0, 10) ?? "")
@@ -305,7 +297,6 @@ export function CreateProjectDialog({
               />
             </div>
           </div>
-          {/* Invite Members */}
           <div className="grid gap-2 pb-2">
             <Label>Invite Members</Label>
             <InviteMembers
@@ -315,7 +306,6 @@ export function CreateProjectDialog({
             />
           </div>
 
-          {/* Validation */}
           {validationIssues && <ValidationAlert issues={validationIssues} />}
         </div>
 
