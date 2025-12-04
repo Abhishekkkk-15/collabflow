@@ -1,6 +1,6 @@
-// lib/notifications/transform.ts
+import { NotificationType } from "@collabflow/types";
 type RawPayload = {
-  event?: string;
+  event?: NotificationType;
   user?: {
     id?: string;
     name?: string;

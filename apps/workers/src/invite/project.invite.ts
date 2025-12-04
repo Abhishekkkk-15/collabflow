@@ -5,6 +5,7 @@ import { connection } from "../"; // bullmq connection config
 import { prisma } from "@collabflow/db";
 import { NotificationType, ProjectRole } from "@collabflow/types";
 import type { User } from "@prisma/client";
+import { transformSocketToNotification } from "../lib/notifPayload";
 
 export const projectInviteQueue = new Queue("projectInviteQueue", {
   connection,
@@ -18,7 +19,7 @@ type ProjectMemberPayload = {
 };
 
 let BULK_PROJECT_MEMBER_STORE: ProjectMemberPayload[] = [];
-const PROJECT_BATCH_SIZE = 5;
+const PROJECT_BATCH_SIZE = 2;
 
 /**
  * Push into in-memory buffer and flush when threshold reached.
@@ -121,21 +122,22 @@ export function startProjectInviteWorker() {
   const worker = new Worker(
     "projectInviteQueue",
     async (job) => {
-      const { project, member, invitedBy } = job.data as {
+      const { project, members, invitedBy } = job.data as {
         project: any; // minimal project info: id, name, slug, workspaceId
-        member: { userId: string; role: ProjectRole; email?: string };
+        members: { userId: string; role: ProjectRole; email?: string };
         invitedBy?: User | null;
       };
+      console.log(project, members, invitedBy.image);
 
       // 1) Enqueue email for this member (if email present)
-      if (member?.email) {
+      if (members?.email) {
         await emailQueue.add(
           "email:project-invite",
           {
-            to: member.email,
+            to: members.email,
             subject: `You're invited to project ${project.name}`,
             projectId: project.id,
-            invitedUserId: member.userId,
+            invitedUserId: members.userId,
             projectName: project.name,
             workspaceId: project.workspaceId,
           },
@@ -146,8 +148,8 @@ export function startProjectInviteWorker() {
       // 2) Buffer project member for batched DB insert
       const payload: ProjectMemberPayload = {
         projectId: project.id,
-        userId: member.userId,
-        role: member.role,
+        userId: members.userId,
+        role: members.role,
       };
       await pushAndMaybeFlushProject(payload);
 
@@ -155,7 +157,7 @@ export function startProjectInviteWorker() {
       // Link to project details (adjust front-end route as needed)
       const notification = await prisma.notification.create({
         data: {
-          userId: member.userId,
+          userId: members.userId,
           actorId: invitedBy?.id ?? null,
           projectId: project.id,
           workspaceId: project.workspaceId ?? null,
@@ -174,6 +176,7 @@ export function startProjectInviteWorker() {
                   id: invitedBy.id,
                   name: invitedBy.name,
                   email: invitedBy.email,
+                  image: invitedBy.image,
                 }
               : null,
           },
@@ -185,8 +188,12 @@ export function startProjectInviteWorker() {
         "socket-events",
         JSON.stringify({
           event: "notification",
-          room: `user:${member.userId}`,
-          payload: notification,
+          room: `user:${members.userId}`,
+          payload: transformSocketToNotification({
+            notification,
+            event: "INVITE",
+            user: invitedBy,
+          }),
         })
       );
     },

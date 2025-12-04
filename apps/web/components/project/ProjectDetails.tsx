@@ -52,7 +52,6 @@ import {
   Loader2,
   Trash,
 } from "lucide-react";
-import { mockProject } from "@/app/dashboard/[workspace]/[project]/mockdata";
 import InviteMemberSheet from "../workspace/InviteMemberSheet";
 
 type Member = {
@@ -96,7 +95,7 @@ export default function ProjectDetails({
     | Project
     | undefined;
 
-  const project = mockProject ?? projectProp ?? storeProject ?? ({} as Project);
+  const project = projectProp ?? storeProject ?? ({} as Project);
   const members = membersProp ?? project.members ?? [];
 
   /* UI state */
@@ -437,7 +436,7 @@ export default function ProjectDetails({
           </div>
 
           <div className="max-h-[56vh] overflow-auto border rounded p-2 space-y-2">
-            {mockProject.members.map((u) => {
+            {project?.members?.map((u) => {
               const selected = selectedInvites.some((s) => s.userId === u.id);
               return (
                 <div

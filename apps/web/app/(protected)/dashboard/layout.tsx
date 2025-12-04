@@ -37,7 +37,6 @@ export default async function DashboardLayout({
     fetchedWorkspaces = res.data;
   } catch (error: any) {
     fetchedWorkspaces = null;
-    console.log("error", error);
   }
 
   // return (

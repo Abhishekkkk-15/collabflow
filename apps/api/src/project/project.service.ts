@@ -42,10 +42,18 @@ export class ProjectService {
           },
         });
 
+        await tx.projectMember.create({
+          data: {
+            projectId: project.id,
+            role: 'OWNER',
+            userId: user.id,
+          },
+        });
+
         this.projectQueue.add('project:create', {
           project,
           members: dto.members,
-          user,
+          invitedBy: user,
         });
 
         return project;
@@ -96,6 +104,16 @@ export class ProjectService {
       where: {
         OR: [{ id }, { slug }],
       },
+      include: {
+        owner: {
+          select: {
+            name: true,
+            image: true,
+            id: true,
+            email: true,
+          },
+        },
+      },
     });
     if (!project) throw new NotFoundException('Project not found');
     return project;
@@ -113,6 +131,7 @@ export class ProjectService {
       where: { slug: slug as string },
       select: { id: true },
     });
+    if (!project) throw new BadRequestException("Project doesn't exit's");
     const count = await prisma.projectMember.count({
       where: {
         projectId: project?.id,
@@ -129,6 +148,7 @@ export class ProjectService {
       },
       take: limit,
     });
+    console.log(project, members);
     if (!members) throw new NotFoundException('Members not found');
     return { members, count };
   }

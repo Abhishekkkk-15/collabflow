@@ -29,6 +29,7 @@ export class CurrentMiddleaware implements NestMiddleware {
         role: decoded.role as string,
         email: decoded.email as string,
         name: decoded.name as string,
+        image: decoded.picture as string,
       };
       req.user = user;
       next();

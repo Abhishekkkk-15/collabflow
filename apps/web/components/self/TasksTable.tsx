@@ -24,8 +24,9 @@ import {
 import { Status, Task, TaskPriority, type User } from "@collabflow/types";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { useSelector } from "react-redux";
+import AddTaskDialog from "../task/AddTaskDialog";
 
-export default function TasksTable() {
+export default function TasksTable({ project }: { project: string }) {
   const user = useSelector((state: any) => state?.user.userRoles);
   console.log("ii", user);
   const [statusFilter, setStatusFilter] = useState("All");
@@ -310,11 +311,26 @@ export default function TasksTable() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
+            {/* <Button
               disabled={user?.role == "USER" || undefined}
               className="bg-primary text-primary-foreground hover:bg-primary/90  flex gap-2">
               <Plus size={16} /> Add Task
-            </Button>
+            </Button> */}
+            <AddTaskDialog
+              visibleFields={visibleFields}
+              project={project}
+              onCreate={(task) => {
+                // parent: insert new task into local list or dispatch Redux action
+                // Example (if tasks is local state):
+                // setTasks(prev => [task, ...prev]);
+                console.log("created task", task);
+              }}
+              // optional create API function:
+              // createApi={async (payload) => {
+              //   const res = await axios.post('/task', payload);
+              //   return res.data;
+              // }}
+            />
           </div>
         </div>
       </div>

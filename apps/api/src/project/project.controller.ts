@@ -9,12 +9,11 @@ import {
   UseGuards,
   Req,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
 import { AuthGuard } from '../common/guards/AuthGuard';
-import { ProjectMemberGuard } from '../common/guards/ProjectMemberGuard';
 import { MemberGuard } from '../common/guards/MemberGuard';
 import { CurrentUser } from '../common/decorator/current-user.decorator';
 import type { User } from '@prisma/client';
@@ -22,15 +21,20 @@ import type { User } from '@prisma/client';
 @Controller('project')
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
-  @Get('project')
+  @Get(':slug/members')
+  getProjectMembers(@Param('slug') slug: string, @Query('limit') limit = 5) {
+    return this.projectService.getProjectMembers(slug, limit);
+  }
+  @Get()
   @UseGuards(AuthGuard, MemberGuard)
   findOne(
     @Query('slug') slug: string,
     @Query('pId') id: string,
     @Req() req: any,
+    @CurrentUser() user: any,
   ) {
-    console.log('got here');
-    console.log(slug, id);
+    if (!slug && !id)
+      throw new BadRequestException('Slug or Project id must be provided');
     return this.projectService.findOne(id, slug, req.user.id);
   }
   @Post()
@@ -47,9 +51,4 @@ export class ProjectController {
   // findAll(@Param('id') workspaceId: string, @Req() req: any) {
   //   return this.projectService.findAll(workspaceId, req.user.id);
   // }
-
-  @Get(':slug/members')
-  getProjectMembers(@Param('slug') slug: string, @Query('limit') limit = 5) {
-    return this.projectService.getProjectMembers(slug, limit);
-  }
 }

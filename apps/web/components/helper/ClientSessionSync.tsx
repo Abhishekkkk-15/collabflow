@@ -4,6 +4,8 @@
 import { useEffect } from "react";
 import { useAppDispatch } from "@/lib/redux/hooks"; // typed hook
 import { setUser, clearUser } from "@/lib/redux/slices/userSlice";
+import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function ClientSessionSync({
   session,
@@ -12,6 +14,7 @@ export default function ClientSessionSync({
   session: any;
   userRoles: any;
 }) {
+  if (!session) return;
   const dispatch = useAppDispatch();
 
   useEffect(() => {

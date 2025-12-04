@@ -12,6 +12,22 @@ export class NotificationService {
       where: {
         userId: user.id,
       },
+      include: {
+        user: {
+          select: {
+            name: true,
+            image: true,
+            email: true,
+          },
+        },
+        actor: {
+          select: {
+            name: true,
+            image: true,
+            email: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },

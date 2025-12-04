@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import type { Notification } from "@prisma/client";
 import { api } from "@/lib/api/api";
 import { useSocket } from "../providers/SocketProvider";
-
+import { User } from "@collabflow/types";
 enum NotificationType {
   GENERAL = "GENERAL",
   INVITE = "INVITE",
@@ -37,7 +37,7 @@ enum NotificationType {
 
 type RawNotif = {
   event: string;
-  payload: Notification;
+  payload: Notification & { actor: any };
 };
 
 type Notif = Notification;
@@ -82,7 +82,9 @@ export default function NotificationDropdown() {
   );
 
   async function fetchNotification() {
-    const notification: Notification[] = (await api.get("/notification")).data;
+    const notification: Notification[] & { actor: any } = (
+      await api.get("/notification")
+    ).data;
     return notification;
   }
 
@@ -125,13 +127,9 @@ export default function NotificationDropdown() {
   }, []);
 
   async function markAsRead(id: string) {
-    // optimistic update locally
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
-
-    // TODO: call API to persist: POST /notifications/:id/mark-read
-    // await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
   }
 
   async function markAllRead() {
@@ -145,17 +143,11 @@ export default function NotificationDropdown() {
 
   function clearAll() {
     setNotifications([]);
-    // optionally call API to clear; usually not required
   }
 
-  // click handler for a notification (navigate if needed)
   function onNotifClick(n: Notif) {
     markAsRead(n.id);
-    // if notification has link, navigate (hook your router here)
     if (n.link) {
-      // example using next/navigation (uncomment if available)
-      // import { useRouter } from "next/navigation"; const router = useRouter();
-      // router.push(n.link);
       window.location.href = n.link;
       return;
     }
