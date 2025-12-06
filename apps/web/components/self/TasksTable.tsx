@@ -1,410 +1,308 @@
 "use client";
-import React, { JSX, use, useState } from "react";
+
+import React, { JSX, useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
+
 import {
+  Filter,
+  Settings,
   ArrowUpDown,
   MoreHorizontal,
-  Filter,
-  Plus,
-  Settings,
   Check,
-  XCircle,
-  CheckCircle2,
-  Clock,
-  Loader2,
   Circle,
+  Loader2,
+  Clock,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
-import { Status, Task, TaskPriority, type User } from "@collabflow/types";
-import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
-import { useSelector } from "react-redux";
+
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Task, TaskPriority, TaskStatus, TaskTag, User } from "@prisma/client";
 import AddTaskDialog from "../task/AddTaskDialog";
 
+interface IExtendedTask extends Task {
+  assignees: { user: User }[];
+}
+
 export default function TasksTable({ project }: { project: string }) {
-  const user = useSelector((state: any) => state?.user.userRoles);
-  console.log("ii", user);
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [tasks, setTasks] = useState<IExtendedTask[]>([]);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [priorityFilter, setPriorityFilter] = useState("ALL");
+
   const [visibleFields, setVisibleFields] = useState<string[]>([
     "id",
     "title",
+    "description",
     "status",
     "priority",
-    "tag",
+    "tags",
+    "dueDate",
+    "assignees",
   ]);
+
   const statuses = [
-    "All",
-    "Todo",
-    "In Progress",
-    "Backlog",
-    "Done",
-    "Canceled",
+    "ALL",
+    "TODO",
+    "IN_PROGRESS",
+    "BACKLOG",
+    "DONE",
+    "CANCELED",
   ];
-  const priorities = ["All", "Low", "Medium", "High"];
-  const tasks: Task[] = [
-    {
-      id: "TASK-8782",
-      tag: "Documentation",
-      title:
-        "You can't compress the program without quantifying the open-source SSD ...",
-      status: "In Progress",
-      priority: "Medium",
-    },
-    {
-      id: "TASK-7878",
-      tag: "Documentation",
-      title:
-        "Try to calculate the EXE feed, maybe it will index the multi-byte pixel!",
-      status: "Backlog",
-      priority: "Medium",
-    },
-    {
-      id: "TASK-7839",
-      tag: "Bug",
-      title: "We need to bypass the neural TCP card!",
-      status: "Todo",
-      priority: "High",
-    },
-    {
-      id: "TASK-5562",
-      tag: "Feature",
-      title:
-        "The SAS interface is down, bypass the open-source pixel so we can back u...",
-      status: "Backlog",
-      priority: "Medium",
-    },
-    {
-      id: "TASK-8686",
-      tag: "Feature",
-      title:
-        "I'll parse the wireless SSL protocol, that should driver the API panel!",
-      status: "Canceled",
-      priority: "Medium",
-    },
-    {
-      id: "TASK-1280",
-      tag: "Bug",
-      title:
-        "Use the digital TLS panel, then you can transmit the haptic system!",
-      status: "Done",
-      priority: "High",
-    },
-    {
-      id: "TASK-7262",
-      tag: "Feature",
-      title:
-        "The UTF8 application is down, parse the neural bandwidth so we can back ...",
-      status: "Done",
-      priority: "High",
-    },
-    {
-      id: "TASK-1138",
-      tag: "Feature",
-      title:
-        "Generating the driver won't do anything, we need to quantify the 1080p SM...",
-      status: "In Progress",
-      priority: "Medium",
-    },
-    {
-      id: "TASK-7184",
-      tag: "Feature",
-      title: "We need to program the back-end THX pixel!",
-      status: "Todo",
-      priority: "Low",
-    },
-  ];
-  const filteredTasks = tasks.filter(
-    (t) =>
-      (statusFilter === "All" || t.status === statusFilter) &&
-      (priorityFilter === "All" || t.priority === priorityFilter)
-  );
-  function FilterChip({
-    label,
-    onRemove,
-  }: {
-    label: string;
-    onRemove: () => void;
-  }) {
-    return (
-      <span
-        className="
-      flex items-center gap-2
-      px-3 py-1.5
-      bg-muted/60
-      text-sm
-      rounded-full border
-      hover:bg-muted
-      transition
-    ">
-        {label}
-        <button
-          onClick={onRemove}
-          className="h-4 w-4 flex items-center justify-center rounded-full 
-                   hover:bg-foreground/10 text-muted-foreground hover:text-foreground">
-          ×
-        </button>
-      </span>
-    );
-  }
-  function toggleField(fieldKey: string) {
+  const priorities = ["ALL", "LOW", "MEDIUM", "HIGH"];
+
+  // Toggle column visibility
+  function toggleField(field: string) {
     setVisibleFields((prev) =>
-      prev.includes(fieldKey)
-        ? prev.filter((f) => f !== fieldKey)
-        : [...prev, fieldKey]
+      prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
     );
   }
+
   const allFields = [
     { key: "id", label: "Task ID" },
-    { key: "tag", label: "Tag" },
     { key: "title", label: "Title" },
+    { key: "description", label: "Description" },
+    { key: "tags", label: "Tags" },
     { key: "status", label: "Status" },
     { key: "priority", label: "Priority" },
+    { key: "dueDate", label: "Due Date" },
+    { key: "assignees", label: "Assigned To" },
   ];
 
-  const statusIcons: Record<Status, JSX.Element> = {
-    Todo: (
+  // Status Icons
+  const statusIcons: Record<TaskStatus, JSX.Element> = {
+    TODO: (
       <span className="flex items-center gap-2">
         <Circle className="h-3 w-3 text-gray-400" /> Todo
       </span>
     ),
-    "In Progress": (
+    IN_PROGRESS: (
       <span className="flex items-center gap-2">
         <Loader2 className="h-3 w-3 text-blue-500 animate-spin" /> In Progress
       </span>
     ),
-    Backlog: (
+    BLOCKED: (
       <span className="flex items-center gap-2">
         <Clock className="h-3 w-3 text-orange-500" /> Backlog
       </span>
     ),
-    Done: (
+    DONE: (
       <span className="flex items-center gap-2">
         <CheckCircle2 className="h-3 w-3 text-green-500" /> Done
       </span>
     ),
-    Canceled: (
+    REVIEW: (
       <span className="flex items-center gap-2">
         <XCircle className="h-3 w-3 text-red-500" /> Canceled
       </span>
     ),
   };
 
+  // Tag Colors
+  const tagColors: Record<TaskTag, string> = {
+    BUG: "bg-red-100 text-red-700 border-red-200",
+    FEATURE: "bg-purple-100 text-purple-700 border-purple-200",
+    IMPROVEMENT: "bg-blue-100 text-blue-700 border-blue-200",
+    REFACTOR: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    DESIGN: "bg-pink-100 text-pink-700 border-pink-200",
+    DOCUMENTATION: "bg-gray-100 text-gray-700 border-gray-200",
+    FRONTEND: "bg-green-100 text-green-700 border-green-200",
+    BACKEND: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    DATABASE: "bg-orange-100 text-orange-700 border-orange-200",
+    SECURITY: "bg-rose-100 text-rose-700 border-rose-200",
+    PERFORMANCE: "bg-teal-100 text-teal-700 border-teal-200",
+  };
+
+  const filteredTasks = tasks.filter((t) => {
+    const matchStatus = statusFilter === "ALL" || t.status === statusFilter;
+    const matchPriority =
+      priorityFilter === "ALL" || t.priority === priorityFilter;
+    return matchStatus && matchPriority;
+  });
+
   return (
     <div>
-      <div className="p-4 w-full bg-background text-foreground">
-        {/* Top Bar */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex gap-2 items-center">
-            <Input placeholder="Filter tasks..." className="w-64" />
-            {/* <Button variant="outline" className="flex gap-2"><Filter size={16}/> Status</Button>
-           {/* STATUS DROPDOWN */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="flex gap-2 rounded-md shadow-sm">
-                  <Filter size={16} /> Status
-                </Button>
-              </DropdownMenuTrigger>
+      {/* ---------------------- TOP TOOLBAR ---------------------- */}
+      <div className="p-4 flex justify-between items-center">
+        {/* LEFT: filter area */}
+        <div className="flex gap-2 items-center">
+          <Input placeholder="Filter tasks..." className="w-64" />
 
-              <DropdownMenuContent
-                align="start"
-                sideOffset={4}
-                className="w-40 rounded-lg p-1 shadow-lg border bg-popover">
-                {statuses.map((s) => (
-                  <DropdownMenuItem
-                    key={s}
-                    onClick={() => setStatusFilter(s)}
-                    className={`
-          flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
-          hover:bg-muted hover:text-foreground transition
-          ${statusFilter === s ? "bg-muted text-foreground" : ""}
-        `}>
-                    {s}
-                    {statusFilter === s && <Check className="h-4 w-4" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+          {/* Status Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex gap-2">
+                <Filter size={16} /> Status
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-40 p-1">
+              {statuses.map((s) => (
+                <div
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={`px-3 py-2 text-sm rounded-md cursor-pointer 
+                  hover:bg-muted flex justify-between
+                  ${statusFilter === s ? "bg-muted" : ""}`}>
+                  {s}
+                  {statusFilter === s && <Check size={14} />}
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-            {/* PRIORITY DROPDOWN */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="flex gap-2 rounded-md shadow-sm">
-                  <Filter size={16} /> Priority
-                </Button>
-              </DropdownMenuTrigger>
+          {/* Priority Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex gap-2">
+                <Filter size={16} /> Priority
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-40 p-1">
+              {priorities.map((p) => (
+                <div
+                  key={p}
+                  onClick={() => setPriorityFilter(p)}
+                  className={`px-3 py-2 text-sm rounded-md cursor-pointer hover:bg-muted flex justify-between
+                  ${priorityFilter === p ? "bg-muted" : ""}`}>
+                  {p}
+                  {priorityFilter === p && <Check size={14} />}
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-              <DropdownMenuContent
-                align="start"
-                sideOffset={4}
-                className="w-40 rounded-lg p-1 shadow-lg border bg-popover">
-                {priorities.map((p) => (
-                  <DropdownMenuItem
-                    key={p}
-                    onClick={() => setPriorityFilter(p)}
-                    className={`
-          flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
-          hover:bg-muted hover:text-foreground transition
-          ${priorityFilter === p ? "bg-muted text-foreground" : ""}
-        `}>
-                    {p}
-                    {priorityFilter === p && <Check className="h-4 w-4" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/* ACTIVE FILTER CHIPS */}
-            {/* ACTIVE FILTER CHIPS */}
-            <div className="flex gap-2 mt-1">
-              {statusFilter !== "All" && (
-                <FilterChip
-                  label={`Status: ${statusFilter}`}
-                  onRemove={() => setStatusFilter("All")}
-                />
-              )}
+        {/* RIGHT: Add + View */}
+        <div className="flex gap-2">
+          {/* Column Visibility */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex gap-2">
+                <Settings size={16} /> View
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48 p-1">
+              {allFields.map((f) => (
+                <div
+                  key={f.key}
+                  className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-muted"
+                  onClick={() => toggleField(f.key)}>
+                  <Checkbox checked={visibleFields.includes(f.key)} />
+                  {f.label}
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-              {priorityFilter !== "All" && (
-                <FilterChip
-                  label={`Priority: ${priorityFilter}`}
-                  onRemove={() => setPriorityFilter("All")}
-                />
-              )}
-            </div>
-            {/* <Button variant="outline" className="flex gap-2"><Filter size={16}/> Priority</Button> */}
-          </div>
-          <div className="flex items-center gap-2">
-            {/* <Button  variant="outline" className="flex gap-2"><Settings size={16}/> View</Button>
-             */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="flex gap-2 rounded-md shadow-sm">
-                  <Settings size={16} /> View
-                </Button>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent
-                align="end"
-                sideOffset={8}
-                className="w-48 rounded-lg p-1 shadow-lg border bg-popover">
-                {allFields.map((f) => (
-                  <DropdownMenuItem
-                    key={f.key}
-                    onClick={() => toggleField(f.key)}
-                    className={`
-          flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer
-          hover:bg-muted hover:text-foreground transition
-        `}>
-                    <Checkbox checked={visibleFields.includes(f.key)} />
-                    <span className="text-sm">{f.label}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/* <Button
-              disabled={user?.role == "USER" || undefined}
-              className="bg-primary text-primary-foreground hover:bg-primary/90  flex gap-2">
-              <Plus size={16} /> Add Task
-            </Button> */}
-            <AddTaskDialog
-              visibleFields={visibleFields}
-              project={project}
-              onCreate={(task) => {
-                // parent: insert new task into local list or dispatch Redux action
-                // Example (if tasks is local state):
-                // setTasks(prev => [task, ...prev]);
-                console.log("created task", task);
-              }}
-              // optional create API function:
-              // createApi={async (payload) => {
-              //   const res = await axios.post('/task', payload);
-              //   return res.data;
-              // }}
-            />
-          </div>
+          <AddTaskDialog
+            projectId={project}
+            onCreate={(task) => setTasks((prev) => [task, ...prev])}
+          />
         </div>
       </div>
 
-      {/* Table */}
+      {/* ---------------------- TABLE ---------------------- */}
       <div className="border rounded-md overflow-hidden">
         <table className="w-full text-sm">
-          <thead className=" top-0  bg-muted/60 text-muted-foreground text-xs uppercase tracking-wide font-medium border-b">
+          <thead className="bg-muted/40 text-muted-foreground uppercase text-xs border-b">
             <tr>
-              <th className="p-3 text-left align-middle w-[48px]">
-                <div className="flex items-center justify-center">
-                  <Checkbox />
-                </div>
+              <th className="p-3 w-[40px]">
+                <Checkbox />
               </th>
-              {visibleFields.includes("id") && (
-                <th className="p-3 text-left align-middle w-[140px]">
-                  <div className="whitespace-nowrap">Task</div>
-                </th>
-              )}
+              {visibleFields.includes("id") && <th className="p-3">ID</th>}
               {visibleFields.includes("title") && (
-                <th className="p-3 text-left align-middle">
-                  <div className="whitespace-nowrap">Title</div>
-                </th>
+                <th className="p-3">Title</th>
               )}
+              {visibleFields.includes("description") && (
+                <th className="p-3">Description</th>
+              )}
+              {visibleFields.includes("tags") && <th className="p-3">Tags</th>}
               {visibleFields.includes("status") && (
-                <th className="p-3 text-left align-middle cursor-pointer w-[140px]">
-                  <div className="flex items-center gap-2 whitespace-nowrap">
-                    <span>Status</span>
-                    <ArrowUpDown size={14} />
-                  </div>
-                </th>
+                <th className="p-3">Status</th>
               )}
               {visibleFields.includes("priority") && (
-                <th className="p-3 text-left align-middle cursor-pointer w-[110px]">
-                  <div className="flex items-center gap-2 whitespace-nowrap">
-                    <span>Priority</span>
-                    <ArrowUpDown size={14} />
-                  </div>
-                </th>
+                <th className="p-3">Priority</th>
               )}
-              <th className="p-3 w-[56px]" />
+              {visibleFields.includes("dueDate") && (
+                <th className="p-3">Due</th>
+              )}
+              {visibleFields.includes("assignees") && (
+                <th className="p-3">Assigned</th>
+              )}
+              <th className="p-3 w-[50px]"></th>
             </tr>
           </thead>
 
           <tbody>
             {filteredTasks.map((task) => (
-              <tr
-                key={task.id}
-                className="border-t hover:bg-muted/20 transition">
+              <tr key={task.id} className="border-t hover:bg-muted/20">
                 <td className="p-3">
                   <Checkbox />
                 </td>
-                {visibleFields.includes("id") && (
-                  <td className="p-3 font-medium">{task.id}</td>
-                )}
 
-                <td className="p-3 max-w-xl truncate flex items-center gap-2">
-                  {visibleFields.includes("tag") && (
-                    <span className="text-xs px-2 py-1 rounded-full bg-muted/50 border">
-                      {task.tag}
-                    </span>
-                  )}
-                  {visibleFields.includes("title") && task.title}
-                </td>
-                {visibleFields.includes("status") && (
-                  <td className="p-3">
-                    <span className="flex items-center ">
-                      <div className="w-2 h-2  rounded-full" />
-                      {statusIcons[task.status]}
-                    </span>
+                {visibleFields.includes("id") && (
+                  <td className="p-3 font-medium">
+                    TASK-{task.id.slice(-4).toUpperCase()}
                   </td>
                 )}
+
+                {visibleFields.includes("title") && (
+                  <td className="p-3">{task.title}</td>
+                )}
+
+                {visibleFields.includes("description") && (
+                  <td className="p-3 max-w-[300px] truncate">
+                    {task.description}
+                  </td>
+                )}
+
+                {visibleFields.includes("tags") && (
+                  <td className="p-3 space-x-1">
+                    {task.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className={`px-2 py-0.5 rounded-md text-xs border ${tagColors[tag]}`}>
+                        {tag}
+                      </span>
+                    ))}
+                  </td>
+                )}
+
+                {visibleFields.includes("status") && (
+                  <td className="p-3">{statusIcons[task.status]}</td>
+                )}
+
                 {visibleFields.includes("priority") && (
                   <td className="p-3">{task.priority}</td>
+                )}
+
+                {visibleFields.includes("dueDate") && (
+                  <td className="p-3 text-muted-foreground">
+                    {task.dueDate
+                      ? new Date(task.dueDate).toLocaleDateString()
+                      : "—"}
+                  </td>
+                )}
+
+                {visibleFields.includes("assignees") && (
+                  <td className="p-3">
+                    <div className="flex -space-x-2">
+                      {task.assignees.map((a) => (
+                        <Avatar
+                          key={a.user.id}
+                          className="h-6 w-6 border rounded-full">
+                          <AvatarImage src={a.user.image ?? ""} />
+                          <AvatarFallback>{a.user.name?.[0]}</AvatarFallback>
+                        </Avatar>
+                      ))}
+                    </div>
+                  </td>
                 )}
 
                 <td className="p-3">
@@ -414,9 +312,13 @@ export default function TasksTable({ project }: { project: string }) {
                         <MoreHorizontal size={16} />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <p className="px-2 py-1 text-sm">Edit</p>
-                      <p className="px-2 py-1 text-sm">Delete</p>
+                    <DropdownMenuContent align="end" className="p-1">
+                      <div className="px-2 py-1 text-sm hover:bg-muted rounded">
+                        Edit
+                      </div>
+                      <div className="px-2 py-1 text-sm hover:bg-muted rounded">
+                        Delete
+                      </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>

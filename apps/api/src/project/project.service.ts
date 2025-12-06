@@ -127,6 +127,7 @@ export class ProjectService {
     return `This action removes a #${id} project`;
   }
   async getProjectMembers(slug: string, limit: number) {
+    console.log(slug);
     const project = await prisma.project.findFirst({
       where: { slug: slug as string },
       select: { id: true },
@@ -148,7 +149,6 @@ export class ProjectService {
       },
       take: limit,
     });
-    console.log(project, members);
     if (!members) throw new NotFoundException('Members not found');
     return { members, count };
   }

@@ -30,6 +30,11 @@ model User {
   ownedProjects        Project[]         @relation("projectOwner") 
   notifications        Notification[] 
   sentNotification  Notification[]     @relation("NotificationActor")
+taskAssignments  TaskAssignee[]
+  createdTasks  Task[] @relation("TaskCreator")
+  taskComments TaskComment[]
+  taskActivities TaskActivity[]
+
 }
 
 model Account {
@@ -68,7 +73,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Workspace models
 
 model Workspace {
   id          String   @id @default(cuid())
@@ -87,6 +91,9 @@ model Workspace {
   priority    Priority @default(LOW) 
 
   notifications Notification[]
+
+  tasks Task[]
+
 
   @@index([ownerId])
   @@index([slug])
@@ -132,8 +139,9 @@ model Project {
   workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   members       ProjectMember[]
   notifications Notification[]
-  // attach arbitrary json for settings, extra data
   meta          Json?
+
+tasks Task[]
 
   @@index([workspaceId])
   @@index([ownerId])
@@ -172,7 +180,6 @@ enum ProjectStatus {
   ARCHIVED
 }
 
-// nOTIFICATION MODEL   
 model Notification {
   id          String           @id @default(cuid())
   
@@ -222,4 +229,113 @@ enum Priority {
   HIGH
   LOW 
   MEDIUM
+}
+
+model Task {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus    @default(TODO)
+  priority    TaskPriority  @default(MEDIUM)
+  tags        TaskTag[]   
+  dueDate     DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  creatorId   String
+  creator     User          @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  workspaceId String
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  projectId   String?
+  project     Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assignees   TaskAssignee[]  
+  attachments TaskAttachment[]
+  comments    TaskComment[]
+  activities TaskActivity[]
+
+  @@index([workspaceId])
+  @@index([projectId])
+  @@index([creatorId])
+  @@index([status])
+  @@index([priority])
+}
+
+model TaskAssignee {
+  id      String @id @default(cuid())
+  taskId  String
+  userId  String
+  assignedAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId]) 
+  @@index([userId])
+}
+
+model TaskAttachment {
+  id        String @id @default(cuid())
+  taskId    String
+  url       String
+  name      String?
+  fileType  String?
+  uploadedAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model TaskComment {
+  id        String @id @default(cuid())
+  taskId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TaskActivity {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String?
+  field     String?  
+  oldValue  String?
+  newValue  String?
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+  BLOCKED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskTag {
+  BUG
+  FEATURE
+  IMPROVEMENT
+  REFACTOR
+  DESIGN
+  DOCUMENTATION
+  FRONTEND
+  BACKEND
+  DATABASE
+  SECURITY
+  PERFORMANCE
 }

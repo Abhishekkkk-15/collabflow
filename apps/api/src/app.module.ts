@@ -10,6 +10,7 @@ import { NextFunction } from 'express';
 import { CurrentMiddleaware } from './common/middleware/current-user.middleware';
 import { QueuesModule } from './queues/queues.module';
 import { BullModule } from '@nestjs/bullmq';
+import { TaskModule } from './task/task.module';
 @Module({
   imports: [
     WorkspaceModule,
@@ -19,6 +20,7 @@ import { BullModule } from '@nestjs/bullmq';
     WebsocketModule,
     QueuesModule,
     BullModule,
+    TaskModule,
   ],
   controllers: [AppController],
   providers: [AppService],

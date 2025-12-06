@@ -15,6 +15,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 import {
   Select,
@@ -24,134 +30,175 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 import { Plus, Loader2, Check } from "lucide-react";
 
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-
 import type {
-  Task,
-  Status as TStatus,
+  TaskStatus,
   TaskPriority,
+  TaskTag,
   User,
 } from "@collabflow/types";
+
 import { api } from "@/lib/api/api";
+import { useParams } from "next/navigation";
+import {
+  useActiveProject,
+  useWorkspace,
+} from "@/lib/redux/hooks/use-workspaces";
 
-type AddTaskDialogProps = {
-  visibleFields: string[];
-  onCreate?: (task: Task) => void;
-  createApi?: (payload: Partial<Task>) => Promise<Task>;
-  project: string;
-};
+// ----------------------------------------
+// CONSTANTS (mirrors your Prisma enums)
+// ----------------------------------------
 
-const DEFAULT_STATUSES: TStatus[] = [
-  "Todo",
-  "In Progress",
-  "Backlog",
-  "Done",
-  "Canceled",
+const STATUSES: TaskStatus[] = [
+  "TODO",
+  "IN_PROGRESS",
+  "REVIEW",
+  "DONE",
+  "BLOCKED",
+];
+const PRIORITIES: TaskPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
+const TAGS: TaskTag[] = [
+  "BUG",
+  "FEATURE",
+  "IMPROVEMENT",
+  "REFACTOR",
+  "DESIGN",
+  "DOCUMENTATION",
+  "FRONTEND",
+  "BACKEND",
+  "DATABASE",
+  "SECURITY",
 ];
 
-const DEFAULT_PRIORITIES: TaskPriority[] = ["Low", "Medium", "High"];
+type AddTaskDialogProps = {
+  projectId: string;
+  onCreate?: (t: any) => void;
+};
 
 export default function AddTaskDialog({
-  visibleFields,
+  projectId,
   onCreate,
-  createApi,
-  project,
 }: AddTaskDialogProps) {
   const [open, setOpen] = useState(false);
-  const [members, setMembers] = useState<any[]>([]);
+
+  // Form state
   const [title, setTitle] = useState("");
-  const [tag, setTag] = useState("");
   const [description, setDescription] = useState("");
 
-  const [status, setStatus] = useState<TStatus>("Todo");
-  const [priority, setPriority] = useState<TaskPriority>("Medium");
+  const [status, setStatus] = useState<TaskStatus>("TODO");
+  const [priority, setPriority] = useState<TaskPriority>("MEDIUM");
+  const [dueDate, setDueDate] = useState<Date | undefined>();
 
-  const [assignedTo, setAssignedTo] = useState<User[]>([]);
-  const [openMembersPopover, setOpenMembers] = useState(false);
+  const [tags, setTags] = useState<TaskTag[]>([]);
+  const [members, setMembers] = useState<User[]>([]);
+  const [assignees, setAssignees] = useState<User[]>([]);
+
+  const [openMemberSelect, setOpenMemberSelect] = useState(false);
+  const [openTagSelect, setOpenTagSelect] = useState(false);
 
   const [loading, setLoading] = useState(false);
-  const taskRef = useRef(Math.floor(Math.random() * 900 + 1000));
-  const showId = visibleFields.includes("id");
-  const showTag = visibleFields.includes("tag");
-  const showTitle = visibleFields.includes("title");
-  const showStatus = visibleFields.includes("status");
-  const showPriority = visibleFields.includes("priority");
 
-  async function fetchProjectUsers() {
-    try {
-      return (await api.get(`/project/${project}/members`)).data;
-    } catch (error) {
-      return [];
-    }
-  }
+  const taskTempId = uuidv4();
+  const { workspace } = useParams();
+  const ws = useWorkspace(workspace?.toString());
+  const proj = useActiveProject();
 
-  /** toggle multi-select */
-  function toggleUser(u: User) {
-    const exists = assignedTo.some((x) => x.id === u.id);
-    if (exists) {
-      setAssignedTo((prev) => prev.filter((x) => x.id !== u.id));
-    } else {
-      setAssignedTo((prev) => [...prev, u]);
-    }
-  }
+  // ----------------------------------------
+  // Fetch project members
+  // ----------------------------------------
 
   useEffect(() => {
     (async () => {
-      let m = await fetchProjectUsers();
-      console.log("m", m.members);
-      setMembers(m.members);
+      try {
+        console.log("project id", projectId);
+        const res = await api.get(`/project/${projectId}/members`);
+        setMembers(res.data.members.map((m: any) => m.user));
+        console.log(res);
+      } catch (_) {}
     })();
-  }, []);
+  }, [projectId]);
+
+  // ----------------------------------------
+  // Toggle tags (multi-select)
+  // ----------------------------------------
+
+  function toggleTag(tag: TaskTag) {
+    setTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  }
+
+  // ----------------------------------------
+  // Toggle assignees (multi-select)
+  // ----------------------------------------
+
+  function toggleAssignee(u: User) {
+    setAssignees((prev) =>
+      prev.some((x) => x.id === u.id)
+        ? prev.filter((x) => x.id !== u.id)
+        : [...prev, u]
+    );
+  }
 
   function reset() {
     setTitle("");
-    setTag("");
     setDescription("");
-    setAssignedTo([]);
-    setStatus("Todo");
-    setPriority("Medium");
+    setStatus("TODO");
+    setPriority("MEDIUM");
+    setTags([]);
+    setAssignees([]);
+    setDueDate(undefined);
   }
 
+  // ----------------------------------------
+  // Handle submit
+  // ----------------------------------------
+
   async function handleSubmit() {
-    if (showTitle && !title.trim()) {
-      alert("Title required");
+    if (!title.trim()) {
+      alert("Title is required");
       return;
     }
 
     setLoading(true);
 
+    const payload = {
+      id: taskTempId,
+      title,
+      description,
+      status,
+      priority,
+      tags,
+      assignedTo: assignees.map((u) => u.id),
+      dueDate: dueDate ?? null,
+      projectId: proj?.id,
+      workspaceId: ws?.id,
+    };
+
+    console.log(payload);
+
     try {
-      const newTask: Task = {
-        id: taskRef.current.toString(),
-        title,
-        tag,
-        description,
-        status,
-        priority,
-        assignedTo: assignedTo.map((u) => u.id),
-      };
-
-      let created = newTask;
-      if (createApi) created = await createApi(newTask);
-
-      onCreate?.(created);
+      const res = await api.post("/task", {
+        ...payload,
+      });
+      console.log(res);
+      onCreate?.(res.data);
       reset();
       setOpen(false);
     } catch (err) {
       console.error(err);
-      alert("Failed to create");
+      alert("Task creation failed");
     } finally {
       setLoading(false);
     }
   }
+
+  // ----------------------------------------
+  // UI
+  // ----------------------------------------
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -167,28 +214,16 @@ export default function AddTaskDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Task ID */}
-          {showId && (
-            <p className="text-xs text-muted-foreground">
-              ID:{" "}
-              <span className="font-mono">{`TASK-${Math.floor(
-                Math.random() * 90000 + 1000
-              )}`}</span>
-            </p>
-          )}
-
           {/* Title */}
-          {showTitle && (
-            <div className="grid gap-1">
-              <label className="text-xs font-medium">Title</label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Fix login error"
-                autoFocus
-              />
-            </div>
-          )}
+          <div className="grid gap-1">
+            <label className="text-xs font-medium">Title</label>
+            <Input
+              placeholder="Implement search bar..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              autoFocus
+            />
+          </div>
 
           {/* Description */}
           <div className="grid gap-1">
@@ -201,75 +236,97 @@ export default function AddTaskDialog({
             />
           </div>
 
-          {/* Tag */}
-          {showTag && (
-            <div className="grid gap-1">
-              <label className="text-xs font-medium">Tag</label>
-              <Input
-                placeholder="Feature, Bug, Docs..."
-                value={tag}
-                onChange={(e) => setTag(e.target.value)}
-              />
-            </div>
-          )}
-
-          {/* Assigned To */}
+          {/* Tags */}
           <div className="grid gap-1">
-            <label className="text-xs font-medium">Assigned To</label>
+            <label className="text-xs font-medium">Tags</label>
 
-            <Popover open={openMembersPopover} onOpenChange={setOpenMembers}>
+            <Popover open={openTagSelect} onOpenChange={setOpenTagSelect}>
               <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="flex min-h-[38px] items-center gap-2 w-full rounded-md border px-3 py-2 text-sm hover:bg-accent">
-                  {assignedTo.length === 0 ? (
-                    <span className="text-muted-foreground">Select users…</span>
+                <button className="flex flex-wrap min-h-[38px] gap-1 rounded-md border px-3 py-2 text-sm hover:bg-accent">
+                  {tags.length === 0 ? (
+                    <span className="text-muted-foreground">Select tags…</span>
                   ) : (
-                    <div className="flex flex-wrap gap-1">
-                      {assignedTo.map((u) => (
-                        <div
-                          key={u.id}
-                          className="flex items-center gap-1 bg-muted border px-2 py-0.5 rounded-full text-xs">
-                          <Avatar className="h-4 w-4">
-                            <AvatarImage src={u.image || ""} />
-                            <AvatarFallback>{u.name?.[0]}</AvatarFallback>
-                          </Avatar>
-                          {u.name}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleUser(u);
-                            }}
-                            className="text-muted-foreground hover:text-foreground">
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                    tags.map((t) => (
+                      <span
+                        key={t}
+                        className="px-2 py-1 bg-muted border rounded-full text-xs">
+                        {t}
+                      </span>
+                    ))
                   )}
                 </button>
               </PopoverTrigger>
 
-              <PopoverContent className="w-full p-2 space-y-1 ">
-                {members!.map((m) => {
-                  const selected = assignedTo.some((u) => u.id === m.id);
-
+              <PopoverContent className="p-2 w-full space-y-1">
+                {TAGS.map((t) => {
+                  const selected = tags.includes(t);
                   return (
                     <div
-                      key={m?.user?.id}
-                      onClick={() => toggleUser(m?.user)}
-                      className={`flex items-center gap-3 w-full px-2 py-2 rounded-md cursor-pointer hover:bg-muted transition  ${
+                      key={t}
+                      onClick={() => toggleTag(t)}
+                      className={`flex justify-between items-center px-2 py-2 rounded cursor-pointer hover:bg-muted ${
+                        selected ? "bg-muted" : ""
+                      }`}>
+                      {t}
+                      {selected && <Check className="h-4 w-4 text-primary" />}
+                    </div>
+                  );
+                })}
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Assignees */}
+          <div className="grid gap-1">
+            <label className="text-xs font-medium">Assigned To</label>
+
+            <Popover open={openMemberSelect} onOpenChange={setOpenMemberSelect}>
+              <PopoverTrigger asChild>
+                <button className="flex flex-wrap min-h-[38px] gap-2 border px-3 py-2 rounded-md text-sm hover:bg-accent">
+                  {assignees.length === 0 ? (
+                    <span className="text-muted-foreground">Select users…</span>
+                  ) : (
+                    assignees.map((u) => (
+                      <div
+                        key={u.id}
+                        className="flex items-center gap-1 px-2 py-1 border rounded-full bg-muted text-xs">
+                        <Avatar className="h-4 w-4">
+                          <AvatarImage src={u.image ?? ""} />
+                          <AvatarFallback>{u.name?.[0]}</AvatarFallback>
+                        </Avatar>
+                        {u.name}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleAssignee(u);
+                          }}>
+                          ×
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </button>
+              </PopoverTrigger>
+
+              <PopoverContent className="p-2 w-full space-y-1">
+                {members.map((u) => {
+                  const selected = assignees.some((x) => x.id === u.id);
+                  return (
+                    <div
+                      key={u.id}
+                      onClick={() => toggleAssignee(u)}
+                      className={`flex items-center gap-3 px-2 py-2 cursor-pointer hover:bg-muted rounded ${
                         selected ? "bg-muted" : ""
                       }`}>
                       <Avatar className="h-7 w-7">
-                        <AvatarImage src={m?.user?.image ?? ""} />
-                        <AvatarFallback>{m?.user?.name?.[0]}</AvatarFallback>
+                        <AvatarImage src={u.image ?? ""} />
+                        <AvatarFallback>{u.name?.[0]}</AvatarFallback>
                       </Avatar>
 
-                      <div className="flex-1">{m?.user?.name}</div>
+                      <div className="flex-1">{u.name}</div>
 
                       <div
-                        className={`border h-4 w-4 flex items-center justify-center rounded-sm ${
+                        className={`h-4 w-4 border rounded-sm flex items-center justify-center ${
                           selected ? "bg-primary border-primary" : ""
                         }`}>
                         {selected && (
@@ -283,47 +340,65 @@ export default function AddTaskDialog({
             </Popover>
           </div>
 
-          {/* Status & Priority */}
-          <div className="grid grid-cols-2 gap-2">
-            {showStatus && (
-              <div className="grid gap-1 w-full">
-                <label className="text-xs font-medium">Status</label>
-                <Select
-                  value={status}
-                  onValueChange={(v) => setStatus(v as TStatus)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DEFAULT_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          {/* Status + Priority */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1">
+              <label className="text-xs font-medium">Status</label>
+              <Select
+                value={status}
+                onValueChange={(v) => setStatus(v as TaskStatus)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            {showPriority && (
-              <div className="grid gap-1 w-full">
-                <label className="text-xs font-medium">Priority</label>
-                <Select
-                  value={priority}
-                  onValueChange={(v) => setPriority(v as TaskPriority)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DEFAULT_PRIORITIES.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="grid gap-1">
+              <label className="text-xs font-medium">Priority</label>
+              <Select
+                value={priority}
+                onValueChange={(v) => setPriority(v as TaskPriority)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Due Date */}
+          <div className="grid gap-1">
+            <label className="text-xs font-medium">Due Date</label>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="justify-start w-full">
+                  {dueDate ? dueDate.toDateString() : "Select due date"}
+                </Button>
+              </PopoverTrigger>
+
+              <PopoverContent>
+                <Calendar
+                  mode="single" // ✅ IMPORTANT
+                  selected={dueDate} // now valid
+                  onSelect={setDueDate} // now valid
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
@@ -335,7 +410,7 @@ export default function AddTaskDialog({
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="animate-spin h-4 w-4" /> Creating
+                <Loader2 className="animate-spin h-4 w-4" /> Creating…
               </span>
             ) : (
               "Create"
