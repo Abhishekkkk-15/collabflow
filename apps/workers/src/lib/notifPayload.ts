@@ -73,7 +73,7 @@ export function transformSocketToNotification(
   }
 ): NotificationOut {
   const event = (raw.event || raw?.typemessage || "").toString().toUpperCase();
-  const actor = raw.user || opts?.invitedBy || null;
+  const actor = opts?.invitedBy || raw.user || null;
   const recipient =
     opts?.recipientUserId ?? raw.mentionedUser ?? raw.toUserId ?? null;
 
@@ -126,8 +126,8 @@ export function transformSocketToNotification(
 
     case "TASK_ASSIGNED":
       type = "TASK_ASSIGNED";
-      title = raw.title ?? `Task assigned by ${actor?.name ?? "someone"}`;
-      body = raw.text ?? raw.body ?? "";
+      title = `Task assigned by ${actor?.name ?? "someone"}`;
+      body = raw.title ?? raw.body ?? "";
       break;
 
     case "TASK_UPDATED":

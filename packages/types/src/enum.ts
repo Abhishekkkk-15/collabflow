@@ -9,7 +9,7 @@ export type NotificationType =
   | "TASK_UPDATED"
   | "PROJECT_UPDATED"
   | "SYSTEM";
-export type Status = "Todo" | "In Progress" | "Backlog" | "Done" | "Canceled";
+export type Status = "Todo" | "In Progress" | "Blocked" | "Done" | "Canceled";
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE" | "BLOCKED";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -28,9 +28,9 @@ export type TaskTag =
 export enum ETaskStatus {
   TODO = "TODO",
   IN_PROGRESS = "IN_PROGRESS",
-  BACKLOG = "BACKLOG",
+  BLOCKED = "BLOCKED",
   DONE = "DONE",
-  CANCELED = "CANCELED",
+  REVIEW = "REVIEW",
 }
 
 export enum ETaskPriority {

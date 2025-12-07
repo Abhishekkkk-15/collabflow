@@ -7,5 +7,6 @@ import { QueuesModule } from '../queues/queues.module';
   controllers: [ProjectController],
   providers: [ProjectService],
   imports: [QueuesModule],
+  exports: [ProjectService],
 })
 export class ProjectModule {}

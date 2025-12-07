@@ -39,6 +39,9 @@ export class ProjectService {
             workspaceId: dto.workspaceId,
             ownerId: user.id,
             dueDate: dto.dueDate,
+            priority: dto.priority,
+            status: dto.status,
+            isArchived: dto.status === 'ARCHIVED',
           },
         });
 
@@ -94,12 +97,12 @@ export class ProjectService {
       if (!projects) {
         throw new NotFoundException('Pojects not found');
       }
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
 
-  async findOne(id: string, slug: string, userId: string) {
+  async findOne(id: string, slug: string) {
     const project = await prisma.project.findFirst({
       where: {
         OR: [{ id }, { slug }],
@@ -119,13 +122,36 @@ export class ProjectService {
     return project;
   }
 
-  update(id: number, updateProjectDto: UpdateProjectDto) {
-    return `This action updates a #${id} project`;
+  async update(slug: string, uDto: UpdateProjectDto) {
+    try {
+      const proj = await this.findOne('', slug);
+      if (!proj) throw new NotFoundException('Project not found');
+
+      const { members, workspaceId, ...allowedFields } = uDto;
+
+      return prisma.project.update({
+        where: { id: proj.id },
+        data: allowedFields,
+      });
+    } catch (err: any) {
+      if (err.code === 'P2025') {
+        throw new NotFoundException('Project not found');
+      }
+      throw err;
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} project`;
+  async remove(slug: string) {
+    const proj = await this.findOne('', slug);
+    if (!proj) throw new NotFoundException('Not found');
+    await prisma.project.delete({
+      where: {
+        id: proj.id,
+      },
+    });
+    return { message: 'Done' };
   }
+
   async getProjectMembers(slug: string, limit: number) {
     console.log(slug);
     const project = await prisma.project.findFirst({

@@ -29,7 +29,7 @@ export class NotificationController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.notificationService.findOne(+id);
+    return this.notificationService.findOne(id);
   }
 
   @Patch('')
@@ -37,8 +37,8 @@ export class NotificationController {
     return this.notificationService.markAsRead(user);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.notificationService.remove(+id);
+  @Delete('')
+  remove(@Body() body: { ids: string[] }) {
+    return this.notificationService.remove(body.ids);
   }
 }

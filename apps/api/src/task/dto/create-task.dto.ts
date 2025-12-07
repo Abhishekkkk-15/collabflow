@@ -8,8 +8,12 @@ import {
   IsDateString,
 } from 'class-validator';
 
-import { ETaskStatus, ETaskPriority, ETaskTag } from '@collabflow/types';
-
+import {
+  ETaskStatus,
+  ETaskPriority,
+  ETaskTag,
+  TaskStatus,
+} from '@collabflow/types';
 export class CreateTaskDto {
   @IsString()
   @IsNotEmpty()

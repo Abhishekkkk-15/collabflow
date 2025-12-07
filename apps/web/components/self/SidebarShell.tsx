@@ -35,6 +35,7 @@ import {
 } from "@/lib/redux/hooks/use-user";
 import { AUTHORIZED_ROLES, type PROJECT_ROLE_VALUES } from "@collabflow/types";
 import { CreateProjectDialog } from "./CreateProjectDialog";
+import Link from "next/link";
 function SidebarShell({
   children,
   fetchedWorkspaces,
@@ -127,6 +128,19 @@ function SidebarShell({
                           {normalizeString(p.slug)}
                         </DropdownMenuItem>
                       ))}
+                      <DropdownMenuItem
+                        className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
+          hover:bg-muted hover:text-foreground transition">
+                        Open Task
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
+          hover:bg-muted hover:text-foreground transition">
+                        <Link
+                          href={`/dashboard/${params.workspace?.toString()}/chat`}>
+                          Open Chat
+                        </Link>
+                      </DropdownMenuItem>
                       {isAuthorized && (
                         <DropdownMenuItem
                           className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer

@@ -21,10 +21,9 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { Notification } from "@prisma/client";
+import type { Notification, User } from "@prisma/client";
 import { api } from "@/lib/api/api";
 import { useSocket } from "../providers/SocketProvider";
-import { User } from "@collabflow/types";
 enum NotificationType {
   GENERAL = "GENERAL",
   INVITE = "INVITE",
@@ -40,7 +39,7 @@ type RawNotif = {
   payload: Notification & { actor: any };
 };
 
-type Notif = Notification;
+type Notif = Notification & { actor: User };
 
 function timeAgo(iso?: string | Date) {
   if (!iso) return "";
@@ -73,18 +72,21 @@ function IconFallback({ type }: { type?: NotificationType }) {
   }
 }
 
+interface INotify extends Notif {}
+
 export default function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notif[]>([]);
 
   const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.isRead).length,
+    () => notifications?.filter((n) => !n.isRead).length,
     [notifications]
   );
 
   async function fetchNotification() {
-    const notification: Notification[] & { actor: any } = (
+    const notification: Notif[] & { actor: User } = (
       await api.get("/notification")
     ).data;
+    console.log("notiif", notification);
     return notification;
   }
 
@@ -122,6 +124,7 @@ export default function NotificationDropdown() {
   useEffect(() => {
     (async () => {
       const notificaion = await fetchNotification();
+      console.log("not", notificaion);
       setNotifications(notificaion);
     })();
   }, []);
@@ -141,8 +144,13 @@ export default function NotificationDropdown() {
     }
   }
 
-  function clearAll() {
-    setNotifications([]);
+  async function clearAll() {
+    let ids = notifications.map((n) => n.id);
+    await api.delete("/notification", {
+      data: {
+        ids,
+      },
+    });
   }
 
   function onNotifClick(n: Notif) {
@@ -232,8 +240,8 @@ export default function NotificationDropdown() {
                     }`}
                     onClick={() => onNotifClick(n)}>
                     <Avatar className="h-9 w-9">
-                      {actorImage ? (
-                        <AvatarImage src={actorImage} />
+                      {actorImage || n.actor ? (
+                        <AvatarImage src={actorImage || n.actor.image} />
                       ) : (
                         <AvatarFallback>
                           <IconFallback

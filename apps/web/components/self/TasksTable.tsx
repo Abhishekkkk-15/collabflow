@@ -26,13 +26,21 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Task, TaskPriority, TaskStatus, TaskTag, User } from "@prisma/client";
 import AddTaskDialog from "../task/AddTaskDialog";
+import { api } from "@/lib/api/api";
+import { toast } from "sonner";
 
 interface IExtendedTask extends Task {
   assignees: { user: User }[];
 }
 
-export default function TasksTable({ project }: { project: string }) {
-  const [tasks, setTasks] = useState<IExtendedTask[]>([]);
+export default function TasksTable({
+  project,
+  fetchedTasks,
+}: {
+  project: string;
+  fetchedTasks: IExtendedTask[];
+}) {
+  const [tasks, setTasks] = useState<IExtendedTask[]>(fetchedTasks || []);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
 
@@ -47,14 +55,7 @@ export default function TasksTable({ project }: { project: string }) {
     "assignees",
   ]);
 
-  const statuses = [
-    "ALL",
-    "TODO",
-    "IN_PROGRESS",
-    "BACKLOG",
-    "DONE",
-    "CANCELED",
-  ];
+  const statuses = ["ALL", "TODO", "IN_PROGRESS", "BLOCKED", "DONE", "REVIEW"];
   const priorities = ["ALL", "LOW", "MEDIUM", "HIGH"];
 
   // Toggle column visibility
@@ -125,6 +126,23 @@ export default function TasksTable({ project }: { project: string }) {
       priorityFilter === "ALL" || t.priority === priorityFilter;
     return matchStatus && matchPriority;
   });
+
+  async function handleTaskDelete(id: string) {
+    try {
+      await api.delete(`/task/${id}`);
+      toast.info("Task deleted", {
+        position: "top-center",
+      });
+      setTasks((prev) => {
+        return prev.filter((t) => t.id !== id);
+      });
+    } catch (error: any) {
+      toast.error("Error while deleting task", {
+        position: "top-center",
+        description: error.data.message,
+      });
+    }
+  }
 
   return (
     <div>
@@ -316,7 +334,9 @@ export default function TasksTable({ project }: { project: string }) {
                       <div className="px-2 py-1 text-sm hover:bg-muted rounded">
                         Edit
                       </div>
-                      <div className="px-2 py-1 text-sm hover:bg-muted rounded">
+                      <div
+                        className="px-2 py-1 text-sm hover:bg-muted rounded"
+                        onClick={() => handleTaskDelete(task.id)}>
                         Delete
                       </div>
                     </DropdownMenuContent>

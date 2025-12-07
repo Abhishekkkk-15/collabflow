@@ -8,7 +8,7 @@ export class NotificationService {
   create(createNotificationDto: CreateNotificationDto) {}
 
   async findAll(user: User) {
-    return await prisma.notification.findMany({
+    const notifications = await prisma.notification.findMany({
       where: {
         userId: user.id,
       },
@@ -32,10 +32,15 @@ export class NotificationService {
         createdAt: 'desc',
       },
     });
+    return notifications;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} notification`;
+  async findOne(id: string) {
+    await prisma.notification.findUnique({
+      where: {
+        id,
+      },
+    });
   }
 
   async markAsRead(user: User) {
@@ -48,10 +53,16 @@ export class NotificationService {
       },
     });
 
-    return 'Updated';
+    return;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} notification`;
+  async remove(ids: string[]) {
+    await prisma.notification.deleteMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+    });
   }
 }

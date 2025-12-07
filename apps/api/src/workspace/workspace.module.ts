@@ -7,5 +7,6 @@ import { QueuesModule } from '../queues/queues.module';
   controllers: [WorkspaceController],
   providers: [WorkspaceService],
   imports: [QueuesModule],
+  exports: [WorkspaceService],
 })
 export class WorkspaceModule {}

@@ -8,6 +8,7 @@ import { startProjecteWorker } from "./project/index";
 // import { startNotificationWorker } from "./notification";
 export const connection = { host: "localhost", port: 6379 };
 export const redisPub = createClient({ url: "redis://localhost:6379" });
+import { startTaskWorker } from "./task/task.worker";
 
 async function main() {
   try {
@@ -19,6 +20,7 @@ async function main() {
     startWorkspaceWorker();
     startProjectInviteWorker();
     startProjecteWorker();
+    startTaskWorker();
     //   startNotificationWorker();
   } catch (error) {
     console.log("error");

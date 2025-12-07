@@ -1,6 +1,6 @@
-import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 import type { Workspace } from '@collabflow/types';
-import type { WorkspaceRole } from '@prisma/client';
+import { Priority, ProjectStatus, type WorkspaceRole } from '@prisma/client';
 import { Type } from 'class-transformer';
 export class CreateWorkspaceDto {
   @IsNotEmpty({ message: "Name can't be empty" })
@@ -10,6 +10,10 @@ export class CreateWorkspaceDto {
   slug?: string;
   @IsString({ message: 'Description must be string' })
   description!: string;
+  @IsEnum(Priority)
+  priority!: Priority;
+  @IsEnum(ProjectStatus)
+  status!: ProjectStatus;
   @ValidateNested({ each: true })
   @Type(() => MemberDto)
   members?: MemberDto[];

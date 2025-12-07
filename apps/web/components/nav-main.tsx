@@ -1,13 +1,13 @@
 "use client";
 
-import { ChevronRight, type LucideIcon } from "lucide-react";
-import { AppWindow } from "lucide-react";
+import { ChevronRight, MoreHorizontalIcon, AppWindow } from "lucide-react";
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -19,16 +19,24 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { Workspace } from "@prisma/client";
-import {
-  setWorkspaces,
-  TProject,
-  TWorkspace,
-} from "@/lib/redux/slices/workspace";
+
 import { Skeleton } from "./ui/skeleton";
 import Link from "next/link";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { useEffect } from "react";
+
+import {
+  TProject,
+  TWorkspace,
+  setWorkspaces,
+} from "@/lib/redux/slices/workspace";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function NavMain({ items }: { items: TWorkspace[] }) {
   if (items.length === 0)
@@ -40,20 +48,23 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
         <Skeleton className="h-7 w-full rounded-md" />
       </div>
     );
+
   const dispatch = useAppDispatch();
   useEffect(() => {
     dispatch(setWorkspaces(items));
-    console.log("its started");
   });
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
+
       <SidebarMenu>
         {items?.map((item: TWorkspace) => (
           <Collapsible key={item?.id} asChild>
             <SidebarMenuItem>
+              {/* Workspace Button */}
               <SidebarMenuButton asChild tooltip={item?.name}>
-                <Link href={`/dashboard/${item?.slug} ` as string}>
+                <Link href={`/dashboard/${item?.slug}`}>
                   <AppWindow />
                   <span>
                     {item?.name.length >= 20
@@ -62,24 +73,58 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
                   </span>
                 </Link>
               </SidebarMenuButton>
+
+              {/* Workspace Projects */}
               {item?.projects.length ? (
                 <>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuAction className="data-[state=open]:rotate-90">
                       <ChevronRight />
-                      <span className="sr-only">Toggle</span>
                     </SidebarMenuAction>
                   </CollapsibleTrigger>
+
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {item?.projects?.map((subItem: TProject) => (
-                        <SidebarMenuSubItem key={subItem?.id}>
+                        <SidebarMenuSubItem
+                          key={subItem?.id}
+                          className="group flex items-center justify-between">
+                          {/* Project Name */}
                           <SidebarMenuSubButton asChild>
                             <Link
                               href={`/dashboard/${item?.slug}/${subItem?.slug}`}>
                               <span>{subItem?.name}</span>
                             </Link>
                           </SidebarMenuSubButton>
+
+                          {/* Hover three dots */}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="px-1 py-1 hover:bg-accent rounded">
+                                  <MoreHorizontalIcon className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+
+                              <DropdownMenuContent align="end" side="right">
+                                {/* Chat */}
+                                <DropdownMenuItem asChild>
+                                  <Link
+                                    href={`/dashboard/${item?.slug}/${subItem?.slug}/chat`}>
+                                    Chat
+                                  </Link>
+                                </DropdownMenuItem>
+
+                                {/* Tasks */}
+                                <DropdownMenuItem asChild>
+                                  <Link
+                                    href={`/dashboard/${item?.slug}/${subItem?.slug}/tasks`}>
+                                    Tasks
+                                  </Link>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </SidebarMenuSubItem>
                       ))}
                     </SidebarMenuSub>
