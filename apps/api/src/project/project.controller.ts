@@ -17,6 +17,7 @@ import { AuthGuard } from '../common/guards/AuthGuard';
 import { MemberGuard } from '../common/guards/MemberGuard';
 import { CurrentUser } from '../common/decorator/current-user.decorator';
 import type { User } from '@prisma/client';
+import { WsAuthorizationGuard } from '../common/guards/ws-authorization.guard';
 
 @Controller('project')
 export class ProjectController {
@@ -44,6 +45,12 @@ export class ProjectController {
     @CurrentUser() user: User,
   ) {
     return this.projectService.create(createProjectDto, user);
+  }
+
+  @Delete(':slug')
+  @UseGuards(WsAuthorizationGuard)
+  deleteProject(@Param('slug') slug: string) {
+    return this.projectService.remove(slug);
   }
 
   // @Get(':id')

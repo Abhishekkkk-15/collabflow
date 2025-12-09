@@ -21,7 +21,7 @@ type WorkspaceMemberPayload = {
 };
 
 let BULK_WORKSPACE_MEMBER_STORE: WorkspaceMemberPayload[] = [];
-const BATCH_SIZE = 5;
+const BATCH_SIZE = 2;
 
 async function pushAndMaybeFlush(memberPayload: WorkspaceMemberPayload) {
   const exists = BULK_WORKSPACE_MEMBER_STORE.some(
@@ -124,7 +124,6 @@ export function startInviteWorker() {
       };
 
       await pushAndMaybeFlush(payloadToBeStoredInDb);
-      console.log("Invited by", invitedBy);
       const notification = await prisma.notification.create({
         data: {
           userId: members.userId,

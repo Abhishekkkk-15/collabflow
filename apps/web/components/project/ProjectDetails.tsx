@@ -53,6 +53,7 @@ import {
   Trash,
 } from "lucide-react";
 import InviteMemberSheet from "../workspace/InviteMemberSheet";
+import { api } from "@/lib/api/api";
 
 type Member = {
   id: string;
@@ -183,7 +184,7 @@ export default function ProjectDetails({
     setLoading(true);
     try {
       const res = await axios.post(
-        `/project/${project.id}/invite`,
+        `/project/${project.slug}/invite`,
         { members: selectedInvites },
         { withCredentials: true }
       );
@@ -202,12 +203,13 @@ export default function ProjectDetails({
   async function deleteProject() {
     setLoading(true);
     try {
-      await axios.delete(`/project/${project.id}`, { withCredentials: true });
+      await api.delete(`/project/${project.slug}`, { withCredentials: true });
       toastSuccess("Project deleted");
       onDeleted?.(project.id);
       setDeleteConfirmOpen(false);
     } catch (err: any) {
-      toastError("Failed to delete project");
+      console.log(err);
+      toastError("Failed to delete project", err.response.data.message.message);
     } finally {
       setLoading(false);
     }
@@ -221,9 +223,12 @@ export default function ProjectDetails({
       /* noop if sonner not present */
     }
   }
-  function toastError(msg: string) {
+  function toastError(msg: string, desc?: string) {
     try {
-      toast.error(msg);
+      toast.error(msg, {
+        description: desc,
+        position: "top-center",
+      });
     } catch {
       /* noop */
     }
