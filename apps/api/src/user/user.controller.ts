@@ -14,6 +14,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '../common/guards/AuthGuard';
 import { WsAuthorizationGuard } from '../common/guards/ws-authorization.guard';
+import { CurrentUser } from '../common/decorator/current-user.decorator';
+import type { User } from '@prisma/client';
 
 @Controller('user')
 export class UserController {
@@ -26,8 +28,8 @@ export class UserController {
 
   @Get()
   @UseGuards(AuthGuard)
-  findAll(@Req() req: any) {
-    return this.userService.findAll(req.user.id);
+  findAll(@CurrentUser() user: User) {
+    return this.userService.findAll(user);
   }
 
   @Get('/roles')

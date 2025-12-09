@@ -1,8 +1,11 @@
+import { Priority, ProjectStatus } from "@prisma/client";
 import { z } from "zod";
 const WorkspaceSchema = z.object({
   name: z.string().min(2, "Workspace name is too short"),
   slug: z.string().min(2, "Slug is too short"),
   description: z.string().optional(),
+  status: z.enum(ProjectStatus),
+  priority: z.enum(Priority),
   members: z
     .array(
       z.object({

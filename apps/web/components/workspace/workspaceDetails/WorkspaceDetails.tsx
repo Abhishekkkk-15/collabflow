@@ -79,12 +79,12 @@ export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
         description: data.description?.trim() || "",
       };
 
-      // optimistic update
       dispatch(updateWorkspace({ id: workspace.id, data: payload }));
-
-      const res = await api.patch(`/workspace/${workspace.id}`, payload, {
-        withCredentials: true,
+      const res = await api.patch(`/workspace/${workspace.slug}`, {
+        name: payload.name,
+        description: payload.description,
       });
+      console.log("res", res);
 
       dispatch(updateWorkspace({ id: workspace.id, data: res.data }));
       toast.success("Workspace updated");
@@ -92,7 +92,6 @@ export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
     } catch (err: any) {
       console.error(err);
       toast.error(err?.response?.data?.message || "Failed to update workspace");
-      // reload members / state if needed
       fetchWorkspaceMembers();
     } finally {
       setSaving(false);
@@ -103,7 +102,7 @@ export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
     setTransferring(true);
     try {
       const res = await api.post(
-        `/workspace/${workspace.id}/transfer`,
+        `/workspace/${workspace.slug}/transfer`,
         { newOwnerId },
         { withCredentials: true }
       );
@@ -170,8 +169,9 @@ export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
         onOpenChange={setInviteOpen}
         workspaceId={workspace.id}
         onInvite={async (members) => {
+          console.log("sending invite", members);
           await api.post(
-            `/workspace/${workspace.id}/invite`,
+            `/workspace/${workspace.slug}/invite`,
             { members },
             { withCredentials: true }
           );

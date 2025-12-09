@@ -13,6 +13,16 @@ import WorkspaceSchema from "@/lib/validator/WorkspaceSchema";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import z from "zod";
 import { ValidationAlert } from "@/components/self/ValidationAlert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Priority, ProjectStatus } from "@prisma/client";
+import { api } from "@/lib/api/api";
+
 export default function CreateWorkspace() {
   console.log("Client component");
   const [name, setName] = useState("");
@@ -30,6 +40,12 @@ export default function CreateWorkspace() {
   >([]);
   const [loading, setLoading] = useState(false);
 
+  // NEW: status & priority state
+  const [status, setStatus] = useState<
+    "DRAFT" | "isActive" | "PAUSED" | "COMPLETED" | "ARCHIVED"
+  >("DRAFT");
+  const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
@@ -39,7 +55,11 @@ export default function CreateWorkspace() {
         slug,
         description,
         members,
+        status: status as ProjectStatus,
+        priority: priority as Priority,
       };
+
+      // NOTE: update WorkspaceSchema to validate status & priority
       const parsed = WorkspaceSchema.safeParse(payload);
       console.log("Parsed Data", parsed.data);
       if (!parsed.success) {
@@ -55,11 +75,9 @@ export default function CreateWorkspace() {
       }
 
       const dataToSend = parsed.data;
-      const res = await axios.post(
-        "http://localhost:3001/workspace",
-        dataToSend,
-        { withCredentials: true }
-      );
+      const res = await api.post("/workspace", dataToSend, {
+        withCredentials: true,
+      });
       toast.success(`${res.data.name} Workspace created`, {
         position: "top-center",
         richColors: true,
@@ -123,12 +141,63 @@ export default function CreateWorkspace() {
           />
         </div>
 
+        {/* NEW: Status block */}
+        <div className="grid gap-2">
+          <Label>Status</Label>
+
+          <Select
+            value={status}
+            onValueChange={(val) =>
+              setStatus(
+                val as
+                  | "DRAFT"
+                  | "isActive"
+                  | "PAUSED"
+                  | "COMPLETED"
+                  | "ARCHIVED"
+              )
+            }>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select workspace status" />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="DRAFT">DRAFT</SelectItem>
+              <SelectItem value="isActive">isActive</SelectItem>
+              <SelectItem value="PAUSED">PAUSED</SelectItem>
+              <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+              <SelectItem value="ARCHIVED">ARCHIVED</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* NEW: Priority block */}
+        <div className="grid gap-2">
+          <Label>Priority</Label>
+
+          <Select
+            value={priority}
+            onValueChange={(val) =>
+              setPriority(val as "LOW" | "MEDIUM" | "HIGH")
+            }>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select priority level" />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="LOW">LOW</SelectItem>
+              <SelectItem value="MEDIUM">MEDIUM</SelectItem>
+              <SelectItem value="HIGH">HIGH</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="grid gap-2">
           <Label>Invite Members</Label>
           <InviteMembers
             onChange={(val) => setMembers(val)}
             roleType="WORKSPACE"
-            workspaceId=""
+            slug=""
           />
         </div>
         {validationIssues?.length ? (

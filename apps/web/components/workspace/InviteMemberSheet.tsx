@@ -28,6 +28,7 @@ import { api } from "@/lib/api/api";
 type InviteEntry = {
   userId: string;
   role: WorkspaceRole;
+  email: string;
 };
 
 type InviteMemberSheetProps = {
@@ -116,19 +117,23 @@ export default function InviteMemberSheet({
   // ----------------------------
   // Toggle user selection
   // ----------------------------
-  function toggleSelectUser(userId: string) {
-    const exists = inviteSelected.find((x) => x.userId === userId);
-
+  function toggleSelectUser(user: User) {
+    const exists = inviteSelected.find((x) => x.userId === user.id);
     if (exists) {
-      setInviteSelected((prev) => prev.filter((p) => p.userId !== userId));
+      setInviteSelected((prev) => prev.filter((p) => p.userId !== user.id));
     } else {
-      setInviteSelected((prev) => [...prev, { userId, role: "CONTRIBUTOR" }]);
+      setInviteSelected((prev) => [
+        ...prev,
+        { userId: user.id, role: "CONTRIBUTOR", email: user.email! },
+      ]);
     }
   }
 
-  function setUserRole(userId: string, role: WorkspaceRole) {
+  function setUserRole(user: User, role: WorkspaceRole) {
     setInviteSelected((prev) =>
-      prev.map((p) => (p.userId === userId ? { ...p, role } : p))
+      prev.map((p) =>
+        p.userId === user.id ? { ...p, role, email: user.email! } : p
+      )
     );
   }
 
@@ -140,6 +145,7 @@ export default function InviteMemberSheet({
 
     try {
       setLoading(true);
+      console.log("mem", inviteSelected);
       await onInvite?.(inviteSelected);
       onOpenChange(false);
     } catch (e) {
@@ -187,7 +193,7 @@ export default function InviteMemberSheet({
                     flex items-center gap-3 p-2 rounded cursor-pointer
                     ${selected ? "bg-muted" : "hover:bg-muted/40"}
                   `}
-                  onClick={() => toggleSelectUser(m.id)}>
+                  onClick={() => toggleSelectUser(m)}>
                   <Avatar className="h-8 w-8">
                     {m.image ? (
                       <AvatarImage src={m.image} />
@@ -210,16 +216,16 @@ export default function InviteMemberSheet({
                     <Select
                       disabled={!selected}
                       value={role}
-                      onValueChange={(value) =>
-                        setUserRole(m.id, value as WorkspaceRole)
+                      onValueChange={(value: WorkspaceRole) =>
+                        setUserRole(m, value)
                       }>
                       <SelectTrigger className="w-32 h-8">
                         <SelectValue placeholder="Role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="CONTRIBUTOR">Contributor</SelectItem>
-                        <SelectItem value="ADMIN">Admin</SelectItem>
                         <SelectItem value="VIEWER">Viewer</SelectItem>
+                        <SelectItem value="CONTRIBUTOR">Contibitor</SelectItem>
+                        <SelectItem value="MAINTAINER">Maintainer</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

@@ -2,17 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { prisma } from '@collabflow/db';
-import { Account, User, UserRole } from '@collabflow/types';
+import { Account, UserRole } from '@collabflow/types';
+import { User } from '@prisma/client';
 @Injectable()
 export class UserService {
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
   }
-  async findAll(currentUser: string): Promise<User[]> {
+  async findAll(currentUser: User): Promise<User[]> {
     const users = await prisma.user.findMany({
       where: {
         NOT: {
-          id: currentUser,
+          id: currentUser.id,
         },
       },
     });

@@ -10,6 +10,7 @@ import { createSlug } from '../common/utils/slug-helper';
 import { User, Workspace } from '@prisma/client';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { InviteWorkspaceDto } from './dto/invite.workspace.dto';
 @Injectable()
 export class WorkspaceService {
   constructor(@InjectQueue('workspaceQueue') private workspaceQueue: Queue) {}
@@ -202,8 +203,30 @@ export class WorkspaceService {
           },
         },
       });
+      console.log('fet', members);
       if (!members) throw new NotFoundException('Members not found');
       return { members, count };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async handleInvite(slug: string, dto: InviteWorkspaceDto, owner: User) {
+    try {
+      const workspace = await prisma.workspace.findUnique({
+        where: {
+          slug,
+        },
+      });
+
+      if (!workspace) throw new NotFoundException('Workspace not found');
+
+      await this.workspaceQueue.add('workspace:create', {
+        workspace: workspace,
+        members: dto.members,
+        invitedBy: owner,
+      });
+      return { message: 'Success' };
     } catch (error) {
       throw error;
     }
