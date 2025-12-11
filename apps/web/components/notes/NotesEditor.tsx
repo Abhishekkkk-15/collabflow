@@ -19,8 +19,6 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { common, createLowlight } from "lowlight";
 import javascript from "highlight.js/lib/languages/javascript";
 import json from "highlight.js/lib/languages/json";
-
-// Table & details (toggle)
 import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
@@ -28,15 +26,8 @@ import TableCell from "@tiptap/extension-table-cell";
 import Details from "@tiptap/extension-details";
 import DetailsContent from "@tiptap/extension-details-content";
 import DetailsSummary from "@tiptap/extension-details-summary";
-
-// Drag handle
 import DragHandle from "@tiptap/extension-drag-handle";
-
-// If your package manager didn't have details extension names, adjust imports accordingly.
-
-// Custom callout (local)
 import Callout from "./extensions/Callout";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
