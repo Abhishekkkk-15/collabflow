@@ -12,20 +12,31 @@ import {
 import { Input } from "@/components/ui/input";
 import { signIn } from "next-auth/react";
 import loginImg from "../public/login.png";
+import { useState } from "react";
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const [email, setEmail] = useState("");
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-6 md:p-8">
+          <form
+            className="p-6 md:p-8"
+            onSubmit={async (e) => {
+              e.preventDefault();
+
+              await signIn("resend", {
+                email,
+                callbackUrl: "/dashboard",
+              });
+            }}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Welcome back</h1>
+                <h1 className="text-2xl font-bold">Welcome to Collabflow</h1>
                 <p className="text-muted-foreground text-balance">
-                  Login to your Acme Inc account
+                  Sign in or create an account
                 </p>
               </div>
               <Field>
@@ -34,19 +45,9 @@ export function LoginForm({
                   id="email"
                   type="email"
                   placeholder="m@example.com"
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-              </Field>
-              <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a
-                    href="#"
-                    className="ml-auto text-sm underline-offset-2 hover:underline">
-                    Forgot your password?
-                  </a>
-                </div>
-                <Input id="password" type="password" required />
               </Field>
               <Field>
                 <Button type="submit">Login</Button>
@@ -92,7 +93,7 @@ export function LoginForm({
                 </Button>
               </Field>
               <FieldDescription className="text-center">
-                Don&apos;t have an account? <a href="#">Sign up</a>
+                We’ll email you a secure, password-free login link.
               </FieldDescription>
             </FieldGroup>
           </form>

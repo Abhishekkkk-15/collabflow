@@ -1,14 +1,35 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
+import Email from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import ResendProvider from "next-auth/providers/resend";
+
 // import { prisma } from "@/lib/prisma";
 import { prisma } from "@collabflow/db";
-
+import { Resend } from "resend";
+import { MAGIC_LINK_TEMPLATE } from "./email-temp/magicLinktemplate";
+const resend = new Resend(process.env.RESEND_API_KEY);
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
 
   providers: [
+    ResendProvider({
+      apiKey: process.env.RESEND_API_KEY!,
+      from: process.env.EMAIL_FROM!,
+      async sendVerificationRequest({ identifier, url }) {
+        await resend.emails.send({
+          from: process.env.EMAIL_FROM!,
+          to: identifier,
+          subject: "Sign in to CollabFlow",
+          html: MAGIC_LINK_TEMPLATE({
+            email: identifier,
+            url,
+          }),
+        });
+      },
+    }),
+
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -21,6 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   pages: {
     signIn: "/login",
+    verifyRequest: "/check-email",
   },
 
   callbacks: {
