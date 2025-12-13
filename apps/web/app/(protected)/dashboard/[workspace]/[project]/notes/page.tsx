@@ -1,8 +1,10 @@
-import NotesEditor from "@/components/notes/NotesEditor";
-import React from "react";
+import NotesClient from "@/components/notes/NotesClient";
 
-function page() {
-  return <NotesEditor />;
+export default async function NotesPage({
+  params,
+}: {
+  params: { workspace: string; project: string };
+}) {
+  const { project, workspace } = await params;
+  return <NotesClient />;
 }
-
-export default page;
