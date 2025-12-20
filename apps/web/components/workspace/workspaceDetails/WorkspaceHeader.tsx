@@ -3,10 +3,10 @@
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Pencil, Forward } from "lucide-react";
-import { WorkspaceWithMeta } from "./WorkspaceDetails";
+import { IProp } from "./WorkspaceDetails";
 
 interface WorkspaceHeaderProps {
-  workspace: WorkspaceWithMeta;
+  workspace: IProp;
   memberCount: number;
   isRestricted: boolean;
   onOpenEdit: () => void;
@@ -77,34 +77,6 @@ export default function WorkspaceHeader({
           </div>
         </div>
 
-        {/* Right: actions */}
-        {!isRestricted && (
-          <div className="flex flex-wrap gap-2 justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onOpenInvite}
-              className="rounded-full">
-              Invite
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onOpenEdit}
-              className="rounded-full">
-              <Pencil className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onOpenTransfer}
-              className="rounded-full">
-              <Forward className="h-4 w-4 mr-1" />
-              Transfer
-            </Button>
-          </div>
-        )}
       </div>
     </section>
   );

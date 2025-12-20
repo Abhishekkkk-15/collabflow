@@ -6,10 +6,10 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 
 import MemberAvatarGrid from "./MemberAvatarGrid";
-import { WorkspaceWithMeta } from "./WorkspaceDetails";
+import  {IProp}  from "./WorkspaceDetails";
 
 interface WorkspaceInfoCardProps {
-  workspace: WorkspaceWithMeta;
+  workspace:IProp ;
   members: any[];
   isRestricted: boolean;
   onInviteClick: () => void;

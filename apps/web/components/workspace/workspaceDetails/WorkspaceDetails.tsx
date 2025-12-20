@@ -20,7 +20,7 @@ import { Project, User, Workspace, WorkspaceMember } from "@prisma/client";
 interface IExtendedWorkspceMembers extends WorkspaceMember {
   user: User;
 }
-interface IProp extends Workspace {
+export interface IProp extends Workspace {
   owner: User;
   projects: Project[];
   unreadCount?: number;
@@ -138,11 +138,6 @@ export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
           onOpenInvite={() => setInviteOpen(true)}
           onOpenTransfer={() => setTransferOpen(true)}
         />
-
-        <WorkspaceProjects
-          workspace={workspace.projects}
-          isRestricted={isRestricted}
-        />
       </div>
 
       {/* Right: info + members + quick links */}
@@ -154,17 +149,17 @@ export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
       />
 
       {/* Edit workspace dialog */}
-      <EditWorkspaceDialog
+      {/* <EditWorkspaceDialog
         open={editOpen}
         onOpenChange={setEditOpen}
         workspace={workspace}
         onSave={handleSaveWorkspace}
         loading={saving}
         disabled={isRestricted}
-      />
+      /> */}
 
       {/* Invite sheet (your old component) */}
-      <InviteMemberSheet
+      {/* <InviteMemberSheet
         open={inviteOpen}
         onOpenChange={setInviteOpen}
         workspaceId={workspace.id}
@@ -180,10 +175,10 @@ export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
         }}
         disabled={isRestricted}
         currentPath="WORKSPACE"
-      />
+      /> */}
 
       {/* Transfer ownership dialog */}
-      <TransferOwnerDialog
+      {/* <TransferOwnerDialog
         open={transferOpen}
         onOpenChange={setTransferOpen}
         workspace={workspace}
@@ -191,7 +186,7 @@ export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
         onTransfer={handleTransferOwner}
         loading={transferring}
         disabled={isRestricted}
-      />
+      /> */}
     </div>
   );
 }
