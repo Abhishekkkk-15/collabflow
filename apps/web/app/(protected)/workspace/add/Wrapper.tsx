@@ -40,7 +40,6 @@ export default function CreateWorkspace() {
   >([]);
   const [loading, setLoading] = useState(false);
 
-  // NEW: status & priority state
   const [status, setStatus] = useState<
     "DRAFT" | "isActive" | "PAUSED" | "COMPLETED" | "ARCHIVED"
   >("DRAFT");
@@ -59,7 +58,6 @@ export default function CreateWorkspace() {
         priority: priority as Priority,
       };
 
-      // NOTE: update WorkspaceSchema to validate status & priority
       const parsed = WorkspaceSchema.safeParse(payload);
       console.log("Parsed Data", parsed.data);
       if (!parsed.success) {

@@ -64,7 +64,7 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
             <SidebarMenuItem>
               {/* Workspace Button */}
               <SidebarMenuButton asChild tooltip={item?.name}>
-                <Link href={`/dashboard/${item?.slug}`}>
+                <Link href={`/workspace/${item?.slug}`}>
                   <AppWindow />
                   <span>
                     {item?.name.length >= 20
@@ -92,7 +92,7 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
                           {/* Project Name */}
                           <SidebarMenuSubButton asChild>
                             <Link
-                              href={`/dashboard/${item?.slug}/${subItem?.slug}`}>
+                              href={`/workspace/${item?.slug}/project/${subItem?.slug}`}>
                               <span>{subItem?.name}</span>
                             </Link>
                           </SidebarMenuSubButton>
@@ -110,7 +110,7 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
                                 {/* Chat */}
                                 <DropdownMenuItem asChild>
                                   <Link
-                                    href={`/dashboard/${item?.slug}/${subItem?.slug}/chat`}>
+                                    href={`/workspace/${item?.slug}/project/${subItem?.slug}/chat`}>
                                     Chat
                                   </Link>
                                 </DropdownMenuItem>
@@ -118,7 +118,7 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
                                 {/* Tasks */}
                                 <DropdownMenuItem asChild>
                                   <Link
-                                    href={`/dashboard/${item?.slug}/${subItem?.slug}/tasks`}>
+                                    href={`/workspace/${item?.slug}/project/${subItem?.slug}/tasks`}>
                                     Tasks
                                   </Link>
                                 </DropdownMenuItem>

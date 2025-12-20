@@ -105,7 +105,7 @@ export function AppSidebar({ ...props }: any) {
                     `}>
                     {/* Workspace redirect */}
                     <Link
-                      href={`/dashboard/${workspace.slug}`}
+                      href={`/workspace/${workspace.slug}`}
                       className="flex-1 truncate"
                       onClick={() => {
                         dispatch(
@@ -114,7 +114,7 @@ export function AppSidebar({ ...props }: any) {
                           )
                         );
                       }}>
-                      {workspace.name}
+                      {workspace.name}kk
                     </Link>
 
                     {/* Unread count */}
@@ -162,7 +162,7 @@ export function AppSidebar({ ...props }: any) {
                                   }
                                 `}>
                                 <Link
-                                  href={`/dashboard/${workspace.slug}/${p.slug}/tasks`}>
+                                  href={`/workspace/${workspace.slug}/${p.slug}/tasks`}>
                                   {p.name}
                                 </Link>
                               </SidebarMenuButton>
@@ -187,19 +187,19 @@ export function AppSidebar({ ...props }: any) {
                                   align="start">
                                   <div className="py-1 text-sm">
                                     <Link
-                                      href={`/dashboard/${workspace.slug}/${p.slug}/tasks`}
+                                      href={`/workspace/${workspace.slug}/project/${p.slug}/tasks`}
                                       className="block px-3 py-2 hover:bg-muted">
                                       Tasks
                                     </Link>
 
                                     <Link
-                                      href={`/dashboard/${workspace.slug}/${p.slug}/chat`}
+                                      href={`/workspace/${workspace.slug}/project/${p.slug}/chat`}
                                       className="block px-3 py-2 hover:bg-muted">
                                       Chat
                                     </Link>
 
                                     <Link
-                                      href={`/dashboard/${workspace.slug}/${p.slug}/settings`}
+                                      href={`/workspace/${workspace.slug}/project/${p.slug}/settings`}
                                       className="block px-3 py-2 hover:bg-muted">
                                       Settings
                                     </Link>

@@ -8,9 +8,7 @@ async function page({
   params: { workspace: string; project: string };
 }) {
   const workspaceSlug = await params;
-  console.log("paramssss", workspaceSlug);
   const workspace = await api.get(`/workspace/${workspaceSlug.workspace}`);
-  console.log("workspace fetched", workspace.data);
   return <WorkspaceDetails workspace={workspace.data} />;
 }
 

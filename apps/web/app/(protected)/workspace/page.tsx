@@ -1,11 +1,10 @@
-import React from "react";
-import CreateWorkspace from "./Wrapper";
-function page() {
+import DefaultDashboard from "@/components/self/DefaultDashboard";
+async function Page({ params }: { params: any }) {
+  console.log("params", await params);
   return (
-    <div>
-      <CreateWorkspace />
-    </div>
+    <>
+      <DefaultDashboard />
+    </>
   );
 }
-
-export default page;
+export default Page;

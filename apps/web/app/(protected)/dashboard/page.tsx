@@ -1,10 +1,11 @@
-import DefaultDashboard from "@/components/self/DefaultDashboard";
-async function Page({ params }: { params: any }) {
-  console.log("params", await params);
+import React from 'react'
+
+function page() {
   return (
-    <>
-      <DefaultDashboard />
-    </>
-  );
+    <div>
+      Dashboard
+    </div>
+  )
 }
-export default Page;
+
+export default page
