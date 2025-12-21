@@ -1,176 +1,487 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Save, Trash2, Plus } from "lucide-react";
+import {
+  Save,
+  Trash2,
+  Plus,
+  Settings,
+  Users,
+  FolderKanban,
+  Shield,
+  AlertTriangle,
+  Lock,
+  Globe,
+  Loader2
+} from "lucide-react";
 import MembersTable from "@/components/dashboard/MembersTable";
 import InviteMemberSheet from "@/components/workspace/InviteMemberSheet";
+import { api } from "@/lib/api/api";
+import { toast } from "sonner";
+import { TProject, setWorkspaces as useWSs } from "@/lib/redux/slices/workspace"
+import { TWorkspace } from "@/lib/redux/slices/workspace";
+import { useDispatch } from "react-redux";
+import { useActiveWorkspace } from "@/lib/redux/hooks/use-workspaces";
+import { Project, Workspace } from "@prisma/client";
+import { AxiosError } from "axios";
+
+type EWorkspace = Workspace & {projects:Project[]}
 
 export default function WorkspaceDashboard() {
-  const [workspace, setWorkspace] = useState({
-    name: "Collabflow Workspace",
-    slug: "-status:-z.enum(projectstatus),-priority:-z.enum(priority),_9c360d7880d34342",
-    description: "Private collaborative workspace",
-    isPrivate: true,
-  });
-  const [inviteOpen,setInviteOpen] = useState(false)
-  return (
-    <div className="min-h-screen  bg-muted/40 px-4 py-6 sm:px-6 lg:px-10">
-      {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Workspace Settings</h1>
-          <p className="text-sm text-muted-foreground">
-            Control workspace identity, members, and permissions
+
+  const [workspaces, setWorkspaces] = useState<EWorkspace[]>([]);
+
+  const [selectedWorkspace, setSelectedWorkspace] = useState<EWorkspace | null>(null);
+  const dispatch = useDispatch();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  async function fetchWorkspace() {
+    try {
+      const res = await api.get("/workspace/dashboard");
+      console.log("dashboard : ",res)
+      setWorkspaces(res.data);
+      setSelectedWorkspace(res.data[0] ?? null);
+      dispatch(useWSs(res.data));
+    } catch (error:any) {
+      toast.error("Failed to load workspaces",error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchWorkspace();
+  }, []);
+
+useEffect(()=>{
+  if(selectedWorkspace){
+
+    setProjects(selectedWorkspace?.projects)
+  }
+},[selectedWorkspace])
+
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.success("Changes saved successfully");
+    } catch (error) {
+      toast.error("Failed to save changes");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getStatusVariant = (status: string): "default" | "secondary" | "outline" => {
+    const statusLower = status.toLowerCase();
+    if (statusLower === "active") return "default";
+    if (statusLower === "archived") return "secondary";
+    return "outline";
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!selectedWorkspace) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <Settings className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <h3 className="mt-4 text-lg font-semibold">No workspaces found</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You don't have any owned workspaces yet.
           </p>
         </div>
-        <Button className="gap-2 self-start sm:self-auto">
-          <Save className="h-4 w-4" /> Save Changes
-        </Button>
       </div>
+    );
+  }
 
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:w-fit sm:grid-cols-4">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
-          <TabsTrigger value="danger">Danger</TabsTrigger>
-        </TabsList>
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Workspace Settings
+            </h1>
+            <p className="text-muted-foreground">
+              Manage your workspace configuration and team
+            </p>
+          </div>
 
-        {/* General */}
-        <TabsContent value="general">
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>Workspace Information</CardTitle>
-              <CardDescription>
-                Basic details used across Collabflow
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Name</label>
-                  <Input
-                    value={workspace.name}
-                    onChange={(e) =>
-                      setWorkspace({ ...workspace, name: e.target.value })
-                    }
-                  />
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            size="lg"
+            className="gap-2 shadow-sm"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Save Changes
+              </>
+            )}
+          </Button>
+        </div>
+
+        <div className="mb-8">
+          <Label htmlFor="workspace-select" className="text-sm font-medium">
+            Current Workspace
+          </Label>
+          <Select
+            value={selectedWorkspace.slug!}
+            onValueChange={(value) => {
+              const ws = workspaces.find((w) => w.slug === value);
+              if (ws) setSelectedWorkspace(ws);
+            }}
+          >
+            <SelectTrigger id="workspace-select" className="mt-2 w-full sm:max-w-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {workspaces.map((ws) => (
+                <SelectItem key={ws.id} value={ws.slug!}>
+                  <div className="flex items-center gap-2">
+                    {ws.status == "DRAFT" ? (
+                      <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : (
+                      <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                    {ws.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Tabs defaultValue="general" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:inline-grid sm:grid-cols-5">
+            <TabsTrigger value="general" className="gap-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">General</span>
+            </TabsTrigger>
+            <TabsTrigger value="members" className="gap-2">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Members</span>
+            </TabsTrigger>
+            <TabsTrigger value="projects" className="gap-2" onClick={()=>setProjects(selectedWorkspace.projects)}>
+              <FolderKanban className="h-4 w-4" />
+              <span className="hidden sm:inline">Projects</span>
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="gap-2">
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Permissions</span>
+            </TabsTrigger>
+            <TabsTrigger value="danger" className="gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="hidden sm:inline">Danger</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Workspace Information</CardTitle>
+                <CardDescription>
+                  Update your workspace details and visibility settings
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="workspace-name">Workspace Name</Label>
+                    <Input
+                      id="workspace-name"
+                      value={selectedWorkspace.name}
+                      onChange={(e) =>
+                        setSelectedWorkspace({
+                          ...selectedWorkspace,
+                          name: e.target.value,
+                        })
+                      }
+                      placeholder="Enter workspace name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="workspace-slug">Workspace Slug</Label>
+                    <Input
+                      id="workspace-slug"
+                      value={selectedWorkspace.slug!}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Slug cannot be changed after creation
+                    </p>
+                  </div>
                 </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Slug</label>
-                  <Input
-                    value={workspace.slug}
+                  <Label htmlFor="workspace-description">Description</Label>
+                  <Textarea
+                    id="workspace-description"
+                    value={selectedWorkspace.description?? ""}
                     onChange={(e) =>
-                      setWorkspace({ ...workspace, slug: e.target.value })
+                      setSelectedWorkspace({
+                        ...selectedWorkspace,
+                        description: e.target.value,
+                      })
                     }
+                    placeholder="Describe your workspace purpose and goals..."
+                    rows={4}
                   />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  className="resize-none"
-                  value={workspace.description}
-                  onChange={(e) =>
-                    setWorkspace({ ...workspace, description: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border bg-background p-4">
-                <div className="space-y-0.5">
-                  <p className="font-medium">Private workspace</p>
-                  <p className="text-sm text-muted-foreground">
-                    Only invited members can access
+                  <p className="text-xs text-muted-foreground">
+                    Help team members understand what this workspace is for
                   </p>
                 </div>
-                <Switch
-                  checked={workspace.isPrivate}
-                  onCheckedChange={(v) =>
-                    setWorkspace({ ...workspace, isPrivate: v })
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Members */}
-        <TabsContent value="members">
-          <Card className="">
-            <CardHeader className="flex-row reminder">
-              <div className="flex-1">
-                <CardTitle>Members</CardTitle>
+                <Separator />
+
+                <div className="flex items-start justify-between gap-4 rounded-lg border bg-muted/50 p-4">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                      <p className="font-medium">Private Workspace</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      When enabled, only invited members can discover and access this workspace
+                    </p>
+                  </div>
+                  <Switch
+                    checked={selectedWorkspace.isActive}
+                    onCheckedChange={(v) =>
+                      setSelectedWorkspace({
+                        ...selectedWorkspace,
+                        isActive: v,
+                      })
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="members">
+            <Card>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle>Team Members</CardTitle>
+                    <CardDescription>
+                      Invite and manage people who can access this workspace
+                    </CardDescription>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setInviteOpen(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Invite Member
+                  </Button>
+                </div>
+              </CardHeader>
+
+              <CardContent>
+                <MembersTable workspaceSlug={selectedWorkspace.slug!} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="projects">
+            <Card>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle>Projects</CardTitle>
+                    <CardDescription>
+                      All projects created within this workspace
+                    </CardDescription>
+                  </div>
+                  <Badge variant="secondary" className="text-xs">
+                    {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+                  </Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent>
+                {projects.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <FolderKanban className="h-12 w-12 text-muted-foreground/50" />
+                    <h3 className="mt-4 text-lg font-semibold">No projects yet</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Projects created in this workspace will appear here
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {projects.map((project) => (
+                      <div
+                        key={project.id}
+                        className="group flex items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50"
+                      >
+                        <div className="flex-1 space-y-1">
+                          <p className="font-medium">{project.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            /{project.slug}
+                          </p>
+                        </div>
+                        <Badge variant={getStatusVariant(project.status)}>
+                          {project.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="permissions">
+            <Card>
+              <CardHeader>
+                <CardTitle>Member Permissions</CardTitle>
                 <CardDescription>
-                  Manage who has access to this workspace
+                  Control what members can do within this workspace
                 </CardDescription>
-              </div>
-              <Button size="sm" variant="outline" className="gap-2"  onClick={()=>setInviteOpen(true)} >
-                <Plus className="h-4 w-4"/> Invite
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <MembersTable workspacSlug={workspace.slug}  />
-            </CardContent>
-          </Card>
-        </TabsContent>
-                  <InviteMemberSheet workspaceId={workspace.slug} open={inviteOpen} onOpenChange={setInviteOpen} currentPath="WORKSPACE" />
-        {/* Permissions */}
-        <TabsContent value="permissions">
-          <Card className="max-w-3xl">
-            <CardHeader>
-              <CardTitle>Permissions</CardTitle>
-              <CardDescription>
-                Control what members can do inside this workspace
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="font-medium">Create projects</p>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <p className="font-medium">Invite new members</p>
-                <Switch />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardHeader>
 
-        {/* Danger */}
-        <TabsContent value="danger">
-          <Card className="max-w-3xl border-destructive/40">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
-              <CardDescription>
-                Irreversible and destructive actions
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-                <p className="text-sm text-muted-foreground">
-                  Deleting this workspace will permanently remove all projects,
-                  members, and data.
-                </p>
-              </div>
-              <Button variant="destructive" className="gap-2">
-                <Trash2 className="h-4 w-4" /> Delete Workspace
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                    <div className="flex-1 space-y-1">
+                      <p className="font-medium">Create Projects</p>
+                      <p className="text-sm text-muted-foreground">
+                        Allow members to create new projects in this workspace
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+
+                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                    <div className="flex-1 space-y-1">
+                      <p className="font-medium">Invite Members</p>
+                      <p className="text-sm text-muted-foreground">
+                        Allow members to invite other people to the workspace
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+
+                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                    <div className="flex-1 space-y-1">
+                      <p className="font-medium">Modify Settings</p>
+                      <p className="text-sm text-muted-foreground">
+                        Allow members to change workspace settings and configuration
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+
+                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                    <div className="flex-1 space-y-1">
+                      <p className="font-medium">Delete Resources</p>
+                      <p className="text-sm text-muted-foreground">
+                        Allow members to delete projects and other workspace resources
+                      </p>
+                    </div>
+                    <Switch />
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-muted p-4">
+                  <p className="text-sm text-muted-foreground">
+                    <strong className="text-foreground">Note:</strong> Workspace owners always have full permissions regardless of these settings.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="danger">
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                </div>
+                <CardDescription>
+                  Irreversible actions that will permanently affect your workspace
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6">
+                  <h3 className="font-semibold">Delete Workspace</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Once you delete a workspace, there is no going back. This will permanently delete:
+                  </p>
+                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    <li>• All projects and their data</li>
+                    <li>• All member associations</li>
+                    <li>• All workspace settings and configuration</li>
+                  </ul>
+                  <Button variant="destructive" className="mt-6 gap-2">
+                    <Trash2 className="h-4 w-4" />
+                    Delete This Workspace
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      <InviteMemberSheet
+        workspaceId={selectedWorkspace.slug!}
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        currentPath="WORKSPACE"
+      />
     </div>
   );
 }

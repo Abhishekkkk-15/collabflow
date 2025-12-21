@@ -34,6 +34,11 @@ export class WorkspaceController {
   ) {
     return this.workspaceService.create(createWorkspaceDto, user);
   }
+
+  @Get('/dashboard')
+  findAllWsForOwnerAndMaintainer(@CurrentUser() user: User) {
+    return this.workspaceService.findAllWSForOwnerAndMaintainer(user);
+  }
   @UseGuards(AuthGuard)
   @Get()
   findAll(@Req() req: ExtendedRequest) {

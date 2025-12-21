@@ -51,6 +51,7 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
 
   const dispatch = useAppDispatch();
   useEffect(() => {
+    console.log("swesddas : ", items)
     dispatch(setWorkspaces(items));
   });
 

@@ -27,15 +27,15 @@ type MemberWithUser = WorkspaceMember & {
 };
 
 export default function MembersTable({
-  workspacSlug,
+  workspaceSlug,
 }: {
-  workspacSlug: string;
+  workspaceSlug: string;
 }) {
   const [members, setMembers] =
     useState<MemberWithUser[]>([]);
 
     const fetchMembers = async() =>{
-        return (await api.get(`workspace/${workspacSlug}/members`)).data
+        return (await api.get(`workspace/${workspaceSlug}/members`)).data
     }
 
   const [query, setQuery] = useState("");
@@ -65,7 +65,7 @@ export default function MembersTable({
     role: Role
   ) {
     try {
-      await api.patch(`/workspace/${workspacSlug}/members/${memberId}`, {
+      await api.patch(`/workspace/${workspaceSlug}/members/${memberId}`, {
         role,
       });
 
@@ -84,7 +84,7 @@ export default function MembersTable({
   async function handleRemove(memberId: string) {
     try {
       await api.delete(
-        `/${workspacSlug}/members/${memberId}`
+        `/${workspaceSlug}/members/${memberId}`
       );
 
       setMembers((prev) =>
@@ -108,7 +108,7 @@ export default function MembersTable({
     return () => {
         
     };
-  }, [workspacSlug]);
+  }, [workspaceSlug]);
 
   return (
     <div>

@@ -50,6 +50,33 @@ export class WorkspaceService {
     return workspace;
   }
 
+  async findAllWSForOwnerAndMaintainer(user: User) {
+    console.log('request');
+    return await prisma.workspace.findMany({
+      where: {
+        OR: [
+          {
+            members: {
+              some: {
+                AND: [{ userId: user.id }, { role: 'OWNER' }],
+              },
+            },
+          },
+          {
+            members: {
+              some: {
+                AND: [{ userId: user.id }, { role: 'MAINTAINER' }],
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        projects: true,
+      },
+    });
+  }
+
   async findAll(ownerId: string): Promise<any> {
     const workspaces = await prisma.workspace.findMany({
       where: {

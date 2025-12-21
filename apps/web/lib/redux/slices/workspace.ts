@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { api } from "@/lib/api/api";
+import { stat } from "fs";
 
 export type TProject = {
   id: string;
@@ -80,6 +81,7 @@ const workspaceSlice = createSlice({
   reducers: {
     setWorkspaces(state, action: PayloadAction<TWorkspace[]>) {
       state.workspaces = action.payload;
+      console.log("sk", state.workspaces);
     },
 
     addWorkspace(state, action: PayloadAction<TWorkspace>) {
