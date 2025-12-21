@@ -477,7 +477,7 @@ useEffect(()=>{
       </div>
 
       <InviteMemberSheet
-        workspaceId={selectedWorkspace.slug!}
+        workspaceSlug={selectedWorkspace.slug!}
         open={inviteOpen}
         onOpenChange={setInviteOpen}
         currentPath="WORKSPACE"

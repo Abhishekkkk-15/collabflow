@@ -36,7 +36,7 @@ type InviteMemberSheetProps = {
   onOpenChange: (v: boolean) => void;
   onInvite?: (members: InviteEntry[]) => Promise<void> | void;
   disabled?: boolean;
-  workspaceId: string;
+  workspaceSlug: string;
   currentPath: "PROJECT" | "WORKSPACE";
 };
 
@@ -45,7 +45,7 @@ export default function InviteMemberSheet({
   onOpenChange,
   onInvite,
   disabled = false,
-  workspaceId,
+  workspaceSlug,
   currentPath,
 }: InviteMemberSheetProps) {
   const [inviteSelected, setInviteSelected] = useState<InviteEntry[]>([]);
@@ -55,9 +55,9 @@ export default function InviteMemberSheet({
 
   async function fetchNonMembers() {
     try {
-      console.log("wslug",workspaceId)
+      console.log("wslug",workspaceSlug)
       const res = await api.get(
-        `user/workspaces/${workspaceId}/users?limit=20&page=1`
+        `user/workspaces/${workspaceSlug}/users?limit=20&page=1`
       );
 
       if (Array.isArray(res.data)) {
@@ -73,7 +73,7 @@ export default function InviteMemberSheet({
   async function fetchNonMembersP() {
     try {
       const res = await api.get(
-        `user/project/${workspaceId}/users?limit=20&page=1`
+        `user/project/${workspaceSlug}/users?limit=20&page=1`
       );
 
       console.log(res);
@@ -101,7 +101,7 @@ export default function InviteMemberSheet({
     if (currentPath == "PROJECT") {
       fetchNonMembersP();
     }
-  }, []);
+  }, [open]);
 
   const filtered = nonMembers.filter((u) => {
     const q = query.toLowerCase();
