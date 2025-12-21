@@ -1,16 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api/api";
 import { toast } from "sonner";
-
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import {
-  updateWorkspace,
-  addProjectToWorkspace,
-  // ensure these exist in your slice
-} from "@/lib/redux/slices/workspace";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Popover,
@@ -31,595 +23,552 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import { Separator } from "@/components/ui/separator";
 
 import {
   Pencil,
-  Plus,
-  UserPlus,
-  Forward,
   MoreHorizontal,
   Loader2,
+  FolderKanban,
+  Users,
+  Settings,
+  BarChart3,
+  MessageSquare,
+  CheckSquare,
+  Clock,
 } from "lucide-react";
-import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
-import { useParams } from "next/navigation";
-import { EmptyDemo } from "../project/EmptyProjects";
-import { Project, User, Workspace, WorkspaceMember } from "@prisma/client";
-import InviteMemberSheet from "./InviteMemberSheet";
-import { UserWorkspaceRoles } from "@/lib/redux/slices/userSlice";
 
-interface IExtendedWorkspceMembers extends WorkspaceMember {
+interface User {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  slug?: string | null;
+  description?: string | null;
+  status?: string;
+  taskCount?: number;
+  unreadCount?: number;
+}
+
+interface WorkspaceMember {
+  id: string;
+  role?: string;
   user: User;
 }
-interface IProp extends Workspace {
-  owner: User;
-  projects: Project[];
-  unreadCount?: number;
-  members: IExtendedWorkspceMembers[];
-  _count: { members: number };
+
+interface WorkspaceDetailsProps {
+  workspace: {
+    id: string;
+    name: string;
+    slug?: string | null;
+    description?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    isActive: boolean;
+    priority?: string;
+    unreadCount?: number;
+    owner?: User;
+    projects?: Project[];
+    members?: WorkspaceMember[];
+    _count?: { members: number };
+  };
+  userRole?: string;
+  onUpdate?: (data: any) => Promise<void>;
 }
 
-export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
-  const params = useParams();
-  const dispatch = useAppDispatch();
-  const { workspaces, activeWorkspaceId } = useAppSelector(
-    (s: any) => s.workspace
-  );
-  console.log(params);
-  const { workspaceRoles }: { workspaceRoles: UserWorkspaceRoles[] } =
-    useAppSelector((s: any) => s.user.userRoles);
-  // const workspace = useMemo(
-  //   () =>
-  //     workspaces?.find((w: any) => w.slug === params.workspace?.toString()) ??
-  //     null,
-  //   [params]
-  // );
-
-  // ui state
+export default function WorkspaceDetails({
+  workspace,
+  userRole = "MEMBER",
+  onUpdate,
+}: WorkspaceDetailsProps) {
   const [editing, setEditing] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [transferOpen, setTransferOpen] = useState(false);
-  const [addingProject, setAddingProject] = useState(false);
   const [loadingAction, setLoadingAction] = useState(false);
-  // form states
-  const [formName, setFormName] = useState("");
-  const [formSlug, setFormSlug] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-
-  // invite form local state
-  const [inviteSelected, setInviteSelected] = useState<
-    { userId: string; role?: string }[]
-  >([]);
-  const [allMembers, setAllMembers] = useState<any[]>([]); // fetched members / possible invites
-
-  // transfer form state
-  const [newOwnerId, setNewOwnerId] = useState<string | null>(null);
-
-  // new project name
-  const [newProjectName, setNewProjectName] = useState("");
-  const userRole = !(
-    workspaceRoles?.find((ws: any) => ws.workspaceId == workspace?.id)?.role ===
-      "ADMIN" ||
-    workspaceRoles?.find((ws: any) => ws.workspaceId == workspace?.id)?.role ===
-      "OWNER" ||
-    workspaceRoles?.find((ws: any) => ws.workspaceId == workspace?.id)?.role ===
-      "MAINTAINER"
+  const [formName, setFormName] = useState(workspace.name || "");
+  const [formSlug, setFormSlug] = useState(workspace.slug || "");
+  const [formDescription, setFormDescription] = useState(
+    workspace.description || ""
   );
 
-  useEffect(() => {
-    if (!workspace) return;
-    setFormName(workspace.name ?? "");
-    setFormSlug(workspace.slug ?? "");
-    setFormDescription(workspace.description ?? "");
-  }, [fetchWorkspaceMembers]);
-
-  // useEffect(() => {
-  //   fetchWorkspaceMembers();
-  // });
-
-  async function fetchWorkspaceMembers() {
-    if (!workspace) return;
-    try {
-      const res = await api.get(`/workspace/${workspace.id}/members`, {
-        withCredentials: true,
-      });
-      console.log(res.data);
-      setAllMembers(res.data.members);
-    } catch (err) {
-      setAllMembers([]);
-    }
-  }
+  const canEdit = ["ADMIN", "OWNER", "MAINTAINER"].includes(userRole);
 
   if (!workspace) {
     return (
-      <div className="p-6 bg-card border rounded-md min-h-[220px] flex items-center justify-center">
-        <div className="text-sm text-muted-foreground">
-          No workspace selected
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center text-muted-foreground">
+              No workspace selected
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // ---------- actions ----------
   async function saveWorkspace() {
     setLoadingAction(true);
     try {
       const payload = {
-        id: workspace.id,
         name: formName.trim(),
         slug: formSlug.trim(),
         description: formDescription?.trim(),
       };
-      // optimistic
-      dispatch(updateWorkspace({ id: workspace.id, data: payload }));
-      const res = await api.patch(`/workspace/${workspace.id}`, payload, {
-        withCredentials: true,
-      });
-      dispatch(updateWorkspace({ id: workspace.id, data: res.data }));
+
+      if (onUpdate) {
+        await onUpdate(payload);
+      }
+
       setEditing(false);
-      toast.success("Workspace updated");
+      toast.success("Workspace updated successfully");
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to update workspace");
+      toast.error(err?.message || "Failed to update workspace");
     } finally {
       setLoadingAction(false);
     }
   }
 
-  async function inviteMembers() {
-    if (!inviteSelected.length) {
-      toast.error("Select members to invite");
-      return;
-    }
-    setLoadingAction(true);
-    try {
-      const body = {
-        members: inviteSelected.map((m) => ({
-          userId: m.userId,
-          role: m.role || "member",
-        })),
-      };
-      const res = await api.post(`/workspace/${workspace.id}/invite`, body, {
-        withCredentials: true,
-      });
-      dispatch(
-        updateWorkspace({
-          id: workspace.id,
-          data: { members: res.data.members },
-        })
-      );
-      toast.success("Invitations sent");
-      setInviteOpen(false);
-      setInviteSelected([]);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to invite members");
-    } finally {
-      setLoadingAction(false);
-    }
-  }
-
-  async function transferOwner() {
-    if (!newOwnerId) {
-      toast.error("Select a member");
-      return;
-    }
-    setLoadingAction(true);
-    try {
-      const res = await api.post(
-        `/workspace/${workspace.id}/transfer`,
-        { newOwnerId },
-        { withCredentials: true }
-      );
-      dispatch(updateWorkspace({ id: workspace.id, data: res.data }));
-      toast.success("Ownership transferred");
-      setTransferOpen(false);
-      setNewOwnerId(null);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to transfer ownership");
-    } finally {
-      setLoadingAction(false);
-    }
-  }
-
-  // ---------- small helpers ----------
-  function slugify(s: string) {
-    return s
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-  }
-
-  // ---------- subcomponents ----------
-  function ProjectCard({ proj }: { proj: any }) {
+  function ProjectCard({ proj }: { proj: Project }) {
     return (
-      <div className="bg-card border rounded-md p-3 hover:shadow-sm transition flex flex-col">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <Link
-              href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
-              className="block font-medium truncate">
-              {proj.name}
-            </Link>
-            <div className="text-xs text-muted-foreground mt-1">
-              Tasks:{" "}
-              <span className="font-medium">{proj.taskCount ?? "—"}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {proj.unreadCount > 0 && (
-              <Badge className="text-xs">{proj.unreadCount}</Badge>
-            )}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button aria-label="Project actions" size="sm" title="Actions">
-                  <MoreHorizontal size={14} />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-44 p-0">
-                <div className="flex flex-col p-1 text-sm">
-                  <Link
-                    href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
-                    className="px-3 py-2 hover:bg-muted rounded">
-                    Open Tasks
-                  </Link>
-                  <Link
-                    href={`/dashboard/${workspace.slug}/${proj.slug}/chat`}
-                    className="px-3 py-2 hover:bg-muted rounded">
-                    Open Chat
-                  </Link>
-                  {!userRole && (
-                    <ProjectSettingsDialog
-                      disable={userRole}
-                      project={proj}
-                      onUpdated={(updated) => {}}
-                      onDeleted={(id) => {}}>
-                      <button
-                        className="
-      w-full flex items-center justify-between 
-      px-3 py-2 text-sm rounded 
-      hover:bg-muted transition
-    ">
-                        <span>Settings</span>
-                        <MoreHorizontal className="h-4 w-4 opacity-70" />
-                      </button>
-                    </ProjectSettingsDialog>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  function MemberAvatarGrid({ members }: { members: any[] }) {
-    const visible = members?.slice(0, 8) || [];
-    const rest = Math.max(0, (members?.length || 0) - visible.length);
-
-    return (
-      <div className="flex items-center gap-2">
-        <div className="flex -space-x-3">
-          {visible.map((m: any) => (
-            <div key={m.id} className="relative">
-              <Avatar className="h-9 w-9 ring-2 ring-background">
-                {m.user.image ? (
-                  <AvatarImage src={m.user.image} />
-                ) : (
-                  <AvatarFallback>{m.user.name?.[0]}</AvatarFallback>
-                )}
-              </Avatar>
-            </div>
-          ))}
-          {rest > 0 && (
-            <div className="h-9 w-9 rounded-full bg-muted text-xs grid place-items-center">
-              +{workspace._count.members}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ---------- render ----------
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* MAIN: overview + projects */}
-      <div className="lg:col-span-2 space-y-6">
-        {/* Header */}
-        <div className="bg-card border gap-6 grid sm:grid-rows-2 rounded-md p-5 lg:flex items-start justify-between ">
-          <div className="flex items-start gap-4">
-            <div>
-              <div className="bg-gradient-to-br from-primary/40 to-primary/20 rounded-full h-14 w-14 grid place-items-center">
-                <span className="text-xl font-bold text-primary-foreground">
-                  {(workspace.name || "").charAt(0)}
-                </span>
-              </div>
+      <Card className="group hover:shadow-md transition-all duration-200 hover:border-primary/50">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex-1 min-w-0">
+              <Link
+                href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
+                className="font-semibold text-base hover:text-primary transition-colors line-clamp-1">
+                {proj.name}
+              </Link>
+              {proj.description && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                  {proj.description}
+                </p>
+              )}
             </div>
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-semibold truncate">
-                  {workspace.name}
-                </h1>
-                <div className="text-xs text-muted-foreground hidden lg:block ">
-                  /{workspace.slug}
-                </div>
-              </div>
-
-              <p className="mt-2 text-sm text-muted-foreground">
-                {workspace.description || "No description yet."}
-              </p>
-
-              <div className="mt-3 flex items-center gap-3">
-                <div className="text-xs text-muted-foreground">Projects</div>
-                <div className="text-sm font-medium">
-                  {(workspace.projects || []).length}
-                </div>
-
-                <Separator orientation="vertical" className="h-5 mx-2" />
-
-                <div className="text-xs text-muted-foreground">Members</div>
-                <div className="text-sm font-medium">
-                  {workspace._count.members}
-                </div>
-
-                {workspace.unreadCount! > 0 && (
-                  <>
-                    <Separator orientation="vertical" className="h-5 mx-2" />
-                    <div className="text-xs text-muted-foreground">Unread</div>
-                    <div className="text-sm font-medium text-destructive">
-                      {workspace?.unreadCount || 0}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {!userRole && (
-            <div className="flex items-center gap-2 h-fit">
-              <Dialog open={editing} onOpenChange={setEditing}>
-                <DialogTrigger asChild>
+            {canEdit && (
+              <Popover>
+                <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={() => setEditing(true)}
-                    disabled={userRole}>
-                    <Pencil size={14} /> Edit
+                    size="icon"
+                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreHorizontal className="h-4 w-4" />
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Edit workspace</DialogTitle>
-                  </DialogHeader>
-
-                  <div className="grid gap-3 py-2">
-                    <label className="text-xs text-muted-foreground">
-                      Name
-                    </label>
-                    <Input
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                    />
-
-                    <label className="text-xs text-muted-foreground">
-                      Slug
-                    </label>
-                    <Input
-                      value={formSlug}
-                      onChange={(e) => setFormSlug(e.target.value)}
-                    />
-
-                    <label className="text-xs text-muted-foreground">
-                      Description
-                    </label>
-                    <Textarea
-                      value={formDescription}
-                      onChange={(e) => setFormDescription(e.target.value)}
-                    />
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-1" align="end">
+                  <div className="flex flex-col text-sm">
+                    <Link
+                      href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded-sm transition-colors">
+                      <CheckSquare className="h-4 w-4" />
+                      Open Tasks
+                    </Link>
+                    <Link
+                      href={`/dashboard/${workspace.slug}/${proj.slug}/chat`}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded-sm transition-colors">
+                      <MessageSquare className="h-4 w-4" />
+                      Open Chat
+                    </Link>
+                    <Separator className="my-1" />
+                    <button className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded-sm transition-colors text-left w-full">
+                      <Settings className="h-4 w-4" />
+                      Settings
+                    </button>
                   </div>
-
-                  <DialogFooter className="flex gap-2">
-                    <Button variant="ghost" onClick={() => setEditing(false)}>
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={saveWorkspace}
-                      disabled={loadingAction || userRole}>
-                      {loadingAction ? (
-                        <Loader2 className="animate-spin mr-2" />
-                      ) : null}
-                      Save
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
-              <InviteMemberSheet
-                open={inviteOpen}
-                onOpenChange={setInviteOpen}
-                workspaceSlug={workspace.id}
-                onInvite={async (members) => {
-                  await api.post(`/workspace/${workspace.id}/invite`, {
-                    members,
-                  });
-                }}
-                disabled={userRole}
-                currentPath="WORKSPACE"
-              />
-              <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setTransferOpen(true)}
-                    disabled={userRole}>
-                    <Forward size={14} /> Transfer
-                  </Button>
-                </DialogTrigger>
-
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Transfer ownership</DialogTitle>
-                  </DialogHeader>
-
-                  <div className="grid gap-3 py-2">
-                    <div className="text-sm text-muted-foreground">
-                      Choose a new owner
-                    </div>
-                    <div className="max-h-[40vh] overflow-auto border rounded p-2">
-                      {(workspace.members || [])
-                        .filter((m) => m.id !== workspace.ownerId)
-                        .map((m) => (
-                          <label
-                            key={m.id}
-                            className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-muted/30 ${
-                              newOwnerId === m.id ? "bg-accent/30" : ""
-                            }`}>
-                            <input
-                              type="radio"
-                              name="newOwner"
-                              checked={newOwnerId === m.id}
-                              onChange={() => setNewOwnerId(m.id)}
-                            />
-                            <Avatar className="h-8 w-8">
-                              {m.user.image ? (
-                                <AvatarImage src={m.user.image} />
-                              ) : (
-                                <AvatarFallback>
-                                  {m.user.name?.[0]}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                            <div>
-                              <div className="font-medium">{m.user.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {m.user.email}
-                              </div>
-                            </div>
-                          </label>
-                        ))}
-                    </div>
-                  </div>
-
-                  <DialogFooter className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      onClick={() => setTransferOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={transferOwner} disabled={loadingAction}>
-                      {loadingAction ? (
-                        <Loader2 className="animate-spin mr-2" />
-                      ) : null}{" "}
-                      Transfer
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
-        </div>
-
-        {workspace.projects.length > 0 ? (
-          <div className="grid gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {(workspace.projects || []).map((p: any) => (
-                <ProjectCard key={p.id} proj={p} />
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="grid">
-            {!userRole && (
-              <div className="grid place-items-center">
-                <EmptyDemo />
-              </div>
+                </PopoverContent>
+              </Popover>
             )}
+          </div>
+
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <CheckSquare className="h-3.5 w-3.5" />
+              <span>{proj.taskCount ?? 0} tasks</span>
+            </div>
+            {proj.unreadCount && proj.unreadCount > 0 && (
+              <Badge variant="destructive" className="h-5 text-xs">
+                {proj.unreadCount} unread
+              </Badge>
+            )}
+            {proj.status && (
+              <Badge variant="secondary" className="h-5 text-xs">
+                {proj.status}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  function MembersList({ members }: { members: WorkspaceMember[] }) {
+    const displayMembers = members?.slice(0, 12) || [];
+    const remaining = Math.max(0, (members?.length || 0) - 12);
+
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          {displayMembers.map((m) => (
+            <div
+              key={m.id}
+              className="flex items-center gap-2 p-2 rounded-md hover:bg-accent/50 transition-colors">
+              <Avatar className="h-8 w-8">
+                {m.user.image ? (
+                  <AvatarImage src={m.user.image} alt={m.user.name || ""} />
+                ) : (
+                  <AvatarFallback className="text-xs">
+                    {m.user.name?.[0] || "U"}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">
+                  {m.user.name}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {m.role || "Member"}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {remaining > 0 && (
+          <div className="text-center pt-2">
+            <Link
+              href={`/dashboard/${workspace.slug}/members`}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              View {remaining} more member{remaining !== 1 ? "s" : ""}
+            </Link>
           </div>
         )}
       </div>
+    );
+  }
 
-      {/* RIGHT: meta / members */}
-      <aside className="space-y-6">
-        <div className="bg-card border rounded-md p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs text-muted-foreground">Workspace</div>
-              <div className="font-semibold">{workspace.name}</div>
-            </div>
+  const EmptyProjects = () => (
+    <div className="text-center py-12 text-muted-foreground">
+      <FolderKanban className="h-12 w-12 mx-auto mb-3 opacity-50" />
+      <p className="text-lg font-medium mb-1">No projects yet</p>
+      <p className="text-sm">Create your first project to get started</p>
+    </div>
+  );
 
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Unread</div>
-              <div className="font-medium text-destructive">
-                {workspace.unreadCount || 0}
+  return (
+    <div className="space-y-6">
+      {/* Header Section */}
+      <Card className="border-2">
+        <CardContent className="p-6">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div className="flex items-start gap-4 flex-1">
+              <div className="relative">
+                <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center shadow-lg">
+                  <span className="text-2xl font-bold text-primary-foreground">
+                    {(workspace.name || "W").charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                {workspace.isActive && (
+                  <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-green-500 rounded-full border-2 border-background" />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
+                    {workspace.name}
+                  </h1>
+                  <Badge variant="outline" className="font-mono text-xs">
+                    /{workspace.slug}
+                  </Badge>
+                  {workspace.priority && (
+                    <Badge
+                      variant={
+                        workspace.priority === "HIGH"
+                          ? "destructive"
+                          : workspace.priority === "MEDIUM"
+                          ? "default"
+                          : "secondary"
+                      }>
+                      {workspace.priority}
+                    </Badge>
+                  )}
+                </div>
+
+                <p className="text-sm text-muted-foreground mb-4 max-w-2xl">
+                  {workspace.description || "No description provided."}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <FolderKanban className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {workspace.projects?.length || 0}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Project{workspace.projects?.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  <Separator orientation="vertical" className="h-4" />
+
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {workspace._count?.members ||
+                        workspace.members?.length ||
+                        0}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Member
+                      {(workspace._count?.members ||
+                        workspace.members?.length) !== 1
+                        ? "s"
+                        : ""}
+                    </span>
+                  </div>
+
+                  {workspace.unreadCount && workspace.unreadCount > 0 && (
+                    <>
+                      <Separator orientation="vertical" className="h-4" />
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-destructive" />
+                        <span className="text-sm font-medium text-destructive">
+                          {workspace.unreadCount}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Unread
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
+
+            {canEdit && (
+              <Dialog open={editing} onOpenChange={setEditing}>
+                <DialogTrigger asChild>
+                  <Button size="lg" className="gap-2">
+                    <Pencil className="h-4 w-4" />
+                    Edit Workspace
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Edit Workspace</DialogTitle>
+                  </DialogHeader>
+
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Workspace Name
+                      </label>
+                      <Input
+                        value={formName}
+                        onChange={(e) => setFormName(e.target.value)}
+                        placeholder="Enter workspace name"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Slug</label>
+                      <Input
+                        value={formSlug}
+                        onChange={(e) => setFormSlug(e.target.value)}
+                        placeholder="workspace-slug"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Used in URLs. Only lowercase letters, numbers, and
+                        hyphens.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Description</label>
+                      <Textarea
+                        value={formDescription}
+                        onChange={(e) => setFormDescription(e.target.value)}
+                        placeholder="Describe your workspace"
+                        rows={4}
+                      />
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setEditing(false)}
+                      disabled={loadingAction}>
+                      Cancel
+                    </Button>
+                    <Button onClick={saveWorkspace} disabled={loadingAction}>
+                      {loadingAction && (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      )}
+                      Save Changes
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="mt-4">
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">Members</div>
-              {!userRole && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setInviteOpen(true)}>
-                  Invite
-                </Button>
-              )}
-            </div>
-
-            <div className="mt-3">
-              <MemberAvatarGrid members={workspace.members || []} />
-            </div>
-          </div>
-
-          <div className="mt-4 text-xs text-muted-foreground">Owner</div>
-          <div className="mt-2 flex items-center gap-3">
-            <Avatar className="h-9 w-9">
-              {workspace.owner?.image ? (
-                <AvatarImage src={workspace.owner.image} />
+      {/* Main Content */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Projects Section */}
+        <div className="xl:col-span-2 space-y-6">
+          <Card>
+            <CardHeader className="border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <FolderKanban className="h-5 w-5" />
+                  Projects
+                </CardTitle>
+                <Badge variant="secondary">
+                  {workspace.projects?.length || 0}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              {workspace.projects && workspace.projects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {workspace.projects.map((p) => (
+                    <ProjectCard key={p.id} proj={p} />
+                  ))}
+                </div>
               ) : (
-                <AvatarFallback>{workspace.owner?.name?.[0]}</AvatarFallback>
+                <EmptyProjects />
               )}
-            </Avatar>
-            <div className="min-w-0">
-              <div className="font-medium">{workspace.owner?.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {workspace.owner?.email || ""}
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="bg-card border rounded-md p-4 text-sm">
-          <div className="font-medium mb-2">Quick Links</div>
-          <div className="flex flex-col gap-2">
-            <Link
-              href={`/dashboard/${workspace.slug}/settings`}
-              className="text-muted-foreground hover:text-foreground">
-              Workspace settings
-            </Link>
-            <Link
-              href={`/dashboard/${workspace.slug}/members`}
-              className="text-muted-foreground hover:text-foreground">
-              Manage members
-            </Link>
-            <Link
-              href={`/dashboard/${workspace.slug}/analytics`}
-              className="text-muted-foreground hover:text-foreground">
-              Analytics
-            </Link>
-          </div>
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Owner Card */}
+          {workspace.owner && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Workspace Owner</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    {workspace.owner.image ? (
+                      <AvatarImage
+                        src={workspace.owner.image}
+                        alt={workspace.owner.name || ""}
+                      />
+                    ) : (
+                      <AvatarFallback className="text-base">
+                        {workspace.owner.name?.[0] || "O"}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold truncate">
+                      {workspace.owner.name || "Unknown"}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {workspace.owner.email || ""}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Members Card */}
+          {workspace.members && workspace.members.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Team Members
+                  </CardTitle>
+                  <Badge variant="secondary">
+                    {workspace._count?.members || workspace.members.length}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <MembersList members={workspace.members} />
+                <Separator className="my-4" />
+                <Link
+                  href={`/dashboard/${workspace.slug}/members`}
+                  className="text-sm text-primary hover:underline">
+                  View all members
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quick Links */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Quick Links</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <Link
+                href={`/dashboard/${workspace.slug}/settings`}
+                className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors text-sm">
+                <Settings className="h-4 w-4 text-muted-foreground" />
+                <span>Workspace Settings</span>
+              </Link>
+              <Link
+                href={`/dashboard/${workspace.slug}/members`}
+                className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors text-sm">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span>Manage Members</span>
+              </Link>
+              <Link
+                href={`/dashboard/${workspace.slug}/analytics`}
+                className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors text-sm">
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <span>Analytics</span>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Workspace Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Status</span>
+                <Badge variant={workspace.isActive ? "default" : "secondary"}>
+                  {workspace.isActive ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Created</span>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {new Date(workspace.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Last Updated</span>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {new Date(workspace.updatedAt).toLocaleDateString()}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </aside>
+      </div>
     </div>
   );
 }
