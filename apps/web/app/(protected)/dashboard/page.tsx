@@ -21,12 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import {
   Save,
@@ -39,26 +34,33 @@ import {
   AlertTriangle,
   Lock,
   Globe,
-  Loader2
+  Loader2,
+  BackpackIcon,
+  ChevronLeft,
+  Archive,
+  PauseCircle,
+  ArrowDown,
+  Minus,
+  ArrowUp,
 } from "lucide-react";
 import MembersTable from "@/components/dashboard/MembersTable";
 import InviteMemberSheet from "@/components/workspace/InviteMemberSheet";
 import { api } from "@/lib/api/api";
 import { toast } from "sonner";
-import { TProject, setWorkspaces as useWSs } from "@/lib/redux/slices/workspace"
-import { TWorkspace } from "@/lib/redux/slices/workspace";
+import { setWorkspaces as useWSs } from "@/lib/redux/slices/workspace";
 import { useDispatch } from "react-redux";
-import { useActiveWorkspace } from "@/lib/redux/hooks/use-workspaces";
 import { Project, Workspace } from "@prisma/client";
-import { AxiosError } from "axios";
 
-type EWorkspace = Workspace & {projects:Project[]}
+type EWorkspace = Workspace & { projects: Project[] };
+type Status = "DRAFT" | "isActive" | "PAUSED" | "COMPLETED" | "ARCHIVED";
+type Priority = "LOW" | "MEDIUM" | "HIGH";
 
 export default function WorkspaceDashboard() {
-
   const [workspaces, setWorkspaces] = useState<EWorkspace[]>([]);
 
-  const [selectedWorkspace, setSelectedWorkspace] = useState<EWorkspace | null>(null);
+  const [selectedWorkspace, setSelectedWorkspace] = useState<EWorkspace | null>(
+    null
+  );
   const dispatch = useDispatch();
   const [projects, setProjects] = useState<Project[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -68,12 +70,12 @@ export default function WorkspaceDashboard() {
   async function fetchWorkspace() {
     try {
       const res = await api.get("/workspace/dashboard");
-      console.log("dashboard : ",res)
+      console.log("dashboard : ", res);
       setWorkspaces(res.data);
       setSelectedWorkspace(res.data[0] ?? null);
       dispatch(useWSs(res.data));
-    } catch (error:any) {
-      toast.error("Failed to load workspaces",error.message);
+    } catch (error: any) {
+      toast.error("Failed to load workspaces", error.message);
     } finally {
       setLoading(false);
     }
@@ -83,18 +85,16 @@ export default function WorkspaceDashboard() {
     fetchWorkspace();
   }, []);
 
-useEffect(()=>{
-  if(selectedWorkspace){
-
-    setProjects(selectedWorkspace?.projects)
-  }
-},[selectedWorkspace])
-
+  useEffect(() => {
+    if (selectedWorkspace) {
+      setProjects(selectedWorkspace?.projects);
+    }
+  }, [selectedWorkspace]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       toast.success("Changes saved successfully");
     } catch (error) {
       toast.error("Failed to save changes");
@@ -103,7 +103,9 @@ useEffect(()=>{
     }
   };
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "outline" => {
+  const getStatusVariant = (
+    status: string
+  ): "default" | "secondary" | "outline" => {
     const statusLower = status.toLowerCase();
     if (statusLower === "active") return "default";
     if (statusLower === "archived") return "secondary";
@@ -147,10 +149,9 @@ useEffect(()=>{
 
           <Button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || selectedWorkspace.status == "ARCHIVED"}
             size="lg"
-            className="gap-2 shadow-sm"
-          >
+            className="gap-2 shadow-sm">
             {saving ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -174,9 +175,10 @@ useEffect(()=>{
             onValueChange={(value) => {
               const ws = workspaces.find((w) => w.slug === value);
               if (ws) setSelectedWorkspace(ws);
-            }}
-          >
-            <SelectTrigger id="workspace-select" className="mt-2 w-full sm:max-w-sm">
+            }}>
+            <SelectTrigger
+              id="workspace-select"
+              className="mt-2 w-full sm:max-w-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -206,7 +208,10 @@ useEffect(()=>{
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Members</span>
             </TabsTrigger>
-            <TabsTrigger value="projects" className="gap-2" onClick={()=>setProjects(selectedWorkspace.projects)}>
+            <TabsTrigger
+              value="projects"
+              className="gap-2"
+              onClick={() => setProjects(selectedWorkspace.projects)}>
               <FolderKanban className="h-4 w-4" />
               <span className="hidden sm:inline">Projects</span>
             </TabsTrigger>
@@ -264,7 +269,7 @@ useEffect(()=>{
                   <Label htmlFor="workspace-description">Description</Label>
                   <Textarea
                     id="workspace-description"
-                    value={selectedWorkspace.description?? ""}
+                    value={selectedWorkspace.description ?? ""}
                     onChange={(e) =>
                       setSelectedWorkspace({
                         ...selectedWorkspace,
@@ -278,7 +283,83 @@ useEffect(()=>{
                     Help team members understand what this workspace is for
                   </p>
                 </div>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={selectedWorkspace.status}
+                      onValueChange={(value) =>
+                        setSelectedWorkspace({
+                          ...selectedWorkspace,
+                          status: value as Status,
+                        })
+                      }
+                      defaultValue={selectedWorkspace.status}>
+                      <SelectTrigger
+                        id="workspace-status"
+                        className="mt-2 w-full">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
 
+                      <SelectContent>
+                        <SelectItem value="isActive">
+                          <div className="flex items-center gap-2">Active</div>
+                        </SelectItem>
+
+                        <SelectItem value="DRAFT">
+                          <div className="flex items-center gap-2">DRAFT</div>
+                        </SelectItem>
+
+                        <SelectItem value="PAUSED">
+                          <div className="flex items-center gap-2">PAUSED</div>
+                        </SelectItem>
+                        <SelectItem value="COMPLETED">
+                          <div className="flex items-center gap-2">
+                            COMPLETED
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="ARCHIVED">
+                          <div className="flex items-center gap-2">
+                            ARCHIVED
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Priority</Label>
+                    <Select
+                      value={selectedWorkspace.priority}
+                      onValueChange={(value) =>
+                        setSelectedWorkspace({
+                          ...selectedWorkspace,
+                          priority: value as "LOW" | "MEDIUM" | "HIGH",
+                        })
+                      }
+                      defaultValue={selectedWorkspace.priority}>
+                      <SelectTrigger
+                        id="workspace-priority"
+                        className="mt-2 w-full">
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        <SelectItem value="LOW">
+                          <div className="flex items-center gap-2">Low</div>
+                        </SelectItem>
+
+                        <SelectItem value="MEDIUM">
+                          <div className="flex items-center gap-2">Medium</div>
+                        </SelectItem>
+
+                        <SelectItem value="HIGH">
+                          <div className="flex items-center gap-2">High</div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <Separator />
 
                 <div className="flex items-start justify-between gap-4 rounded-lg border bg-muted/50 p-4">
@@ -288,7 +369,8 @@ useEffect(()=>{
                       <p className="font-medium">Private Workspace</p>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      When enabled, only invited members can discover and access this workspace
+                      When enabled, only invited members can discover and access
+                      this workspace
                     </p>
                   </div>
                   <Switch
@@ -318,8 +400,7 @@ useEffect(()=>{
                   <Button
                     size="sm"
                     className="gap-2"
-                    onClick={() => setInviteOpen(true)}
-                  >
+                    onClick={() => setInviteOpen(true)}>
                     <Plus className="h-4 w-4" />
                     Invite Member
                   </Button>
@@ -343,7 +424,8 @@ useEffect(()=>{
                     </CardDescription>
                   </div>
                   <Badge variant="secondary" className="text-xs">
-                    {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+                    {projects.length}{" "}
+                    {projects.length === 1 ? "project" : "projects"}
                   </Badge>
                 </div>
               </CardHeader>
@@ -352,7 +434,9 @@ useEffect(()=>{
                 {projects.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <FolderKanban className="h-12 w-12 text-muted-foreground/50" />
-                    <h3 className="mt-4 text-lg font-semibold">No projects yet</h3>
+                    <h3 className="mt-4 text-lg font-semibold">
+                      No projects yet
+                    </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
                       Projects created in this workspace will appear here
                     </p>
@@ -362,8 +446,7 @@ useEffect(()=>{
                     {projects.map((project) => (
                       <div
                         key={project.id}
-                        className="group flex items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50"
-                      >
+                        className="group flex items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50">
                         <div className="flex-1 space-y-1">
                           <p className="font-medium">{project.name}</p>
                           <p className="text-xs text-muted-foreground">
@@ -416,7 +499,8 @@ useEffect(()=>{
                     <div className="flex-1 space-y-1">
                       <p className="font-medium">Modify Settings</p>
                       <p className="text-sm text-muted-foreground">
-                        Allow members to change workspace settings and configuration
+                        Allow members to change workspace settings and
+                        configuration
                       </p>
                     </div>
                     <Switch />
@@ -426,7 +510,8 @@ useEffect(()=>{
                     <div className="flex-1 space-y-1">
                       <p className="font-medium">Delete Resources</p>
                       <p className="text-sm text-muted-foreground">
-                        Allow members to delete projects and other workspace resources
+                        Allow members to delete projects and other workspace
+                        resources
                       </p>
                     </div>
                     <Switch />
@@ -435,7 +520,9 @@ useEffect(()=>{
 
                 <div className="rounded-lg bg-muted p-4">
                   <p className="text-sm text-muted-foreground">
-                    <strong className="text-foreground">Note:</strong> Workspace owners always have full permissions regardless of these settings.
+                    <strong className="text-foreground">Note:</strong> Workspace
+                    owners always have full permissions regardless of these
+                    settings.
                   </p>
                 </div>
               </CardContent>
@@ -447,10 +534,13 @@ useEffect(()=>{
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-destructive" />
-                  <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                  <CardTitle className="text-destructive">
+                    Danger Zone
+                  </CardTitle>
                 </div>
                 <CardDescription>
-                  Irreversible actions that will permanently affect your workspace
+                  Irreversible actions that will permanently affect your
+                  workspace
                 </CardDescription>
               </CardHeader>
 
@@ -458,7 +548,8 @@ useEffect(()=>{
                 <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6">
                   <h3 className="font-semibold">Delete Workspace</h3>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Once you delete a workspace, there is no going back. This will permanently delete:
+                    Once you delete a workspace, there is no going back. This
+                    will permanently delete:
                   </p>
                   <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
                     <li>• All projects and their data</li>

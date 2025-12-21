@@ -6,6 +6,7 @@ import {
   Bot,
   Command,
   Frame,
+  LayoutDashboardIcon,
   LifeBuoy,
   Map,
   PieChart,
@@ -129,6 +130,11 @@ const data = {
   ],
   navSecondary: [
     {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: LayoutDashboardIcon,
+    },
+    {
       title: "Support",
       url: "#",
       icon: LifeBuoy,
@@ -137,23 +143,6 @@ const data = {
       title: "Feedback",
       url: "#",
       icon: Send,
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
     },
   ],
 };
@@ -180,7 +169,6 @@ export function AppSidebar({ ...props }: IExtendedProp) {
     setActiveWsProjects(activeWs.projects);
   }
   if (props.w == null) return <SidebarSkeleton user={user} />;
-  console.log(props.w.workspaces);
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -201,7 +189,7 @@ export function AppSidebar({ ...props }: IExtendedProp) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {props.w.workspaces && <NavMain items={props.w.workspaces} />}
+        {props.w.workspaces && <NavMain items={props.w.workspaces}  />}
 
         {/* <NavProjects projects={data.projects} /> */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />

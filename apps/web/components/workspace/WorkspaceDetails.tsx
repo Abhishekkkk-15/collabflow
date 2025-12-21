@@ -444,7 +444,7 @@ export default function WorkspaceDetails({ workspace }: { workspace: IProp }) {
               <InviteMemberSheet
                 open={inviteOpen}
                 onOpenChange={setInviteOpen}
-                workspaceId={workspace.id}
+                workspaceSlug={workspace.id}
                 onInvite={async (members) => {
                   await api.post(`/workspace/${workspace.id}/invite`, {
                     members,

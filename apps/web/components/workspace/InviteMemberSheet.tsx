@@ -150,11 +150,11 @@ export default function InviteMemberSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetTrigger asChild>
+      {/* <SheetTrigger asChild>
         <Button variant="secondary" size="sm" disabled={disabled}>
           <UserPlus size={14} /> Invite
         </Button>
-      </SheetTrigger>
+      </SheetTrigger> */}
 
       <SheetContent side="right" className="w-[520px]">
         <SheetHeader>
