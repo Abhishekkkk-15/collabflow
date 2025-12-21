@@ -1,10 +1,10 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
 import { prisma } from '@collabflow/db';
 import { WorkspaceMember, WorkspaceRole } from '@prisma/client';
 @Injectable()
@@ -12,13 +12,19 @@ export class WsAuthorizationGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
     const user = req.user;
-    const wsId: string = req.query.wsId;
-    console.log(user);
+    const wsSlug: string = req.params.wsSlug;
+    console.log('slug', req.params);
     try {
+      let ws = await prisma.workspace.findFirst({
+        where: {
+          slug: wsSlug,
+        },
+      });
+      if (!ws) throw new ForbiddenException('Auauthorized');
       let userPermision: WorkspaceMember =
         (await prisma.workspaceMember.findFirst({
           where: {
-            AND: [{ userId: user.id as string }, { workspaceId: wsId }],
+            AND: [{ userId: user.id as string }, { workspaceId: ws?.id }],
           },
         })) as WorkspaceMember;
       if (!userPermision) {

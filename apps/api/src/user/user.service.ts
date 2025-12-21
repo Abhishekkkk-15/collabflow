@@ -23,10 +23,10 @@ export class UserService {
     }));
   }
 
-  async findAllUserNotInWs(wsId: string) {
+  async findAllUserNotInWs(wsSlug: string) {
     const wsExist = await prisma.workspace.findUnique({
       where: {
-        id: wsId,
+        slug: wsSlug,
       },
     });
     if (!wsExist) throw new NotFoundException('Workspace not found');
@@ -35,7 +35,7 @@ export class UserService {
         NOT: {
           workspaceMemberships: {
             some: {
-              workspaceId: wsId,
+              workspaceId: wsExist.id,
             },
           },
         },

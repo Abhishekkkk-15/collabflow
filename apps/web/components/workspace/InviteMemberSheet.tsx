@@ -53,11 +53,9 @@ export default function InviteMemberSheet({
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
 
-  // ----------------------------
-  // Fetch non-members on OPEN
-  // ----------------------------
   async function fetchNonMembers() {
     try {
+      console.log("wslug",workspaceId)
       const res = await api.get(
         `user/workspaces/${workspaceId}/users?limit=20&page=1`
       );
@@ -104,9 +102,7 @@ export default function InviteMemberSheet({
       fetchNonMembersP();
     }
   }, []);
-  // ----------------------------
-  // Search filter
-  // ----------------------------
+
   const filtered = nonMembers.filter((u) => {
     const q = query.toLowerCase();
     return (
@@ -114,9 +110,6 @@ export default function InviteMemberSheet({
     );
   });
 
-  // ----------------------------
-  // Toggle user selection
-  // ----------------------------
   function toggleSelectUser(user: User) {
     const exists = inviteSelected.find((x) => x.userId === user.id);
     if (exists) {

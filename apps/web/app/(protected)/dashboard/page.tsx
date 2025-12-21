@@ -11,17 +11,19 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Save, Trash2, Plus } from "lucide-react";
+import MembersTable from "@/components/dashboard/MembersTable";
+import InviteMemberSheet from "@/components/workspace/InviteMemberSheet";
 
 export default function WorkspaceDashboard() {
   const [workspace, setWorkspace] = useState({
     name: "Collabflow Workspace",
-    slug: "collabflow",
+    slug: "-status:-z.enum(projectstatus),-priority:-z.enum(priority),_9c360d7880d34342",
     description: "Private collaborative workspace",
     isPrivate: true,
   });
-
+  const [inviteOpen,setInviteOpen] = useState(false)
   return (
-    <div className="min-h-screen bg-muted/40 px-4 py-6 sm:px-6 lg:px-10">
+    <div className="min-h-screen  bg-muted/40 px-4 py-6 sm:px-6 lg:px-10">
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -105,7 +107,7 @@ export default function WorkspaceDashboard() {
 
         {/* Members */}
         <TabsContent value="members">
-          <Card className="max-w-3xl">
+          <Card className="">
             <CardHeader className="flex-row reminder">
               <div className="flex-1">
                 <CardTitle>Members</CardTitle>
@@ -113,38 +115,16 @@ export default function WorkspaceDashboard() {
                   Manage who has access to this workspace
                 </CardDescription>
               </div>
-              <Button size="sm" variant="outline" className="gap-2">
-                <Plus className="h-4 w-4" /> Invite
+              <Button size="sm" variant="outline" className="gap-2"  onClick={()=>setInviteOpen(true)} >
+                <Plus className="h-4 w-4"/> Invite
               </Button>
             </CardHeader>
             <CardContent className="space-y-3">
-              {["Abhishek", "Teammate"].map((name) => (
-                <div
-                  key={name}
-                  className="flex items-center justify-between rounded-lg border bg-background p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9">
-                      <AvatarFallback>{name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="leading-tight">
-                      <p className="font-medium">{name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {name === "Abhishek" ? "Workspace Owner" : "Member"}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant={name === "Abhishek" ? "default" : "secondary"}
-                  >
-                    {name === "Abhishek" ? "Owner" : "Member"}
-                  </Badge>
-                </div>
-              ))}
+              <MembersTable workspacSlug={workspace.slug}  />
             </CardContent>
           </Card>
         </TabsContent>
-
+                  <InviteMemberSheet workspaceId={workspace.slug} open={inviteOpen} onOpenChange={setInviteOpen} currentPath="WORKSPACE" />
         {/* Permissions */}
         <TabsContent value="permissions">
           <Card className="max-w-3xl">
