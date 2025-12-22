@@ -18,35 +18,44 @@ export class WorkspaceService {
   async create(
     createWorkspaceDto: CreateWorkspaceDto,
     owner: User,
-  ): Promise<Workspace> {
-    const slug = createSlug(createWorkspaceDto.slug || createWorkspaceDto.name);
-    console.log('current user', owner);
-    const workspace = await prisma.workspace.create({
-      data: {
-        name: createWorkspaceDto.name,
-        description: createWorkspaceDto.description,
-        slug: slug,
-        ownerId: owner.id,
-        priority: createWorkspaceDto.priority,
-        status: createWorkspaceDto.status,
-        isActive:
-          createWorkspaceDto.status === 'ARCHIVED' ||
-          createWorkspaceDto.status === 'PAUSED',
-      },
+  ): Promise<Workspace | undefined> {
+    let workspace;
+    prisma.$transaction(async (tx) => {
+      const slug = createSlug(
+        createWorkspaceDto.slug || createWorkspaceDto.name,
+      );
+      console.log('current user', owner);
+      workspace = await tx.workspace.create({
+        data: {
+          name: createWorkspaceDto.name,
+          description: createWorkspaceDto.description,
+          slug: slug,
+          ownerId: owner.id,
+          priority: createWorkspaceDto.priority,
+          status: createWorkspaceDto.status,
+          isActive:
+            createWorkspaceDto.status === 'ARCHIVED' ||
+            createWorkspaceDto.status === 'PAUSED',
+        },
+      });
+      await tx.workspacePermission.create({
+        data: {
+          workspaceId: workspace.id,
+        },
+      });
+      await tx.workspaceMember.create({
+        data: {
+          userId: owner.id,
+          role: 'OWNER',
+          workspaceId: workspace.id,
+        },
+      });
+      this.workspaceQueue.add('workspace:create', {
+        workspace,
+        members: createWorkspaceDto.members,
+        invitedBy: owner,
+      });
     });
-    await prisma.workspaceMember.create({
-      data: {
-        userId: owner.id,
-        role: 'OWNER',
-        workspaceId: workspace.id,
-      },
-    });
-    this.workspaceQueue.add('workspace:create', {
-      workspace,
-      members: createWorkspaceDto.members,
-      invitedBy: owner,
-    });
-
     return workspace;
   }
 
@@ -73,6 +82,7 @@ export class WorkspaceService {
       },
       include: {
         projects: true,
+        permissions: true,
       },
     });
   }

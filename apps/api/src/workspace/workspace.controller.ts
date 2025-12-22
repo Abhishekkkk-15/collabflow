@@ -64,4 +64,9 @@ export class WorkspaceController {
   ) {
     return this.workspaceService.update(slug, body);
   }
+
+  @Delete(':slug')
+  deleteWorkspace(@Param('slug') slug: string) {
+    this.workspaceService.remove(slug);
+  }
 }

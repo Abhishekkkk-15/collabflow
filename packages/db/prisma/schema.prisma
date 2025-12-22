@@ -94,9 +94,26 @@ model Workspace {
 
   tasks Task[]
 
+  permissions WorkspacePermission? 
 
   @@index([ownerId])
   @@index([slug])
+}
+
+model WorkspacePermission{
+  id String @id @default(cuid())
+  workspaceId String 
+
+   canCreateProject   Boolean @default(true)
+  canInviteMembers  Boolean @default(true)
+  canModifySettings Boolean @default(false)
+  canDeleteResources Boolean @default(false)
+  
+ createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
+  @@unique([workspaceId])
 }
 
 model WorkspaceMember {
@@ -339,3 +356,4 @@ enum TaskTag {
   SECURITY
   PERFORMANCE
 }
+

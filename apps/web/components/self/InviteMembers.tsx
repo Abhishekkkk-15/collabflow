@@ -106,14 +106,12 @@ export function InviteMembers({
     });
   };
   const WORKSPACE_ROLES = [
-    { value: "OWNER", label: "Owner" },
     { value: "MAINTAINER", label: "Maintainer" },
     { value: "CONTRIBUTOR", label: "Contributor" },
     { value: "VIEWER", label: "Viewer" },
   ] as const;
 
   const PROJECT_ROLES = [
-    { value: "OWNER", label: "Owner" },
     { value: "MAINTAINER", label: "Maintainer" },
     { value: "CONTRIBUTOR", label: "Contributor" },
     { value: "VIEWER", label: "Viewer" },

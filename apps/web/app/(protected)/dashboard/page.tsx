@@ -51,9 +51,13 @@ import { api } from "@/lib/api/api";
 import { toast } from "sonner";
 import { setWorkspaces as useWSs } from "@/lib/redux/slices/workspace";
 import { useDispatch } from "react-redux";
-import { Project, Workspace } from "@prisma/client";
+import { Project, Workspace, WorkspacePermission } from "@prisma/client";
+import { useUserRoles } from "@/lib/redux/hooks/use-user";
 
-type EWorkspace = Workspace & { projects: Project[] };
+type EWorkspace = Workspace & {
+  projects: Project[];
+  permissions: WorkspacePermission;
+};
 type Status = "DRAFT" | "isActive" | "PAUSED" | "COMPLETED" | "ARCHIVED";
 type Priority = "LOW" | "MEDIUM" | "HIGH";
 
@@ -68,7 +72,9 @@ export default function WorkspaceDashboard() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
+  const [permissions, setPermissions] = useState<WorkspacePermission>();
+  const { workspaceRoles } = useUserRoles();
+  const [isOwner, setIsOwner] = useState(false);
   async function fetchWorkspace() {
     try {
       const res = await api.get("/workspace/dashboard");
@@ -90,10 +96,18 @@ export default function WorkspaceDashboard() {
   useEffect(() => {
     if (selectedWorkspace) {
       setProjects(selectedWorkspace?.projects);
+      console.log("permissions ", selectedWorkspace.permissions);
+      setPermissions(selectedWorkspace.permissions);
+      let roles = workspaceRoles.find(
+        (w) => w.workspaceId == selectedWorkspace?.id
+      );
+      console.log("ro", roles);
+      setIsOwner(roles?.role == "OWNER");
     }
   }, [selectedWorkspace]);
 
   const handleSave = async () => {
+    if (permissions?.canModifySettings == false || permissions == null) return;
     setSaving(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -106,10 +120,19 @@ export default function WorkspaceDashboard() {
   };
 
   const handleInvite = async (members: InviteEntry[]) => {
+    if (permissions?.canInviteMembers == false) return;
     try {
       await api.post(`/invite/workspace/${selectedWorkspace?.id}`, {
         members,
       });
+    } catch (error) {}
+  };
+
+  const handleDelete = async (id: string) => {
+    if (permissions?.canDeleteResources == false) return;
+    try {
+      await api.delete(`/workspace/${selectedWorkspace?.slug}`);
+      toast.info(selectedWorkspace?.name + " Workspace deleted successfully");
     } catch (error) {}
   };
 
@@ -159,7 +182,11 @@ export default function WorkspaceDashboard() {
 
           <Button
             onClick={handleSave}
-            disabled={saving || selectedWorkspace.status == "ARCHIVED"}
+            disabled={
+              permissions?.canModifySettings ||
+              saving ||
+              selectedWorkspace.status == "ARCHIVED"
+            }
             size="lg"
             className="gap-2 shadow-sm">
             {saving ? (
@@ -229,7 +256,7 @@ export default function WorkspaceDashboard() {
               <Shield className="h-4 w-4" />
               <span className="hidden sm:inline">Permissions</span>
             </TabsTrigger>
-            <TabsTrigger value="danger" className="gap-2">
+            <TabsTrigger value="danger" className="gap-2" disabled={!isOwner}>
               <AlertTriangle className="h-4 w-4" />
               <span className="hidden sm:inline">Danger</span>
             </TabsTrigger>
@@ -251,6 +278,7 @@ export default function WorkspaceDashboard() {
                     <Input
                       id="workspace-name"
                       value={selectedWorkspace.name}
+                      disabled={!permissions?.canModifySettings}
                       onChange={(e) =>
                         setSelectedWorkspace({
                           ...selectedWorkspace,
@@ -280,6 +308,7 @@ export default function WorkspaceDashboard() {
                   <Textarea
                     id="workspace-description"
                     value={selectedWorkspace.description ?? ""}
+                    disabled={!permissions?.canModifySettings}
                     onChange={(e) =>
                       setSelectedWorkspace({
                         ...selectedWorkspace,
@@ -297,6 +326,7 @@ export default function WorkspaceDashboard() {
                   <div className="space-y-2">
                     <Label>Status</Label>
                     <Select
+                      disabled={!permissions?.canModifySettings}
                       value={selectedWorkspace.status}
                       onValueChange={(value) =>
                         setSelectedWorkspace({
@@ -340,6 +370,7 @@ export default function WorkspaceDashboard() {
                   <div className="space-y-2">
                     <Label>Priority</Label>
                     <Select
+                      disabled={!permissions?.canModifySettings}
                       value={selectedWorkspace.priority}
                       onValueChange={(value) =>
                         setSelectedWorkspace({
@@ -384,6 +415,7 @@ export default function WorkspaceDashboard() {
                     </p>
                   </div>
                   <Switch
+                    disabled={!permissions?.canModifySettings}
                     checked={selectedWorkspace.isActive}
                     onCheckedChange={(v) =>
                       setSelectedWorkspace({
@@ -410,7 +442,8 @@ export default function WorkspaceDashboard() {
                   <Button
                     size="sm"
                     className="gap-2"
-                    onClick={() => setInviteOpen(true)}>
+                    onClick={() => setInviteOpen(true)}
+                    disabled={!permissions?.canInviteMembers}>
                     <Plus className="h-4 w-4" />
                     Invite Member
                   </Button>
@@ -492,7 +525,10 @@ export default function WorkspaceDashboard() {
                         Allow members to create new projects in this workspace
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch
+                      defaultChecked={permissions?.canCreateProject}
+                      disabled={!isOwner}
+                    />
                   </div>
 
                   <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
@@ -502,7 +538,10 @@ export default function WorkspaceDashboard() {
                         Allow members to invite other people to the workspace
                       </p>
                     </div>
-                    <Switch />
+                    <Switch
+                      defaultChecked={permissions?.canInviteMembers}
+                      disabled={!isOwner}
+                    />
                   </div>
 
                   <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
@@ -513,7 +552,10 @@ export default function WorkspaceDashboard() {
                         configuration
                       </p>
                     </div>
-                    <Switch />
+                    <Switch
+                      defaultChecked={permissions?.canModifySettings}
+                      disabled={!isOwner}
+                    />
                   </div>
 
                   <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
@@ -524,7 +566,10 @@ export default function WorkspaceDashboard() {
                         resources
                       </p>
                     </div>
-                    <Switch />
+                    <Switch
+                      defaultChecked={permissions?.canDeleteResources}
+                      disabled={!isOwner}
+                    />
                   </div>
                 </div>
 
@@ -566,7 +611,10 @@ export default function WorkspaceDashboard() {
                     <li>• All member associations</li>
                     <li>• All workspace settings and configuration</li>
                   </ul>
-                  <Button variant="destructive" className="mt-6 gap-2">
+                  <Button
+                    variant="destructive"
+                    className="mt-6 gap-2"
+                    disabled={!isOwner}>
                     <Trash2 className="h-4 w-4" />
                     Delete This Workspace
                   </Button>
@@ -583,6 +631,7 @@ export default function WorkspaceDashboard() {
         onOpenChange={setInviteOpen}
         currentPath="WORKSPACE"
         onInvite={handleInvite}
+        disabled={!isOwner}
       />
     </div>
   );

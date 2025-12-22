@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Priority, ProjectStatus } from "@prisma/client";
 import { api } from "@/lib/api/api";
+import InviteMemberSheet from "@/components/workspace/InviteMemberSheet";
 
 export default function CreateWorkspace() {
   console.log("Client component");
