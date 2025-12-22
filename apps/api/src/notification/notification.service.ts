@@ -36,7 +36,7 @@ export class NotificationService {
   }
 
   async findOne(id: string) {
-    await prisma.notification.findUnique({
+    return await prisma.notification.findUnique({
       where: {
         id,
       },

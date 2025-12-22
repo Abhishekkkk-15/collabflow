@@ -25,7 +25,7 @@ import { Input } from "../ui/input";
 import { WorkspaceRole, User } from "@prisma/client";
 import { api } from "@/lib/api/api";
 
-type InviteEntry = {
+export type InviteEntry = {
   userId: string;
   role: WorkspaceRole;
   email: string;
@@ -55,7 +55,7 @@ export default function InviteMemberSheet({
 
   async function fetchNonMembers() {
     try {
-      console.log("wslug",workspaceSlug)
+      console.log("wslug", workspaceSlug);
       const res = await api.get(
         `user/workspaces/${workspaceSlug}/users?limit=20&page=1`
       );

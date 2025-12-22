@@ -106,7 +106,7 @@ export default function WorkspaceDetails({
     <div className="space-y-8 pb-8">
       {/* Hero Section */}
       <Card className="overflow-hidden border-2 shadow-sm">
-        <div className="bg-gradient-to-br from-slate-50 via-slate-50/50 to-white dark:from-slate-900 dark:via-slate-900/50 dark:to-background">
+        <div className="bg-gradient-to-br ">
           <CardContent className="p-8">
             <div className="flex flex-col lg:flex-row gap-8 items-start">
               {/* Workspace Icon & Title */}

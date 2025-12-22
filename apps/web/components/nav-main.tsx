@@ -51,13 +51,13 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
 
   const dispatch = useAppDispatch();
   useEffect(() => {
-    console.log("swesddas : ", items)
+    console.log("swesddas : ", items);
     dispatch(setWorkspaces(items));
   });
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
 
       <SidebarMenu>
         {items?.map((item: TWorkspace) => (
@@ -90,7 +90,6 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
                         <SidebarMenuSubItem
                           key={subItem?.id}
                           className="group flex items-center justify-between">
-                          {/* Project Name */}
                           <SidebarMenuSubButton asChild>
                             <Link
                               href={`/workspace/${item?.slug}/project/${subItem?.slug}`}>
@@ -98,8 +97,7 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
                             </Link>
                           </SidebarMenuSubButton>
 
-                          {/* Hover three dots */}
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button className="px-1 py-1 hover:bg-accent rounded">
@@ -108,7 +106,6 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
                               </DropdownMenuTrigger>
 
                               <DropdownMenuContent align="end" side="right">
-                                {/* Chat */}
                                 <DropdownMenuItem asChild>
                                   <Link
                                     href={`/workspace/${item?.slug}/project/${subItem?.slug}/chat`}>

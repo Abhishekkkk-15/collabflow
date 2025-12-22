@@ -95,17 +95,19 @@ function SidebarShell({
                   <DropdownMenu
                     open={dropDownOpen}
                     onOpenChange={setDropDownOpen}>
-                    <DropdownMenuTrigger asChild>
-                      <button className="flex items-center gap-5 text-sm font-medium border-0 ">
-                        {normalizeString(params.workspace?.toString()!)}
+                    {normalizeString(params.workspace?.toString()!) !== " " && (
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-5 text-sm font-medium border-0 ">
+                          {normalizeString(params.workspace?.toString()!)}
 
-                        <ChevronRightIcon
-                          className={`h-4 w-4 opacity-70 transition-transform duration-200 ${
-                            dropDownOpen ? "rotate-90" : ""
-                          }`}
-                        />
-                      </button>
-                    </DropdownMenuTrigger>
+                          <ChevronRightIcon
+                            className={`h-4 w-4 opacity-70 transition-transform duration-200 ${
+                              dropDownOpen ? "rotate-90" : ""
+                            }`}
+                          />
+                        </button>
+                      </DropdownMenuTrigger>
+                    )}
                     {openCreateProject && (
                       <CreateProjectDialog
                         open={openCreateProject}
@@ -119,7 +121,7 @@ function SidebarShell({
                       align="start"
                       sideOffset={8}
                       className={`
-          w-40 rounded-lg p-1 shadow-lg border bg-popover
+          w-40 rounded-lg p-1 shadow-lg border bg-popover z-50
         `}>
                       {activeWsProjects?.map((p) => (
                         <DropdownMenuItem
@@ -131,24 +133,27 @@ function SidebarShell({
                       <DropdownMenuItem
                         className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
           hover:bg-muted hover:text-foreground transition">
-                        Open Task
+                        <Link
+                          href={`/workspace/${params.workspace?.toString()}/tasks`}>
+                          Open Task
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
           hover:bg-muted hover:text-foreground transition">
                         <Link
-                          href={`/dashboard/${params.workspace?.toString()}/chat`}>
+                          href={`/workspace/${params.workspace?.toString()}/chat`}>
                           Open Chat
                         </Link>
                       </DropdownMenuItem>
-                      {isAuthorized && (
+                      {/* {isAuthorized && (
                         <DropdownMenuItem
                           className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
           hover:bg-muted hover:text-foreground transition"
                           onClick={() => setOpenCreateProject(true)}>
                           Create Project
                         </DropdownMenuItem>
-                      )}
+                      )} */}
                     </DropdownMenuContent>
                   </DropdownMenu>
                   {/* <BreadcrumbSeparator className="hidden md:block" /> */}

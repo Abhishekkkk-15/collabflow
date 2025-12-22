@@ -237,25 +237,4 @@ export class WorkspaceService {
       throw error;
     }
   }
-
-  async handleInvite(slug: string, dto: InviteWorkspaceDto, owner: User) {
-    try {
-      const workspace = await prisma.workspace.findUnique({
-        where: {
-          slug,
-        },
-      });
-
-      if (!workspace) throw new NotFoundException('Workspace not found');
-
-      await this.workspaceQueue.add('workspace:create', {
-        workspace: workspace,
-        members: dto.members,
-        invitedBy: owner,
-      });
-      return { message: 'Success' };
-    } catch (error) {
-      throw error;
-    }
-  }
 }

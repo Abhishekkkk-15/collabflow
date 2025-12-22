@@ -83,16 +83,16 @@ async function flushRemaining() {
   }
 }
 
-process.on("SIGINT", async () => {
-  console.log("SIGINT received - flushing remaining members");
-  await flushRemaining();
-  process.exit(0);
-});
-process.on("SIGTERM", async () => {
-  console.log("SIGTERM received - flushing remaining members");
-  await flushRemaining();
-  process.exit(0);
-});
+// process.on("SIGINT", async () => {
+//   console.log("SIGINT received - flushing remaining members");
+//   await flushRemaining();
+//   process.exit(0);
+// });
+// process.on("SIGTERM", async () => {
+//   console.log("SIGTERM received - flushing remaining members");
+//   await flushRemaining();
+//   process.exit(0);
+// });
 
 export function startInviteWorker() {
   const worker = new Worker(
@@ -123,7 +123,7 @@ export function startInviteWorker() {
         workspaceId: workspace.id as string,
       };
 
-      await pushAndMaybeFlush(payloadToBeStoredInDb);
+      // await pushAndMaybeFlush(payloadToBeStoredInDb);
       const notification = await prisma.notification.create({
         data: {
           userId: members.userId,
@@ -135,12 +135,12 @@ export function startInviteWorker() {
 
           title: `Workspace Invitation`,
           body: `${workspace.name} invited you to join.`,
-          link: `/workspaces/${workspace.slug}`,
-
+          link: `/workspace/${workspace.slug}`,
           meta: {
             workspaceName: workspace.name,
             workspaceId: workspace.id,
             invitedBy: invitedBy,
+            role: members.role,
           },
         },
       });

@@ -39,7 +39,7 @@ type RawNotif = {
   payload: Notification & { actor: any };
 };
 
-type Notif = Notification & { actor: User };
+type Notif = Notification & { actor: User; meta: any };
 
 function timeAgo(iso?: string | Date) {
   if (!iso) return "";
@@ -55,7 +55,6 @@ function timeAgo(iso?: string | Date) {
   return `${d}d`;
 }
 
-/** tiny icon used inside avatar fallback */
 function IconFallback({ type }: { type?: NotificationType }) {
   switch (type) {
     case NotificationType.TASK_ASSIGNED:
@@ -76,7 +75,7 @@ interface INotify extends Notif {}
 
 export default function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notif[]>([]);
-
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const unreadCount = useMemo(
     () => notifications?.filter((n) => !n.isRead).length,
     [notifications]
@@ -106,7 +105,6 @@ export default function NotificationDropdown() {
 
       setNotifications((prev) => [newNotif, ...prev].slice(0, 50));
 
-      // show toast
       toast(dbNotif.title ?? "Notification", {
         description: dbNotif.body ?? undefined,
         position: "top-center",
@@ -154,17 +152,52 @@ export default function NotificationDropdown() {
   }
 
   function onNotifClick(n: Notif) {
+    if (n.type === NotificationType.INVITE) return;
     markAsRead(n.id);
     if (n.link) {
       window.location.href = n.link;
       return;
     }
 
-    // fallback toast
     toast(n.title ?? "Notification", {
       description: n.body ?? undefined,
       position: "top-center",
     });
+  }
+
+  async function acceptInvite(n: Notif) {
+    if (actionLoadingId) return;
+
+    setActionLoadingId(n.id);
+    try {
+      await api.post("/invite/accept", {
+        notificationId: n.id,
+        workspaceId: (n.meta as any)?.workspaceId,
+      });
+
+      toast.success("Invite accepted");
+      setNotifications((prev) => prev.filter((i) => i.id !== n.id));
+    } catch {
+      toast.error("Failed to accept invite");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function rejectInvite(n: Notif) {
+    if (actionLoadingId) return;
+
+    setActionLoadingId(n.id);
+    try {
+      await api.delete(`/invite/reject/${n.id}`);
+
+      toast.info("Invite rejected");
+      setNotifications((prev) => prev.filter((i) => i.id !== n.id));
+    } catch {
+      toast.error("Failed to reject invite");
+    } finally {
+      setActionLoadingId(null);
+    }
   }
 
   return (
@@ -274,7 +307,7 @@ export default function NotificationDropdown() {
                       )}
 
                       <div className="flex items-center gap-2 mt-2">
-                        {!n.isRead && (
+                        {/* {!n.isRead && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -293,7 +326,55 @@ export default function NotificationDropdown() {
                           }}
                           className="text-xs px-2 py-1 rounded hover:bg-muted text-muted-foreground">
                           Dismiss
-                        </button>
+                        </button> */}
+                        {n.type === NotificationType.INVITE ? (
+                          <>
+                            <Button
+                              size="sm"
+                              disabled={actionLoadingId === n.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                acceptInvite(n);
+                              }}>
+                              Confirm
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={actionLoadingId === n.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                rejectInvite(n);
+                              }}>
+                              Reject
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            {!n.isRead && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markAsRead(n.id);
+                                }}
+                                className="text-xs px-2 py-1 rounded bg-primary/5 hover:bg-primary/10 text-primary">
+                                Mark read
+                              </button>
+                            )}
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setNotifications((prev) =>
+                                  prev.filter((it) => it.id !== n.id)
+                                );
+                              }}
+                              className="text-xs px-2 py-1 rounded hover:bg-muted text-muted-foreground">
+                              Dismiss
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

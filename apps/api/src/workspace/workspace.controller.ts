@@ -57,16 +57,6 @@ export class WorkspaceController {
     return this.workspaceService.getWorkspaceMembers(slug, +limit);
   }
 
-  @Post(':slug/invite')
-  inviteMembers(
-    @Param('slug') slug: string,
-    @Body() body: InviteWorkspaceDto,
-    @CurrentUser() user: User,
-  ) {
-    console.log('inviteing new user');
-    return this.workspaceService.handleInvite(slug, body, user);
-  }
-
   @Patch(':slug')
   updateWorkspace(
     @Param('slug') slug: string,

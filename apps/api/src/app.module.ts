@@ -11,6 +11,7 @@ import { CurrentMiddleaware } from './common/middleware/current-user.middleware'
 import { QueuesModule } from './queues/queues.module';
 import { BullModule } from '@nestjs/bullmq';
 import { TaskModule } from './task/task.module';
+import { InviteModule } from './invite/invite.module';
 @Module({
   imports: [
     WorkspaceModule,
@@ -21,6 +22,7 @@ import { TaskModule } from './task/task.module';
     QueuesModule,
     BullModule,
     TaskModule,
+    InviteModule,
   ],
   controllers: [AppController],
   providers: [AppService],

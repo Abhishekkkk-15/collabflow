@@ -52,35 +52,22 @@ export default function ProjectCard({
                 aria-label="Project actions"
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8">
+                className="h-8 w-8 z-50">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-44 p-1">
               <div className="flex flex-col gap-0.5 text-sm">
                 <Link
-                  href={`/dashboard/${workspaceSlug}/${project.slug}/tasks`}
+                  href={`/workspace/${workspaceSlug}/${project.slug}/tasks`}
                   className="px-3 py-1.5 rounded-md hover:bg-muted">
                   Open tasks
                 </Link>
                 <Link
-                  href={`/dashboard/${workspaceSlug}/${project.slug}/chat`}
+                  href={`/workspace/${workspaceSlug}/${project.slug}/chat`}
                   className="px-3 py-1.5 rounded-md hover:bg-muted">
                   Open chat
                 </Link>
-
-                {!isRestricted && (
-                  <ProjectSettingsDialog
-                    project={project}
-                    disable={isRestricted}
-                    onUpdated={() => {}}
-                    onDeleted={() => {}}>
-                    <button className="w-full flex items-center justify-between px-3 py-1.5 text-sm rounded-md hover:bg-muted">
-                      <span>Settings</span>
-                      <MoreHorizontal className="h-4 w-4 opacity-70" />
-                    </button>
-                  </ProjectSettingsDialog>
-                )}
               </div>
             </PopoverContent>
           </Popover>

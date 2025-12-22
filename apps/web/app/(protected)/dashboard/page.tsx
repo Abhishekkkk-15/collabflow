@@ -44,7 +44,9 @@ import {
   ArrowUp,
 } from "lucide-react";
 import MembersTable from "@/components/dashboard/MembersTable";
-import InviteMemberSheet from "@/components/workspace/InviteMemberSheet";
+import InviteMemberSheet, {
+  InviteEntry,
+} from "@/components/workspace/InviteMemberSheet";
 import { api } from "@/lib/api/api";
 import { toast } from "sonner";
 import { setWorkspaces as useWSs } from "@/lib/redux/slices/workspace";
@@ -101,6 +103,14 @@ export default function WorkspaceDashboard() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleInvite = async (members: InviteEntry[]) => {
+    try {
+      await api.post(`/invite/workspace/${selectedWorkspace?.id}`, {
+        members,
+      });
+    } catch (error) {}
   };
 
   const getStatusVariant = (
@@ -572,6 +582,7 @@ export default function WorkspaceDashboard() {
         open={inviteOpen}
         onOpenChange={setInviteOpen}
         currentPath="WORKSPACE"
+        onInvite={handleInvite}
       />
     </div>
   );

@@ -189,7 +189,7 @@ export function AppSidebar({ ...props }: IExtendedProp) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {props.w.workspaces && <NavMain items={props.w.workspaces}  />}
+        {props.w.workspaces && <NavMain items={props.w.workspaces} />}
 
         {/* <NavProjects projects={data.projects} /> */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
