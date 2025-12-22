@@ -12,7 +12,7 @@ export class WsAuthorizationGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
     const user = req.user;
-    const wsSlug: string = req.params.wsSlug;
+    const wsSlug: string = req.params.wsSlug || req.query.wsSlug;
     console.log('slug', req.params);
     try {
       let ws = await prisma.workspace.findFirst({

@@ -122,18 +122,25 @@ export default function WorkspaceDashboard() {
   const handleInvite = async (members: InviteEntry[]) => {
     if (permissions?.canInviteMembers == false) return;
     try {
-      await api.post(`/invite/workspace/${selectedWorkspace?.id}`, {
-        members,
-      });
+      await api.post(
+        `/invite/workspace/${selectedWorkspace?.id}?wsSlug=${selectedWorkspace?.slug}`,
+        {
+          members,
+        }
+      );
     } catch (error) {}
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
     if (permissions?.canDeleteResources == false) return;
     try {
       await api.delete(`/workspace/${selectedWorkspace?.slug}`);
       toast.info(selectedWorkspace?.name + " Workspace deleted successfully");
-    } catch (error) {}
+    } catch (error) {
+      toast.error(
+        "Error Deleting workspace, Try again or check you permissions"
+      );
+    }
   };
 
   const getStatusVariant = (
@@ -443,7 +450,8 @@ export default function WorkspaceDashboard() {
                     size="sm"
                     className="gap-2"
                     onClick={() => setInviteOpen(true)}
-                    disabled={!permissions?.canInviteMembers}>
+                    // disabled={!permissions?.canInviteMembers}
+                  >
                     <Plus className="h-4 w-4" />
                     Invite Member
                   </Button>
@@ -614,7 +622,8 @@ export default function WorkspaceDashboard() {
                   <Button
                     variant="destructive"
                     className="mt-6 gap-2"
-                    disabled={!isOwner}>
+                    disabled={!isOwner}
+                    onClick={handleDelete}>
                     <Trash2 className="h-4 w-4" />
                     Delete This Workspace
                   </Button>
