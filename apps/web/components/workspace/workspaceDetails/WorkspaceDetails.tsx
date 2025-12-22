@@ -1,41 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import {
-  Pencil,
-  MoreHorizontal,
-  Loader2,
   FolderKanban,
   Users,
-  Settings,
-  BarChart3,
+  Calendar,
+  Activity,
+  ExternalLink,
+  ArrowRight,
+  CheckCircle2,
   MessageSquare,
-  CheckSquare,
-  Clock,
+  TrendingUp,
 } from "lucide-react";
 
 interface User {
@@ -78,31 +67,27 @@ interface WorkspaceDetailsProps {
     _count?: { members: number };
   };
   userRole?: string;
-  onUpdate?: (data: any) => Promise<void>;
 }
 
 export default function WorkspaceDetails({
   workspace,
   userRole = "MEMBER",
-  onUpdate,
 }: WorkspaceDetailsProps) {
-  const [editing, setEditing] = useState(false);
-  const [loadingAction, setLoadingAction] = useState(false);
-  const [formName, setFormName] = useState(workspace.name || "");
-  const [formSlug, setFormSlug] = useState(workspace.slug || "");
-  const [formDescription, setFormDescription] = useState(
-    workspace.description || ""
-  );
-
-  const canEdit = ["ADMIN", "OWNER", "MAINTAINER"].includes(userRole);
+  console.log("worksapce", workspace);
 
   if (!workspace) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center text-muted-foreground">
-              No workspace selected
+      <div className="flex items-center justify-center min-h-[600px]">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardContent className="pt-12 pb-12">
+            <div className="text-center">
+              <FolderKanban className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">
+                No Workspace Selected
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Please select a workspace to view its details
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -110,341 +95,214 @@ export default function WorkspaceDetails({
     );
   }
 
-  async function saveWorkspace() {
-    setLoadingAction(true);
-    try {
-      const payload = {
-        name: formName.trim(),
-        slug: formSlug.trim(),
-        description: formDescription?.trim(),
-      };
-
-      if (onUpdate) {
-        await onUpdate(payload);
-      }
-
-      setEditing(false);
-      toast.success("Workspace updated successfully");
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || "Failed to update workspace");
-    } finally {
-      setLoadingAction(false);
-    }
-  }
-
-  function ProjectCard({ proj }: { proj: Project }) {
-    return (
-      <Card className="group hover:shadow-md transition-all duration-200 hover:border-primary/50">
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex-1 min-w-0">
-              <Link
-                href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
-                className="font-semibold text-base hover:text-primary transition-colors line-clamp-1">
-                {proj.name}
-              </Link>
-              {proj.description && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  {proj.description}
-                </p>
-              )}
-            </div>
-
-            {canEdit && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-48 p-1" align="end">
-                  <div className="flex flex-col text-sm">
-                    <Link
-                      href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
-                      className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded-sm transition-colors">
-                      <CheckSquare className="h-4 w-4" />
-                      Open Tasks
-                    </Link>
-                    <Link
-                      href={`/dashboard/${workspace.slug}/${proj.slug}/chat`}
-                      className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded-sm transition-colors">
-                      <MessageSquare className="h-4 w-4" />
-                      Open Chat
-                    </Link>
-                    <Separator className="my-1" />
-                    <button className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded-sm transition-colors text-left w-full">
-                      <Settings className="h-4 w-4" />
-                      Settings
-                    </button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-          </div>
-
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <CheckSquare className="h-3.5 w-3.5" />
-              <span>{proj.taskCount ?? 0} tasks</span>
-            </div>
-            {proj.unreadCount && proj.unreadCount > 0 && (
-              <Badge variant="destructive" className="h-5 text-xs">
-                {proj.unreadCount} unread
-              </Badge>
-            )}
-            {proj.status && (
-              <Badge variant="secondary" className="h-5 text-xs">
-                {proj.status}
-              </Badge>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  function MembersList({ members }: { members: WorkspaceMember[] }) {
-    const displayMembers = members?.slice(0, 12) || [];
-    const remaining = Math.max(0, (members?.length || 0) - 12);
-
-    return (
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          {displayMembers.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center gap-2 p-2 rounded-md hover:bg-accent/50 transition-colors">
-              <Avatar className="h-8 w-8">
-                {m.user.image ? (
-                  <AvatarImage src={m.user.image} alt={m.user.name || ""} />
-                ) : (
-                  <AvatarFallback className="text-xs">
-                    {m.user.name?.[0] || "U"}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">
-                  {m.user.name}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {m.role || "Member"}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        {remaining > 0 && (
-          <div className="text-center pt-2">
-            <Link
-              href={`/dashboard/${workspace.slug}/members`}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              View {remaining} more member{remaining !== 1 ? "s" : ""}
-            </Link>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  const EmptyProjects = () => (
-    <div className="text-center py-12 text-muted-foreground">
-      <FolderKanban className="h-12 w-12 mx-auto mb-3 opacity-50" />
-      <p className="text-lg font-medium mb-1">No projects yet</p>
-      <p className="text-sm">Create your first project to get started</p>
-    </div>
-  );
+  const totalTasks =
+    workspace.projects?.reduce((sum, p) => sum + (p.taskCount ?? 0), 0) ?? 0;
+  const totalUnread =
+    workspace.projects?.reduce((sum, p) => sum + (p.unreadCount ?? 0), 0) ?? 0;
+  const memberCount =
+    workspace._count?.members || workspace.members?.length || 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <Card className="border-2">
-        <CardContent className="p-6">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-            <div className="flex items-start gap-4 flex-1">
-              <div className="relative">
-                <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center shadow-lg">
-                  <span className="text-2xl font-bold text-primary-foreground">
-                    {(workspace.name || "W").charAt(0).toUpperCase()}
-                  </span>
+    <div className="space-y-8 pb-8">
+      {/* Hero Section */}
+      <Card className="overflow-hidden border-2 shadow-sm">
+        <div className="bg-gradient-to-br from-slate-50 via-slate-50/50 to-white dark:from-slate-900 dark:via-slate-900/50 dark:to-background">
+          <CardContent className="p-8">
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              {/* Workspace Icon & Title */}
+              <div className="flex gap-6 items-start flex-1">
+                <div className="relative shrink-0">
+                  <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-700 to-slate-600 dark:from-slate-100 dark:via-slate-300 dark:to-slate-400 flex items-center justify-center shadow-xl ring-4 ring-background">
+                    <span className="text-3xl font-bold text-white dark:text-slate-900">
+                      {(workspace.name || "W").charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  {workspace.isActive && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-emerald-500 rounded-full border-4 border-background shadow-lg flex items-center justify-center">
+                            <CheckCircle2 className="h-3 w-3 text-white" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Active Workspace</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
-                {workspace.isActive && (
-                  <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-green-500 rounded-full border-2 border-background" />
-                )}
-              </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                    {workspace.name}
-                  </h1>
-                  <Badge variant="outline" className="font-mono text-xs">
-                    /{workspace.slug}
-                  </Badge>
-                  {workspace.priority && (
-                    <Badge
-                      variant={
-                        workspace.priority === "HIGH"
-                          ? "destructive"
-                          : workspace.priority === "MEDIUM"
-                          ? "default"
-                          : "secondary"
-                      }>
-                      {workspace.priority}
+                <div className="flex-1 min-w-0 pt-1">
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
+                      {workspace.name}
+                    </h1>
+                    {workspace.priority && (
+                      <Badge
+                        variant={
+                          workspace.priority === "HIGH"
+                            ? "destructive"
+                            : workspace.priority === "MEDIUM"
+                            ? "default"
+                            : "secondary"
+                        }
+                        className="text-xs font-semibold">
+                        {workspace.priority}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-4">
+                    <Badge variant="outline" className="font-mono text-xs">
+                      /{workspace.slug}
                     </Badge>
-                  )}
-                </div>
-
-                <p className="text-sm text-muted-foreground mb-4 max-w-2xl">
-                  {workspace.description || "No description provided."}
-                </p>
-
-                <div className="flex flex-wrap items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <FolderKanban className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      {workspace.projects?.length || 0}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Project{workspace.projects?.length !== 1 ? "s" : ""}
-                    </span>
+                    <Badge variant="secondary" className="text-xs">
+                      {userRole}
+                    </Badge>
                   </div>
 
-                  <Separator orientation="vertical" className="h-4" />
-
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      {workspace._count?.members ||
-                        workspace.members?.length ||
-                        0}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Member
-                      {(workspace._count?.members ||
-                        workspace.members?.length) !== 1
-                        ? "s"
-                        : ""}
-                    </span>
-                  </div>
-
-                  {workspace.unreadCount && workspace.unreadCount > 0 && (
-                    <>
-                      <Separator orientation="vertical" className="h-4" />
-                      <div className="flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4 text-destructive" />
-                        <span className="text-sm font-medium text-destructive">
-                          {workspace.unreadCount}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          Unread
-                        </span>
-                      </div>
-                    </>
-                  )}
+                  <p className="text-muted-foreground leading-relaxed max-w-3xl">
+                    {workspace.description ||
+                      "No description available for this workspace."}
+                  </p>
                 </div>
               </div>
             </div>
 
-            {canEdit && (
-              <Dialog open={editing} onOpenChange={setEditing}>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="gap-2">
-                    <Pencil className="h-4 w-4" />
-                    Edit Workspace
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Edit Workspace</DialogTitle>
-                  </DialogHeader>
-
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Workspace Name
-                      </label>
-                      <Input
-                        value={formName}
-                        onChange={(e) => setFormName(e.target.value)}
-                        placeholder="Enter workspace name"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Slug</label>
-                      <Input
-                        value={formSlug}
-                        onChange={(e) => setFormSlug(e.target.value)}
-                        placeholder="workspace-slug"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Used in URLs. Only lowercase letters, numbers, and
-                        hyphens.
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Description</label>
-                      <Textarea
-                        value={formDescription}
-                        onChange={(e) => setFormDescription(e.target.value)}
-                        placeholder="Describe your workspace"
-                        rows={4}
-                      />
-                    </div>
+            {/* Stats Bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60">
+                <div className="h-10 w-10 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center">
+                  <FolderKanban className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">
+                    {workspace.projects?.length || 0}
                   </div>
+                  <div className="text-xs text-muted-foreground">Projects</div>
+                </div>
+              </div>
 
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setEditing(false)}
-                      disabled={loadingAction}>
-                      Cancel
-                    </Button>
-                    <Button onClick={saveWorkspace} disabled={loadingAction}>
-                      {loadingAction && (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      )}
-                      Save Changes
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-        </CardContent>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60">
+                <div className="h-10 w-10 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{memberCount}</div>
+                  <div className="text-xs text-muted-foreground">Members</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60">
+                <div className="h-10 w-10 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center">
+                  <CheckCircle2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{totalTasks}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Total Tasks
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60">
+                <div className="h-10 w-10 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center">
+                  <MessageSquare className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{totalUnread}</div>
+                  <div className="text-xs text-muted-foreground">Unread</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </div>
       </Card>
 
-      {/* Main Content */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Projects Section */}
+        {/* Main Content */}
         <div className="xl:col-span-2 space-y-6">
-          <Card>
-            <CardHeader className="border-b">
+          {/* Projects Section */}
+          <Card className="shadow-sm">
+            <CardHeader className="border-b bg-muted/30">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-xl">
                   <FolderKanban className="h-5 w-5" />
                   Projects
                 </CardTitle>
-                <Badge variant="secondary">
+                <Badge variant="secondary" className="text-sm">
                   {workspace.projects?.length || 0}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="p-6">
               {workspace.projects && workspace.projects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {workspace.projects.map((p) => (
-                    <ProjectCard key={p.id} proj={p} />
+                <div className="space-y-3">
+                  {workspace.projects.map((proj) => (
+                    <Link
+                      key={proj.id}
+                      href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
+                      className="block group">
+                      <Card className="border-2 hover:border-primary/50 hover:shadow-md transition-all duration-200">
+                        <CardContent className="p-5">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                                  {proj.name}
+                                </h3>
+                                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                              </div>
+
+                              {proj.description && (
+                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                  {proj.description}
+                                </p>
+                              )}
+
+                              <div className="flex flex-wrap items-center gap-3">
+                                {proj.status && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {proj.status}
+                                  </Badge>
+                                )}
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  <span className="font-medium">
+                                    {proj.taskCount ?? 0}
+                                  </span>
+                                  <span>tasks</span>
+                                </div>
+                                {proj.unreadCount && proj.unreadCount > 0 && (
+                                  <Badge
+                                    variant="destructive"
+                                    className="text-xs">
+                                    {proj.unreadCount} unread
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   ))}
                 </div>
               ) : (
-                <EmptyProjects />
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-muted/50 mb-4">
+                    <FolderKanban className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">
+                    No Projects Yet
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    This workspace doesn't have any projects yet
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -452,32 +310,32 @@ export default function WorkspaceDetails({
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Owner Card */}
+          {/* Workspace Owner */}
           {workspace.owner && (
-            <Card>
-              <CardHeader>
+            <Card className="shadow-sm">
+              <CardHeader className="border-b bg-muted/30">
                 <CardTitle className="text-base">Workspace Owner</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-14 w-14 border-2 border-background shadow-md">
                     {workspace.owner.image ? (
                       <AvatarImage
                         src={workspace.owner.image}
-                        alt={workspace.owner.name || ""}
+                        alt={workspace.owner.name || "Owner"}
                       />
                     ) : (
-                      <AvatarFallback className="text-base">
-                        {workspace.owner.name?.[0] || "O"}
+                      <AvatarFallback className="text-lg font-semibold">
+                        {workspace.owner.name?.[0]?.toUpperCase() || "O"}
                       </AvatarFallback>
                     )}
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">
-                      {workspace.owner.name || "Unknown"}
+                    <div className="font-semibold text-base mb-1 truncate">
+                      {workspace.owner.name || "Unknown User"}
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {workspace.owner.email || ""}
+                    <div className="text-sm text-muted-foreground truncate">
+                      {workspace.owner.email || "No email"}
                     </div>
                   </div>
                 </div>
@@ -485,85 +343,107 @@ export default function WorkspaceDetails({
             </Card>
           )}
 
-          {/* Members Card */}
+          {/* Team Members */}
           {workspace.members && workspace.members.length > 0 && (
-            <Card>
-              <CardHeader>
+            <Card className="shadow-sm">
+              <CardHeader className="border-b bg-muted/30">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     Team Members
                   </CardTitle>
-                  <Badge variant="secondary">
-                    {workspace._count?.members || workspace.members.length}
+                  <Badge variant="secondary" className="text-xs">
+                    {memberCount}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
-                <MembersList members={workspace.members} />
-                <Separator className="my-4" />
-                <Link
-                  href={`/dashboard/${workspace.slug}/members`}
-                  className="text-sm text-primary hover:underline">
-                  View all members
-                </Link>
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  {workspace.members.slice(0, 8).map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                      <Avatar className="h-10 w-10 border">
+                        {member.user.image ? (
+                          <AvatarImage
+                            src={member.user.image}
+                            alt={member.user.name || "Member"}
+                          />
+                        ) : (
+                          <AvatarFallback className="text-sm">
+                            {member.user.name?.[0]?.toUpperCase() || "U"}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {member.user.name || "Unknown"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {member.role || "Member"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {workspace.members.length > 8 && (
+                  <>
+                    <Separator className="my-4" />
+                    <Link
+                      href={`/dashboard/${workspace.slug}/members`}
+                      className="flex items-center justify-center gap-2 text-sm font-medium text-primary hover:underline">
+                      View all {memberCount} members
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </>
+                )}
               </CardContent>
             </Card>
           )}
 
-          {/* Quick Links */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Quick Links</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <Link
-                href={`/dashboard/${workspace.slug}/settings`}
-                className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors text-sm">
-                <Settings className="h-4 w-4 text-muted-foreground" />
-                <span>Workspace Settings</span>
-              </Link>
-              <Link
-                href={`/dashboard/${workspace.slug}/members`}
-                className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors text-sm">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span>Manage Members</span>
-              </Link>
-              <Link
-                href={`/dashboard/${workspace.slug}/analytics`}
-                className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors text-sm">
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                <span>Analytics</span>
-              </Link>
-            </CardContent>
-          </Card>
-
           {/* Workspace Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Information</CardTitle>
+          <Card className="shadow-sm">
+            <CardHeader className="border-b bg-muted/30">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Information
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
+            <CardContent className="p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Status</span>
-                <Badge variant={workspace.isActive ? "default" : "secondary"}>
+                <span className="text-sm text-muted-foreground">Status</span>
+                <Badge
+                  variant={workspace.isActive ? "default" : "secondary"}
+                  className="font-medium">
                   {workspace.isActive ? "Active" : "Inactive"}
                 </Badge>
               </div>
+
               <Separator />
+
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Created</span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {new Date(workspace.createdAt).toLocaleDateString()}
-                </span>
+                <span className="text-sm text-muted-foreground">Created</span>
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  {new Date(workspace.createdAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
               </div>
+
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Last Updated</span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {new Date(workspace.updatedAt).toLocaleDateString()}
-                </span>
+                <span className="text-sm text-muted-foreground">Updated</span>
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  {new Date(workspace.updatedAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
               </div>
             </CardContent>
           </Card>

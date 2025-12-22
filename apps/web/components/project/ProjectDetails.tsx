@@ -1,59 +1,30 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
 import Link from "next/link";
-import axios from "axios";
-import { toast } from "sonner";
 
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { updateProjectInStore } from "@/lib/redux/slices/project";
-
-/* shadcn components */
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-/* icons */
 import {
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  UserPlus,
-  Loader2,
-  Trash,
+  FolderKanban,
+  Users,
+  CheckCircle2,
+  MessageSquare,
+  Calendar,
+  Activity,
+  TrendingUp,
+  ExternalLink,
+  ArrowRight,
 } from "lucide-react";
-import InviteMemberSheet from "../workspace/InviteMemberSheet";
-import { api } from "@/lib/api/api";
 
 type Member = {
   id: string;
@@ -77,670 +48,384 @@ type Project = {
   members?: Member[];
   ownerId?: string;
   owner?: { id: string; name?: string; email?: string; image?: string };
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 export default function ProjectDetails({
   project: projectProp,
   members: membersProp,
-  onUpdated,
-  onDeleted,
 }: {
   project?: Project;
   members?: Member[];
-  onUpdated?: (p: Project) => void;
-  onDeleted?: (id: string) => void;
 }) {
-  // allow passing project/members directly or reading from redux if not provided
-  const dispatch = useAppDispatch();
-  const storeProject = useAppSelector((s: any) => s.project?.activeProject) as
-    | Project
-    | undefined;
-
-  const project = projectProp ?? storeProject ?? ({} as Project);
+  const project = projectProp ?? ({} as Project);
   const members = membersProp ?? project.members ?? [];
 
-  /* UI state */
-  const [editingOpen, setEditingOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const statusColor = {
+    DRAFT: "secondary",
+    isActive: "default",
+    PAUSED: "secondary",
+    COMPLETED: "default",
+  } as Record<string, any>;
 
-  /* edit form */
-  const [name, setName] = useState(project.name || "");
-  const [slug, setSlug] = useState(project.slug || "");
-  const [description, setDescription] = useState(project.description || "");
-  const [status, setStatus] = useState(project.status || "isActive");
-  const [priority, setPriority] = useState(project.priority || "MEDIUM");
+  const priorityColor = {
+    LOW: "secondary",
+    MEDIUM: "default",
+    HIGH: "destructive",
+  } as Record<string, any>;
 
-  /* invite state */
-  const [allUsers, setAllUsers] = useState<Member[]>([]); // for invite sheet search
-  const [selectedInvites, setSelectedInvites] = useState<
-    { userId: string; role?: string }[]
-  >([]);
+  const visibleMembers = members.slice(0, 6);
+  const remainingMembers = Math.max(0, members.length - visibleMembers.length);
 
-  useEffect(() => {
-    setName(project.name || "");
-    setSlug(project.slug || "");
-    setDescription(project.description || "");
-    setStatus(project.status || "isActive");
-    setPriority(project.priority || "MEDIUM");
-  }, [project.id]);
-
-  /* fetch potential users for invite sheet (simple) */
-  useEffect(() => {
-    // lazy fetch; adjust endpoint
-    async function loadUsers() {
-      try {
-        const res = await axios.get("/user?limit=200", {
-          withCredentials: true,
-        });
-        setAllUsers(res.data || []);
-      } catch {
-        setAllUsers([]);
-      }
-    }
-    loadUsers();
-  }, []);
-
-  /* helpers */
-  function autoSlug(s: string) {
-    return s
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-  }
-
-  async function saveProjectChanges() {
-    setLoading(true);
-    try {
-      const payload = {
-        name: name.trim(),
-        slug: slug.trim(),
-        description: description?.trim(),
-        status,
-        priority,
-      };
-      const res = await axios.patch(`/project/${project.id}`, payload, {
-        withCredentials: true,
-      });
-      // update store if you have action
-      dispatch(updateProjectInStore(res.data));
-      toastSuccess("Project updated");
-      setEditingOpen(false);
-      onUpdated?.(res.data);
-    } catch (err: any) {
-      toastError(err?.response?.data?.message || "Failed to update project");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function inviteSelectedUsers() {
-    if (!selectedInvites.length) {
-      toastError("Select at least one user to invite");
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        `/project/${project.slug}/invite`,
-        { members: selectedInvites },
-        { withCredentials: true }
-      );
-      toastSuccess("Invites sent");
-      setInviteOpen(false);
-      setSelectedInvites([]);
-      // merge members locally or refetch
-      onUpdated?.(res.data);
-    } catch (err: any) {
-      toastError(err?.response?.data?.message || "Failed to invite users");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function deleteProject() {
-    setLoading(true);
-    try {
-      await api.delete(`/project/${project.slug}`, { withCredentials: true });
-      toastSuccess("Project deleted");
-      onDeleted?.(project.id);
-      setDeleteConfirmOpen(false);
-    } catch (err: any) {
-      console.log(err);
-      toastError("Failed to delete project", err.response.data.message.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  /* small toasts (local helpers) */
-  function toastSuccess(msg: string) {
-    try {
-      toast.success(msg);
-    } catch {
-      /* noop if sonner not present */
-    }
-  }
-  function toastError(msg: string, desc?: string) {
-    try {
-      toast.error(msg, {
-        description: desc,
-        position: "top-center",
-      });
-    } catch {
-      /* noop */
-    }
-  }
-
-  /* Subcomponents */
-
-  function HeaderCard() {
+  if (!project || !project.id) {
     return (
-      <div className="bg-card border rounded-md p-5 flex items-start justify-between gap-6">
-        <div className="flex items-start gap-4">
-          <div className="bg-gradient-to-br from-primary/30 to-primary/10 rounded-full h-14 w-14 grid place-items-center">
-            <span className="text-xl font-bold text-primary-foreground">
-              {(project.name || "P").charAt(0)}
-            </span>
-          </div>
-
-          <div className="min-w-0">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold truncate">
-                {project.name}
-              </h1>
-              <div className="text-xs text-muted-foreground">
-                /{project.slug}
-              </div>
+      <div className="flex items-center justify-center min-h-[600px]">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardContent className="pt-12 pb-12">
+            <div className="text-center">
+              <FolderKanban className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">
+                No Project Selected
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Please select a project to view its details
+              </p>
             </div>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              {project.description || "No description provided."}
-            </p>
-
-            <div className="mt-3 flex items-center gap-3 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-muted-foreground">Tasks</div>
-                <div className="font-medium">{project.taskCount ?? "—"}</div>
-              </div>
-
-              <Separator orientation="vertical" className="h-5 mx-2" />
-
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-muted-foreground">Members</div>
-                <div className="font-medium">{members.length}</div>
-              </div>
-
-              {project.unreadCount ? (
-                <>
-                  <Separator orientation="vertical" className="h-5 mx-2" />
-                  <div className="text-xs text-muted-foreground">Unread</div>
-                  <div className="font-medium text-destructive">
-                    {project.unreadCount}
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Dialog open={editingOpen} onOpenChange={setEditingOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setEditingOpen(true)}>
-                <Pencil className="mr-2 h-4 w-4" /> Edit
-              </Button>
-            </DialogTrigger>
-            <EditDialog />
-          </Dialog>
-
-          {/* <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setInviteOpen(true)}>
-                <UserPlus className="mr-2 h-4 w-4" /> Invite
-              </Button>
-            </SheetTrigger> */}
-          <InviteMemberSheet
-            open={inviteOpen}
-            workspaceId={project.id}
-            disabled={false}
-            onOpenChange={setInviteOpen}
-            currentPath="PROJECT"
-          />
-          {/* </Sheet> */}
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-
-            <PopoverContent className="w-44 p-0">
-              <div className="flex flex-col p-1 text-sm">
-                <button
-                  onClick={() => setEditingOpen(true)}
-                  className="text-left px-3 py-2 hover:bg-muted rounded">
-                  Edit
-                </button>
-                <Link
-                  href={`/dashboard/${project.workspaceSlug || "workspace"}/${
-                    project.slug
-                  }/tasks`}
-                  className="px-3 py-2 hover:bg-muted rounded">
-                  Open Tasks
-                </Link>
-                <button
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  className="text-left px-3 py-2 hover:bg-muted rounded text-destructive">
-                  Delete
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  function EditDialog() {
-    return (
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Edit project</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4 py-2">
-          <div className="grid gap-1">
-            <label className="text-sm font-medium">Name</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-
-          <div className="grid gap-1">
-            <label className="text-sm font-medium">Slug</label>
-            <div className="flex gap-2">
-              <Input value={slug} onChange={(e) => setSlug(e.target.value)} />
-              <Button variant="outline" onClick={() => setSlug(autoSlug(name))}>
-                Auto
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid gap-1">
-            <label className="text-sm font-medium">Description</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 g-2 ">
-            <div>
-              <label className="text-sm font-medium">Status</label>
-              <Select value={status} onValueChange={(v) => setStatus(v)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="w-full">
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="isActive">Active</SelectItem>
-                  <SelectItem value="PAUSED">Paused</SelectItem>
-                  <SelectItem value="COMPLETED">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Priority</label>
-              <Select value={priority} onValueChange={(v) => setPriority(v)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="w-full">
-                  <SelectItem value="LOW">Low</SelectItem>
-                  <SelectItem value="MEDIUM">Medium</SelectItem>
-                  <SelectItem value="HIGH">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setEditingOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={saveProjectChanges} disabled={loading}>
-            {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}{" "}
-            Save
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    );
-  }
-
-  function InviteSheet() {
-    return (
-      <SheetContent side="right" className="w-[520px]">
-        <SheetHeader>
-          <SheetTitle>Invite members to project</SheetTitle>
-        </SheetHeader>
-
-        <div className="p-4 space-y-4">
-          <div className="text-sm text-muted-foreground">
-            Choose users to invite and assign a role (default member).
-          </div>
-
-          <div className="max-h-[56vh] overflow-auto border rounded p-2 space-y-2">
-            {project?.members?.map((u) => {
-              const selected = selectedInvites.some((s) => s.userId === u.id);
-              return (
-                <div
-                  key={u.id}
-                  className="flex items-center gap-3 p-2 rounded hover:bg-muted/40">
-                  <div className="flex items-center gap-3 flex-1">
-                    <Avatar className="h-8 w-8">
-                      {u.image ? (
-                        <AvatarImage src={u.image} />
-                      ) : (
-                        <AvatarFallback>{u.name?.[0]}</AvatarFallback>
-                      )}
-                    </Avatar>
-
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{u.name}</div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {u.email}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={
-                        selected
-                          ? selectedInvites.find((s) => s.userId === u.id)
-                              ?.role || "member"
-                          : undefined
-                      }
-                      onValueChange={(val) => {
-                        if (selected) {
-                          setSelectedInvites((prev) =>
-                            prev.map((p) =>
-                              p.userId === u.id ? { ...p, role: val } : p
-                            )
-                          );
-                        } else {
-                          setSelectedInvites((prev) => [
-                            ...prev,
-                            { userId: u.id, role: val },
-                          ]);
-                        }
-                      }}>
-                      <SelectTrigger className="w-36 h-8">
-                        <SelectValue placeholder="Member" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="member">Member</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="owner">Owner</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Button
-                      variant={selected ? "outline" : "secondary"}
-                      size="sm"
-                      onClick={() => {
-                        if (selected)
-                          setSelectedInvites((prev) =>
-                            prev.filter((p) => p.userId !== u.id)
-                          );
-                        else
-                          setSelectedInvites((prev) => [
-                            ...prev,
-                            { userId: u.id, role: "member" },
-                          ]);
-                      }}>
-                      {" "}
-                    </Button>
+  return (
+    <div className="space-y-8 pb-8">
+      {/* Hero Section */}
+      <Card className="overflow-hidden border-2 shadow-sm">
+        <div className="bg-gradient-to-br from-slate-50 via-slate-50/50 to-white dark:from-slate-900 dark:via-slate-900/50 dark:to-background">
+          <CardContent className="p-8">
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              {/* Project Icon & Title */}
+              <div className="flex gap-6 items-start flex-1">
+                <div className="relative shrink-0 ">
+                  <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 dark:from-blue-400 dark:via-blue-300 dark:to-blue-200 flex items-center justify-center shadow-xl ring-4 ring-background">
+                    <span className="text-3xl font-bold text-white dark:text-blue-900">
+                      {(project.name || "P").charAt(0).toUpperCase()}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
 
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setInviteOpen(false);
-                setSelectedInvites([]);
-              }}>
-              Cancel
-            </Button>
-            <Button onClick={inviteSelectedUsers} disabled={loading}>
-              {loading ? (
-                <Loader2 className="animate-spin mr-2 h-4 w-4" />
-              ) : null}{" "}
-              Invite ({selectedInvites.length})
-            </Button>
-          </div>
+                <div className="flex-1 min-w-0 pt-1">
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
+                      {project.name}
+                    </h1>
+                    {project.priority && (
+                      <Badge
+                        variant={priorityColor[project.priority] || "default"}
+                        className="text-xs font-semibold">
+                        {project.priority}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-4">
+                    <Badge variant="outline" className="font-mono text-xs">
+                      /{project.slug}
+                    </Badge>
+                    {project.status && (
+                      <Badge
+                        variant={statusColor[project.status] || "secondary"}
+                        className="text-xs">
+                        {project.status === "isActive"
+                          ? "Active"
+                          : project.status}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <p className="text-muted-foreground leading-relaxed max-w-3xl">
+                    {project.description ||
+                      "No description available for this project."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60">
+                <div className="h-10 w-10 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center">
+                  <CheckCircle2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">
+                    {project.taskCount ?? 0}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Tasks</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60">
+                <div className="h-10 w-10 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{members.length}</div>
+                  <div className="text-xs text-muted-foreground">Members</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60">
+                <div className="h-10 w-10 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center">
+                  <MessageSquare className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">
+                    {project.unreadCount ?? 0}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Unread</div>
+                </div>
+              </div>
+
+              {project.workspaceSlug && (
+                <Link
+                  href={`/dashboard/${project.workspaceSlug}/${project.slug}/tasks`}
+                  className="group flex items-center gap-3 p-3 rounded-lg bg-background/60 hover:bg-background transition-colors cursor-pointer">
+                  <div className="h-10 w-10 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/20 dark:group-hover:bg-cyan-500/30 transition-colors">
+                    <ExternalLink className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                      Open
+                    </div>
+                    <div className="text-sm font-semibold group-hover:text-primary transition-colors">
+                      Tasks
+                    </div>
+                  </div>
+                </Link>
+              )}
+            </div>
+          </CardContent>
         </div>
-      </SheetContent>
-    );
-  }
+      </Card>
 
-  function MembersGrid() {
-    const visible = members.slice(0, 8);
-    const rest = Math.max(0, members.length - visible.length);
-    return (
-      <div className="bg-card border rounded-md p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs text-muted-foreground">Members</div>
-            <div className="font-medium">{members.length}</div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => setInviteOpen(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Invite
-          </Button>
-        </div>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Main Content */}
+        <div className="xl:col-span-2 space-y-6">
+          {/* Overview Section */}
+          <Card className="shadow-sm">
+            <CardHeader className="border-b bg-muted/30">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Activity className="h-5 w-5" />
+                Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground leading-relaxed">
+                {project.description ||
+                  "No description available for this project."}
+              </p>
 
-        <div className="flex items-center -space-x-3">
-          {visible.map((m) => (
-            <div
-              key={m.id}
-              title={`${m.name} • ${m.role || "member"}`}
-              className="relative">
-              <Avatar className="h-10 w-10 ring-2 ring-background">
-                {m.image ? (
-                  <AvatarImage src={m.image} />
-                ) : (
-                  <AvatarFallback>{m.name?.[0]}</AvatarFallback>
+              <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Status
+                  </div>
+                  <Badge
+                    variant={statusColor[project.status || ""] || "secondary"}
+                    className="font-medium">
+                    {project.status === "isActive"
+                      ? "Active"
+                      : project.status || "Unknown"}
+                  </Badge>
+                </div>
+
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Priority
+                  </div>
+                  <Badge
+                    variant={priorityColor[project.priority || ""] || "default"}
+                    className="font-medium">
+                    {project.priority || "Medium"}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Team Members */}
+          {members.length > 0 && (
+            <Card className="shadow-sm">
+              <CardHeader className="border-b bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Users className="h-5 w-5" />
+                    Team Members
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-sm">
+                    {members.length}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  {visibleMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                      <Avatar className="h-10 w-10 border">
+                        {member.image ? (
+                          <AvatarImage src={member.image} alt={member.name} />
+                        ) : (
+                          <AvatarFallback className="text-sm">
+                            {member.name?.[0]?.toUpperCase() || "U"}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {member.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {member.role
+                            ? member.role.charAt(0).toUpperCase() +
+                              member.role.slice(1)
+                            : "Member"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {remainingMembers > 0 && (
+                  <>
+                    <Separator className="my-4" />
+                    <div className="text-sm text-muted-foreground">
+                      +{remainingMembers} more member
+                      {remainingMembers !== 1 ? "s" : ""}
+                    </div>
+                  </>
                 )}
-              </Avatar>
-            </div>
-          ))}
-          {rest > 0 && (
-            <div className="h-10 w-10 rounded-full bg-muted text-xs grid place-items-center">
-              +{rest}
-            </div>
+              </CardContent>
+            </Card>
           )}
         </div>
 
-        <div className="text-xs text-muted-foreground">
-          Owner:{" "}
-          <span className="font-medium ml-1">
-            {project.owner?.name || project.ownerId}
-          </span>
-        </div>
-      </div>
-    );
-  }
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Project Owner */}
+          {project.owner && (
+            <Card className="shadow-sm">
+              <CardHeader className="border-b bg-muted/30">
+                <CardTitle className="text-base">Project Owner</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-14 w-14 border-2 border-background shadow-md">
+                    {project.owner.image ? (
+                      <AvatarImage
+                        src={project.owner.image}
+                        alt={project.owner.name || "Owner"}
+                      />
+                    ) : (
+                      <AvatarFallback className="text-lg font-semibold">
+                        {project.owner.name?.[0]?.toUpperCase() || "O"}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-base mb-1 truncate">
+                      {project.owner.name || "Unknown User"}
+                    </div>
+                    <div className="text-sm text-muted-foreground truncate">
+                      {project.owner.email || "No email"}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-  function MetaPanel() {
-    return (
-      <aside className="space-y-4">
-        <div className="bg-card border rounded-md p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs text-muted-foreground">Project</div>
-              <div className="font-semibold">{project.name}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Unread</div>
-              <div className="font-medium text-destructive">
-                {project.unreadCount ?? 0}
+          {/* Project Info */}
+          <Card className="shadow-sm">
+            <CardHeader className="border-b bg-muted/30">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Total Tasks
+                </span>
+                <div className="text-2xl font-bold">
+                  {project.taskCount ?? 0}
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="mt-4 grid gap-2">
-            <div className="flex items-center justify-between text-sm">
-              <div className="text-muted-foreground">Status</div>
-              <div className="font-medium">{project.status}</div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="text-muted-foreground">Priority</div>
-              <div className="font-medium">{project.priority}</div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="text-muted-foreground">Tasks</div>
-              <div className="font-medium">{project.taskCount ?? "—"}</div>
-            </div>
-          </div>
-        </div>
+              <Separator />
 
-        <MembersGrid />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Unread</span>
+                <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                  {project.unreadCount ?? 0}
+                </div>
+              </div>
 
-        <div className="bg-card border rounded-md p-4 text-sm">
-          <div className="font-medium mb-2">Quick Links</div>
-          <div className="flex flex-col gap-2">
-            <Link
-              href={`/dashboard/${project.workspaceSlug}/settings`}
-              className="text-muted-foreground hover:text-foreground">
-              Workspace settings
-            </Link>
-            <Link
-              href={`/dashboard/${project.workspaceSlug}/chat`}
-              className="text-muted-foreground hover:text-foreground">
-              Workspace chat
-            </Link>
-          </div>
-        </div>
+              {project.createdAt && (
+                <>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      Created
+                    </span>
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      {new Date(project.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-        <div className="bg-card border rounded-md p-4 text-sm">
-          <div className="flex items-center justify-between">
-            <div className="font-medium text-sm">Danger Zone</div>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setDeleteConfirmOpen(true)}>
-              <Trash className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="text-xs text-muted-foreground mt-2">
-            Delete or archive this project
-          </div>
-        </div>
-      </aside>
-    );
-  }
-
-  /* Delete Confirmation Dialog */
-  function DeleteConfirmDialog() {
-    return (
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogTrigger asChild>
-          <div />
-        </DialogTrigger>
-
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete project</DialogTitle>
-          </DialogHeader>
-
-          <div className="py-2 text-sm text-muted-foreground">
-            Deleting this project is permanent — tasks, chat and files will be
-            removed.
-          </div>
-
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeleteConfirmOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={deleteProject}
-              disabled={loading}>
-              {loading ? (
-                <Loader2 className="animate-spin mr-2 h-4 w-4" />
-              ) : null}{" "}
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  /* main render */
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
-        <HeaderCard />
-
-        {/* Description card */}
-        <div className="bg-card border rounded-md p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">Overview</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {project.description ||
-                  "Add a description to share context about this project."}
-              </p>
-            </div>
-
-            <div>
-              <Badge>{project.status}</Badge>
-            </div>
-          </div>
-        </div>
-
-        {/* Tasks preview card */}
-        <div className="bg-card border rounded-md p-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Recent activity & tasks</h3>
-            <Link
-              href={`/dashboard/${project.workspaceSlug}/${project.slug}/tasks`}
-              className="text-sm text-muted-foreground hover:text-foreground">
-              View all
-            </Link>
-          </div>
-
-          <div className="mt-4 text-sm text-muted-foreground">
-            {/* placeholder: replace with real tasks list */}
-            {project.taskCount ? (
-              <div>{project.taskCount} tasks — show latest 5 here.</div>
-            ) : (
-              <div>No tasks yet.</div>
-            )}
-          </div>
+          {/* Quick Links */}
+          {project.workspaceSlug && (
+            <Card className="shadow-sm">
+              <CardHeader className="border-b bg-muted/30">
+                <CardTitle className="text-base">Quick Links</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-2">
+                <Link
+                  href={`/dashboard/${project.workspaceSlug}/${project.slug}/tasks`}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors text-sm font-medium group">
+                  <span>View Tasks</span>
+                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Link>
+                <Link
+                  href={`/dashboard/${project.workspaceSlug}/settings`}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors text-sm font-medium group">
+                  <span>Workspace Settings</span>
+                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Link>
+                <Link
+                  href={`/dashboard/${project.workspaceSlug}`}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors text-sm font-medium group">
+                  <span>Back to Workspace</span>
+                  <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Link>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
-
-      <MetaPanel />
-
-      <DeleteConfirmDialog />
     </div>
   );
 }

@@ -19,7 +19,6 @@ async function page({
         },
         withCredentials: true,
       });
-      console.log("pro", res);
       return res;
     } catch (error) {
       console.log("error", error);
