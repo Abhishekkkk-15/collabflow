@@ -15,11 +15,15 @@ import { CreateProjectDialog } from "../self/CreateProjectDialog";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 
-export function EmptyDemo() {
+export function EmptyDemo({
+  workspaceId,
+  disabled,
+}: {
+  workspaceId: string;
+  disabled: boolean;
+}) {
   const [openCreateProject, setOpenCreateProject] = useState(false);
-  const currentWorkSpaceId = useSelector(
-    (state: any) => state.workspace.activeWorkspaceId
-  );
+
   return (
     <Empty>
       <EmptyHeader>
@@ -34,11 +38,13 @@ export function EmptyDemo() {
       </EmptyHeader>
       <EmptyContent>
         <div className="flex gap-2">
-          <Button onClick={() => setOpenCreateProject(true)}>
+          <Button
+            onClick={() => setOpenCreateProject(true)}
+            disabled={disabled}>
             Create Project
           </Button>
           <CreateProjectDialog
-            workspaceId={currentWorkSpaceId}
+            workspaceId={workspaceId}
             open={openCreateProject}
             onOpenChange={setOpenCreateProject}
           />

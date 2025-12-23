@@ -150,7 +150,9 @@ export default function MembersTable({
                 {/* ROLE */}
                 <td className="p-3">
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger
+                      asChild
+                      disabled={member.role == "OWNER"}>
                       <Button
                         variant="outline"
                         size="sm"
@@ -175,7 +177,9 @@ export default function MembersTable({
                 {/* ACTIONS */}
                 <td className="p-3">
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger
+                      asChild
+                      disabled={member.role === "OWNER"}>
                       <Button variant="ghost" size="icon">
                         <MoreHorizontal size={16} />
                       </Button>

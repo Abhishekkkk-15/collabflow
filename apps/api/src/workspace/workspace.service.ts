@@ -13,6 +13,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { InviteWorkspaceDto } from './dto/invite.workspace.dto';
 import { ChangeRoleDto } from './dto/change-role';
+import { UpdatePermissinDto } from './dto/update-permission.dto';
 @Injectable()
 export class WorkspaceService {
   constructor(@InjectQueue('workspaceQueue') private workspaceQueue: Queue) {}
@@ -276,7 +277,16 @@ export class WorkspaceService {
     return { success: true };
   }
 
-  async changePermissions() {}
+  async changePermissions(workspaceId: string, dto: UpdatePermissinDto) {
+    const ws = await this.findOneById(workspaceId);
+    if (!ws) throw new NotFoundException('Workspace not found');
+    await prisma.workspacePermission.update({
+      where: {
+        workspaceId: workspaceId,
+      },
+      data: dto,
+    });
+  }
 
   async removeMember(id: string) {
     await prisma.workspaceMember.delete({

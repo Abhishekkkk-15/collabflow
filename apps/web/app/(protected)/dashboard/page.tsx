@@ -58,7 +58,8 @@ import {
   WorkspacePermission,
   WorkspaceRole,
 } from "@prisma/client";
-import { useUserRoles } from "@/lib/redux/hooks/use-user";
+import { useUser, useUserRoles } from "@/lib/redux/hooks/use-user";
+import { EmptyDemo } from "@/components/project/EmptyProjects";
 
 type EWorkspace = Workspace & {
   projects: Project[];
@@ -80,7 +81,10 @@ export default function WorkspaceDashboard() {
   const [saving, setSaving] = useState(false);
   const [permissions, setPermissions] = useState<WorkspacePermission>();
   const { workspaceRoles } = useUserRoles();
+  const user = useUser();
+
   const [isOwner, setIsOwner] = useState(false);
+
   async function fetchWorkspace() {
     try {
       const res = await api.get("/workspace/dashboard");
@@ -108,7 +112,7 @@ export default function WorkspaceDashboard() {
         (w) => w.workspaceId == selectedWorkspace?.id
       );
       console.log("ro", roles);
-      setIsOwner(roles?.role == "OWNER");
+      setIsOwner(selectedWorkspace.ownerId == user.id);
     }
   }, [selectedWorkspace]);
 
@@ -170,6 +174,16 @@ export default function WorkspaceDashboard() {
     try {
       api.delete(`/workspace/members/${id}/remove`);
     } catch (error) {}
+  };
+
+  const handleChangePermission = async (per: Partial<WorkspacePermission>) => {
+    if (!isOwner) return toast.error("Not allowed");
+    try {
+      api.patch(`/workspace/${selectedWorkspace?.id}/permissions`, per);
+      toast.info("Permission changed");
+    } catch (error) {
+      toast.error("Error while changing permission");
+    }
   };
 
   const getStatusVariant = (
@@ -479,8 +493,7 @@ export default function WorkspaceDashboard() {
                     size="sm"
                     className="gap-2"
                     onClick={() => setInviteOpen(true)}
-                    // disabled={!permissions?.canInviteMembers}
-                  >
+                    disabled={!isOwner || permissions?.canInviteMembers}>
                     <Plus className="h-4 w-4" />
                     Invite Member
                   </Button>
@@ -517,13 +530,17 @@ export default function WorkspaceDashboard() {
               <CardContent>
                 {projects.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <FolderKanban className="h-12 w-12 text-muted-foreground/50" />
+                    {/* <FolderKanban className="h-12 w-12 text-muted-foreground/50" />
                     <h3 className="mt-4 text-lg font-semibold">
                       No projects yet
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
                       Projects created in this workspace will appear here
-                    </p>
+                    </p> */}
+                    <EmptyDemo
+                      workspaceId={selectedWorkspace.id}
+                      disabled={!permissions?.canCreateProject!}
+                    />
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -569,6 +586,11 @@ export default function WorkspaceDashboard() {
                     <Switch
                       defaultChecked={permissions?.canCreateProject}
                       disabled={!isOwner}
+                      onClick={() =>
+                        handleChangePermission({
+                          canCreateProject: !permissions?.canCreateProject,
+                        })
+                      }
                     />
                   </div>
 
@@ -582,6 +604,11 @@ export default function WorkspaceDashboard() {
                     <Switch
                       defaultChecked={permissions?.canInviteMembers}
                       disabled={!isOwner}
+                      onClick={() =>
+                        handleChangePermission({
+                          canInviteMembers: !permissions?.canInviteMembers,
+                        })
+                      }
                     />
                   </div>
 
@@ -596,6 +623,11 @@ export default function WorkspaceDashboard() {
                     <Switch
                       defaultChecked={permissions?.canModifySettings}
                       disabled={!isOwner}
+                      onClick={() =>
+                        handleChangePermission({
+                          canModifySettings: !permissions?.canModifySettings,
+                        })
+                      }
                     />
                   </div>
 
@@ -610,6 +642,11 @@ export default function WorkspaceDashboard() {
                     <Switch
                       defaultChecked={permissions?.canDeleteResources}
                       disabled={!isOwner}
+                      onClick={() =>
+                        handleChangePermission({
+                          canDeleteResources: !permissions?.canDeleteResources,
+                        })
+                      }
                     />
                   </div>
                 </div>

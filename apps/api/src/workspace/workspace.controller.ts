@@ -19,6 +19,7 @@ import { CurrentUser } from '../common/decorator/current-user.decorator';
 import type { User } from '@prisma/client';
 import { InviteWorkspaceDto } from './dto/invite.workspace.dto';
 import { ChangeRoleDto } from './dto/change-role';
+import { UpdatePermissinDto } from './dto/update-permission.dto';
 export interface ExtendedRequest extends Request {
   user: User;
 }
@@ -57,6 +58,15 @@ export class WorkspaceController {
   ) {
     return this.workspaceService.getWorkspaceMembers(slug, +limit);
   }
+
+  @Patch(':id/permissions/')
+  handleChangePermission(
+    @Param('id') id: string,
+    @Body() body: UpdatePermissinDto,
+  ) {
+    return this.workspaceService.changePermissions(id, body);
+  }
+
   @Patch('members/role')
   changeRole(@Body() body: ChangeRoleDto, @CurrentUser() user: User) {
     console.log('Dto', body);
