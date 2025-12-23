@@ -123,8 +123,14 @@ export default function WorkspaceDashboard() {
   const handleSave = async () => {
     if (permissions?.canModifySettings == false || permissions == null) return;
     setSaving(true);
+    const payload = {
+      name: selectedWorkspace?.name,
+      description: selectedWorkspace?.description,
+      status: selectedWorkspace?.status,
+      priority: selectedWorkspace?.priority,
+    };
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await api.patch(`/workspace/${selectedWorkspace?.slug!}`, payload);
       toast.success("Changes saved successfully");
     } catch (error) {
       toast.error("Failed to save changes");
@@ -251,11 +257,7 @@ export default function WorkspaceDashboard() {
 
           <Button
             onClick={handleSave}
-            disabled={
-              permissions?.canModifySettings ||
-              saving ||
-              selectedWorkspace.status == "ARCHIVED"
-            }
+            disabled={!hasWorkspacePermission("canModifySettings")}
             size="lg"
             className="gap-2 shadow-sm">
             {saving ? (
