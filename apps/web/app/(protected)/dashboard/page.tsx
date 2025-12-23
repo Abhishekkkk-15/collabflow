@@ -51,7 +51,13 @@ import { api } from "@/lib/api/api";
 import { toast } from "sonner";
 import { setWorkspaces as useWSs } from "@/lib/redux/slices/workspace";
 import { useDispatch } from "react-redux";
-import { Project, Workspace, WorkspacePermission } from "@prisma/client";
+import {
+  Project,
+  Workspace,
+  WorkspaceMember,
+  WorkspacePermission,
+  WorkspaceRole,
+} from "@prisma/client";
 import { useUserRoles } from "@/lib/redux/hooks/use-user";
 
 type EWorkspace = Workspace & {
@@ -141,6 +147,29 @@ export default function WorkspaceDashboard() {
         "Error Deleting workspace, Try again or check you permissions"
       );
     }
+  };
+
+  const handleChangeRole = async (id: string, new_role: WorkspaceRole) => {
+    try {
+      const payload = {
+        id: id,
+        workspaceId: selectedWorkspace?.id,
+        role: new_role,
+      };
+
+      console.log(id, selectedWorkspace?.id, new_role);
+      await api.patch("/workspace/members/role", payload);
+      toast.info("Role changed");
+    } catch (error) {}
+  };
+
+  const handleRemoveMember = async (id: string) => {
+    console.log("p", !permissions?.canInviteMembers, !isOwner);
+    if (permissions?.canInviteMembers == false || isOwner == false)
+      return toast.error("Not allowed");
+    try {
+      api.delete(`/workspace/members/${id}/remove`);
+    } catch (error) {}
   };
 
   const getStatusVariant = (
@@ -459,7 +488,11 @@ export default function WorkspaceDashboard() {
               </CardHeader>
 
               <CardContent>
-                <MembersTable workspaceSlug={selectedWorkspace.slug!} />
+                <MembersTable
+                  workspaceSlug={selectedWorkspace.slug!}
+                  onRoleChange={handleChangeRole}
+                  onRemove={handleRemoveMember}
+                />
               </CardContent>
             </Card>
           </TabsContent>

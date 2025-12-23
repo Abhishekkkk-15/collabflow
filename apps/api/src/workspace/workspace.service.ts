@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { User, Workspace } from '@prisma/client';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { InviteWorkspaceDto } from './dto/invite.workspace.dto';
+import { ChangeRoleDto } from './dto/change-role';
 @Injectable()
 export class WorkspaceService {
   constructor(@InjectQueue('workspaceQueue') private workspaceQueue: Queue) {}
@@ -246,5 +248,41 @@ export class WorkspaceService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async findOneById(id: string) {
+    return await prisma.workspace.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        permissions: true,
+      },
+    });
+  }
+
+  async changeRoles(dto: ChangeRoleDto, user: User) {
+    const ws = await this.findOneById(dto.workspaceId);
+    if (ws?.ownerId != user.id)
+      throw new ForbiddenException('Not permited to perform this task');
+    await prisma.workspaceMember.update({
+      where: {
+        id: dto.id,
+      },
+      data: {
+        role: dto.role,
+      },
+    });
+    return { success: true };
+  }
+
+  async changePermissions() {}
+
+  async removeMember(id: string) {
+    await prisma.workspaceMember.delete({
+      where: {
+        id,
+      },
+    });
   }
 }

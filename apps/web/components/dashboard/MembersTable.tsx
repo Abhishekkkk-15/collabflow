@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Settings } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { WorkspaceMember, User } from "@prisma/client";
+import { WorkspaceMember, User, WorkspaceRole } from "@prisma/client";
 import { api } from "@/lib/api/api";
 import { toast } from "sonner";
 import axios from "axios";
@@ -20,7 +20,6 @@ import axios from "axios";
  * Roles:
  * "OWNER" | "MAINTAINER" | "CONTRIBUTOR" | "VIEWER"
  */
-type Role = "OWNER" | "MAINTAINER" | "CONTRIBUTOR" | "VIEWER";
 
 type MemberWithUser = WorkspaceMember & {
   user: User;
@@ -28,26 +27,24 @@ type MemberWithUser = WorkspaceMember & {
 
 export default function MembersTable({
   workspaceSlug,
+  onRoleChange,
+  onRemove,
 }: {
   workspaceSlug: string;
+  onRoleChange: (id: string, role: WorkspaceRole) => void;
+  onRemove: (id: string) => void;
 }) {
-  const [members, setMembers] =
-    useState<MemberWithUser[]>([]);
+  const [members, setMembers] = useState<MemberWithUser[]>([]);
 
-    const fetchMembers = async() =>{
-        return (await api.get(`workspace/${workspaceSlug}/members`)).data
-    }
+  const fetchMembers = async () => {
+    return (await api.get(`workspace/${workspaceSlug}/members`)).data;
+  };
 
   const [query, setQuery] = useState("");
 
-  const roles: Role[] = [
-    "OWNER",
-    "MAINTAINER",
-    "CONTRIBUTOR",
-    "VIEWER",
-  ];
+  const roles: WorkspaceRole[] = ["MAINTAINER", "CONTRIBUTOR", "VIEWER"];
 
-  const roleStyles: Record<Role, string> = {
+  const roleStyles: Record<WorkspaceRole, string> = {
     OWNER: "bg-purple-100 text-purple-700",
     MAINTAINER: "bg-blue-100 text-blue-700",
     CONTRIBUTOR: "bg-green-100 text-green-700",
@@ -60,20 +57,11 @@ export default function MembersTable({
       .includes(query.toLowerCase())
   );
 
-  async function handleRoleChange(
-    memberId: string,
-    role: Role
-  ) {
+  async function handleRoleChange(id: string, role: WorkspaceRole) {
     try {
-      await api.patch(`/workspace/${workspaceSlug}/members/${memberId}`, {
-        role,
-      });
+      await onRoleChange(id, role);
 
-      setMembers((prev) =>
-        prev.map((m) =>
-          m.id === memberId ? { ...m, role } : m
-        )
-      );
+      setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, role } : m)));
 
       toast.success("Role updated");
     } catch {
@@ -81,16 +69,9 @@ export default function MembersTable({
     }
   }
 
-  async function handleRemove(memberId: string) {
+  async function handleRemove(id: string) {
     try {
-      await api.delete(
-        `/${workspaceSlug}/members/${memberId}`
-      );
-
-      setMembers((prev) =>
-        prev.filter((m) => m.id !== memberId)
-      );
-
+      await onRemove(id);
       toast.success("Member removed");
     } catch {
       toast.error("Failed to remove member");
@@ -98,16 +79,12 @@ export default function MembersTable({
   }
 
   useEffect(() => {
-    (async()=>{
-        
-        
-        let members = await fetchMembers()
-    
-        setMembers(members.members)
-    })() 
-    return () => {
-        
-    };
+    (async () => {
+      let members = await fetchMembers();
+
+      setMembers(members.members);
+    })();
+    return () => {};
   }, [workspaceSlug]);
 
   return (
@@ -144,10 +121,7 @@ export default function MembersTable({
 
           <tbody>
             {filteredMembers.map((member) => (
-              <tr
-                key={member.id}
-                className="border-t hover:bg-muted/20"
-              >
+              <tr key={member.id} className="border-t hover:bg-muted/20">
                 <td className="p-3">
                   <Checkbox />
                 </td>
@@ -156,9 +130,7 @@ export default function MembersTable({
                 <td className="p-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src={member.user.image ?? ""}
-                      />
+                      <AvatarImage src={member.user.image ?? ""} />
                       <AvatarFallback>
                         {member.user.name?.[0] ?? "U"}
                       </AvatarFallback>
@@ -182,8 +154,7 @@ export default function MembersTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        className={roleStyles[member.role as Role]}
-                      >
+                        className={roleStyles[member.role as WorkspaceRole]}>
                         {member.role}
                       </Button>
                     </DropdownMenuTrigger>
@@ -193,10 +164,7 @@ export default function MembersTable({
                         <div
                           key={role}
                           className="px-3 py-2 text-sm hover:bg-muted cursor-pointer"
-                          onClick={() =>
-                            handleRoleChange(member.id, role)
-                          }
-                        >
+                          onClick={() => handleRoleChange(member.id, role)}>
                           {role}
                         </div>
                       ))}
@@ -216,8 +184,7 @@ export default function MembersTable({
                     <DropdownMenuContent align="end">
                       <div
                         className="px-2 py-1 text-sm text-red-600 hover:bg-muted rounded cursor-pointer"
-                        onClick={() => handleRemove(member.id)}
-                      >
+                        onClick={() => handleRemove(member.id)}>
                         Remove
                       </div>
                     </DropdownMenuContent>
@@ -230,8 +197,7 @@ export default function MembersTable({
               <tr>
                 <td
                   colSpan={5}
-                  className="p-6 text-center text-muted-foreground"
-                >
+                  className="p-6 text-center text-muted-foreground">
                   No members found
                 </td>
               </tr>

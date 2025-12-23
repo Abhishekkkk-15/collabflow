@@ -1,4 +1,3 @@
-// lib/notifications/transform.ts
 type RawPayload = {
   event?: string;
   user?: {
@@ -39,19 +38,14 @@ type NotificationOut = {
   meta?: Record<string, any>;
 };
 
-/**
- * Try to parse workspace slug/id from a roomId like "workspace:e-commerce_eae82..."
- */
 function parseWorkspaceFromRoomId(roomId?: string): {
   slug?: string;
   id?: string;
 } {
   if (!roomId) return {};
-  // common pattern "workspace:slug" or "workspace:slug_uuid" etc.
   const parts = roomId.split(':');
   if (parts.length < 2) return {};
-  const payload = parts.slice(1).join(':'); // e.g. "e-commerce_eae82cd89..."
-  // try split at first underscore if present
+  const payload = parts.slice(1).join(':');
   const [slugOrId] = payload.split(/[_]/);
   return { slug: slugOrId, id: payload };
 }
@@ -93,13 +87,11 @@ export function transformSocketToNotification(
     workspaceName = parsed.slug! ?? null;
   }
 
-  // helper to build link (adjust your route patterns)
-  const workspaceLink = workspaceSlug ? `/workspaces/${workspaceSlug}` : null;
+  const workspaceLink = workspaceSlug ? `/workspace/${workspaceSlug}` : null;
   const chatLink = workspaceSlug
-    ? `/dashboard/${workspaceSlug}/chat`
+    ? `/workspace/${workspaceSlug}/chat`
     : workspaceLink;
 
-  // default title/body per event
   let type = 'GENERAL';
   let title =
     raw.body ?? raw.text ?? `${actor?.name ?? 'Someone'} triggered an event`;
@@ -107,7 +99,7 @@ export function transformSocketToNotification(
 
   switch (event) {
     case 'MENTION':
-    case 'MENTIOIN': // handle your typo variant
+    case 'MENTIOIN':
       type = 'MENTION';
       title = `${actor?.name ?? 'Someone'} mentioned you`;
       body =
@@ -156,7 +148,6 @@ export function transformSocketToNotification(
       body = raw.body ?? raw.text ?? '';
   }
 
-  // Build meta with useful context
   const meta: Record<string, any> = {
     rawEvent: raw,
     workspaceName,
@@ -166,7 +157,6 @@ export function transformSocketToNotification(
     roomId: raw.roomId ?? null,
   };
 
-  // Final normalized notification payload
   const out: NotificationOut = {
     userId: recipient ?? null,
     actorId: actor?.id ?? null,
