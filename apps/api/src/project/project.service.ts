@@ -27,9 +27,9 @@ export class ProjectService {
         if (!worspaceExist) {
           throw new NotFoundException('Workspace not found');
         }
-        if (!worspaceExist?.isActive) {
-          throw new BadRequestException('Workspace is archived');
-        }
+        // if (!worspaceExist?.isActive) {
+        //   throw new BadRequestException('Workspace is archived');
+        // }
         const slug = createSlug(dto.slug || dto.name);
         const project = await tx.project.create({
           data: {

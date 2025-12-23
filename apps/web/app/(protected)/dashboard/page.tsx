@@ -42,6 +42,8 @@ import {
   ArrowDown,
   Minus,
   ArrowUp,
+  PlusCircleIcon,
+  PlusIcon,
 } from "lucide-react";
 import MembersTable from "@/components/dashboard/MembersTable";
 import InviteMemberSheet, {
@@ -60,6 +62,7 @@ import {
 } from "@prisma/client";
 import { useUser, useUserRoles } from "@/lib/redux/hooks/use-user";
 import { EmptyDemo } from "@/components/project/EmptyProjects";
+import { CreateProjectDialog } from "@/components/self/CreateProjectDialog";
 
 type EWorkspace = Workspace & {
   projects: Project[];
@@ -80,6 +83,7 @@ export default function WorkspaceDashboard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [permissions, setPermissions] = useState<WorkspacePermission>();
+  const [openCreateProjectDialog, setOpenCreateProjectDialog] = useState(false);
   const { workspaceRoles } = useUserRoles();
   const user = useUser();
 
@@ -185,6 +189,21 @@ export default function WorkspaceDashboard() {
       toast.error("Error while changing permission");
     }
   };
+  // canCreateProject: boolean;
+  //     canInviteMembers: boolean;
+  //     canModifySettings: boolean;
+  //     canDeleteResources: boolean;
+  type WorkspacePermissionKey =
+    | "canCreateProject"
+    | "canInviteMembers"
+    | "canModifySettings"
+    | "canDeleteResources";
+
+  function hasWorkspacePermission(key: WorkspacePermissionKey) {
+    if (!permissions) return;
+    if (isOwner) return true;
+    return permissions![key] == true;
+  }
 
   const getStatusVariant = (
     status: string
@@ -328,7 +347,7 @@ export default function WorkspaceDashboard() {
                     <Input
                       id="workspace-name"
                       value={selectedWorkspace.name}
-                      disabled={!permissions?.canModifySettings}
+                      disabled={!hasWorkspacePermission("canModifySettings")}
                       onChange={(e) =>
                         setSelectedWorkspace({
                           ...selectedWorkspace,
@@ -358,7 +377,7 @@ export default function WorkspaceDashboard() {
                   <Textarea
                     id="workspace-description"
                     value={selectedWorkspace.description ?? ""}
-                    disabled={!permissions?.canModifySettings}
+                    disabled={!hasWorkspacePermission("canModifySettings")}
                     onChange={(e) =>
                       setSelectedWorkspace({
                         ...selectedWorkspace,
@@ -376,7 +395,7 @@ export default function WorkspaceDashboard() {
                   <div className="space-y-2">
                     <Label>Status</Label>
                     <Select
-                      disabled={!permissions?.canModifySettings}
+                      disabled={!hasWorkspacePermission("canModifySettings")}
                       value={selectedWorkspace.status}
                       onValueChange={(value) =>
                         setSelectedWorkspace({
@@ -420,7 +439,7 @@ export default function WorkspaceDashboard() {
                   <div className="space-y-2">
                     <Label>Priority</Label>
                     <Select
-                      disabled={!permissions?.canModifySettings}
+                      disabled={!hasWorkspacePermission("canModifySettings")}
                       value={selectedWorkspace.priority}
                       onValueChange={(value) =>
                         setSelectedWorkspace({
@@ -465,7 +484,7 @@ export default function WorkspaceDashboard() {
                     </p>
                   </div>
                   <Switch
-                    disabled={!permissions?.canModifySettings}
+                    disabled={!hasWorkspacePermission("canModifySettings")}
                     checked={selectedWorkspace.isActive}
                     onCheckedChange={(v) =>
                       setSelectedWorkspace({
@@ -493,7 +512,7 @@ export default function WorkspaceDashboard() {
                     size="sm"
                     className="gap-2"
                     onClick={() => setInviteOpen(true)}
-                    disabled={!isOwner || permissions?.canInviteMembers}>
+                    disabled={!hasWorkspacePermission("canInviteMembers")}>
                     <Plus className="h-4 w-4" />
                     Invite Member
                   </Button>
@@ -520,10 +539,18 @@ export default function WorkspaceDashboard() {
                       All projects created within this workspace
                     </CardDescription>
                   </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {projects.length}{" "}
-                    {projects.length === 1 ? "project" : "projects"}
-                  </Badge>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {projects.length}{" "}
+                      {projects.length === 1 ? "project" : "projects"}
+                    </Badge>
+                    <PlusIcon
+                      className="cursor-pointer"
+                      onClick={() =>
+                        setOpenCreateProjectDialog(!openCreateProjectDialog)
+                      }
+                    />
+                  </div>
                 </div>
               </CardHeader>
 
@@ -539,7 +566,7 @@ export default function WorkspaceDashboard() {
                     </p> */}
                     <EmptyDemo
                       workspaceId={selectedWorkspace.id}
-                      disabled={!permissions?.canCreateProject!}
+                      disabled={!hasWorkspacePermission("canCreateProject")}
                     />
                   </div>
                 ) : (
@@ -710,7 +737,12 @@ export default function WorkspaceDashboard() {
         onOpenChange={setInviteOpen}
         currentPath="WORKSPACE"
         onInvite={handleInvite}
-        disabled={!isOwner}
+        disabled={!hasWorkspacePermission("canInviteMembers")}
+      />
+      <CreateProjectDialog
+        open={openCreateProjectDialog}
+        onOpenChange={setOpenCreateProjectDialog}
+        workspaceId={selectedWorkspace.id}
       />
     </div>
   );

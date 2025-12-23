@@ -64,7 +64,7 @@ export function CreateProjectDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  workspaceId?: string;
+  workspaceId: string;
 }) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -133,7 +133,7 @@ export function CreateProjectDialog({
         name,
         slug,
         description: description || undefined,
-        workspaceId,
+        workspaceId: initialWorkspaceId!,
         priority,
         status,
         dueDate: dueDate || undefined,
@@ -211,7 +211,7 @@ export function CreateProjectDialog({
             />
           </div>
 
-          <div className="grid md:grid-cols-3 gap-2  ">
+          <div className="grid md:grid-cols-2 gap-2  ">
             <div className="grid gap-2">
               <Label>Priority</Label>
               <Select
@@ -242,27 +242,6 @@ export function CreateProjectDialog({
                   <SelectItem value="PAUSED">Paused</SelectItem>
                   <SelectItem value="COMPLETED">Completed</SelectItem>
                   <SelectItem value="ARCHIVED">Archived</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label>Workspace</Label>
-              <Select onValueChange={setWorkspaceId}>
-                <SelectTrigger className="w-auto">
-                  <SelectValue
-                    // placeholder={mockWorkspaces[0].name}
-                    defaultChecked={false}
-                    defaultValue={normalizeString(initialWorkspaceId!)}
-                  />
-                </SelectTrigger>
-                <SelectContent
-                  defaultChecked={false}
-                  defaultValue={normalizeString(initialWorkspaceId!)}>
-                  {userWorkspaces?.map((ws) => (
-                    <SelectItem key={ws.id} value={ws.id}>
-                      {ws.name}
-                    </SelectItem>
-                  ))}
                 </SelectContent>
               </Select>
             </div>
