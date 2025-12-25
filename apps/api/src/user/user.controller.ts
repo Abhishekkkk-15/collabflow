@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -28,8 +29,14 @@ export class UserController {
 
   @Get()
   @UseGuards(AuthGuard)
-  findAll(@CurrentUser() user: User) {
-    return this.userService.findAll(user);
+  findAll(
+    @CurrentUser() user: User,
+    @Query('cursor') cursor: string,
+    @Query('limit') limit: string,
+    @Query('q') searchQuery: string,
+  ) {
+    console.log('SDF', searchQuery, cursor);
+    return this.userService.findAll(user, +limit, cursor, searchQuery);
   }
 
   @Get('/roles')

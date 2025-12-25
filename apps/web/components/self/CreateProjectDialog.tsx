@@ -281,7 +281,7 @@ export function CreateProjectDialog({
             <InviteMembers
               onChange={(val) => handleInviteChange(val as InviteUser[])}
               roleType="PROJECT"
-              slug={workspace?.toString()!}
+              slug={initialWorkspaceId}
             />
           </div>
 

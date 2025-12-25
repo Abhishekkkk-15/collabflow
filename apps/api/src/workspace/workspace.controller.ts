@@ -51,12 +51,9 @@ export class WorkspaceController {
     return this.workspaceService.findOne(slug);
   }
 
-  @Get(':slug/members')
-  getWorkspaceMembers(
-    @Param('slug') slug: string,
-    @Query('limit') limit: string,
-  ) {
-    return this.workspaceService.getWorkspaceMembers(slug, +limit);
+  @Get(':id/members')
+  getWorkspaceMembers(@Param('id') id: string, @Query('limit') limit: string) {
+    return this.workspaceService.getWorkspaceMembers(id, +limit);
   }
 
   @Patch(':id/permissions/')

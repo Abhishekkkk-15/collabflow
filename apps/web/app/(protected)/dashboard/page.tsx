@@ -523,7 +523,7 @@ export default function WorkspaceDashboard() {
 
               <CardContent>
                 <MembersTable
-                  workspaceSlug={selectedWorkspace.slug!}
+                  workspaceSlug={selectedWorkspace.id!}
                   onRoleChange={handleChangeRole}
                   onRemove={handleRemoveMember}
                 />

@@ -9,18 +9,55 @@ export class UserService {
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
   }
-  async findAll(currentUser: User): Promise<User[]> {
+  async findAll(
+    currentUser: User,
+    limit = 10,
+    cursor?: string,
+    query?: string,
+  ): Promise<{
+    members: User[];
+    hasNextPage: boolean;
+    nextCursor: string | null;
+  }> {
     const users = await prisma.user.findMany({
       where: {
         NOT: {
           id: currentUser.id,
         },
+        ...(query?.trim()
+          ? {
+              OR: [
+                {
+                  name: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  email: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            }
+          : {}),
+      },
+      take: limit + 1,
+      // cursor: cursor ? { id: cursor } : undefined,
+      // skip: cursor ? 1 : 0,
+      orderBy: {
+        id: 'asc',
       },
     });
-    return users.map((u) => ({
-      ...u,
-      role: u.role as UserRole,
-    }));
+    console.log('search filter result', users);
+    const hasNextPage = users.length > limit;
+    if (hasNextPage) {
+      users.pop();
+    }
+    const nextCursor = users.length > 0 ? users[users.length - 1].id : null;
+
+    return { members: users, hasNextPage, nextCursor };
   }
 
   async findAllUserNotInWs(wsSlug: string) {

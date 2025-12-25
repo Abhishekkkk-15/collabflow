@@ -11,19 +11,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Settings } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { WorkspaceMember, User, WorkspaceRole } from "@prisma/client";
+import { User, WorkspaceRole } from "@prisma/client";
 import { api } from "@/lib/api/api";
 import { toast } from "sonner";
-import axios from "axios";
-
-/**
- * Roles:
- * "OWNER" | "MAINTAINER" | "CONTRIBUTOR" | "VIEWER"
- */
-
-type MemberWithUser = WorkspaceMember & {
-  user: User;
-};
 
 export default function MembersTable({
   workspaceSlug,
@@ -34,7 +24,7 @@ export default function MembersTable({
   onRoleChange: (id: string, role: WorkspaceRole) => void;
   onRemove: (id: string) => void;
 }) {
-  const [members, setMembers] = useState<MemberWithUser[]>([]);
+  const [members, setMembers] = useState<User[]>([]);
 
   const fetchMembers = async () => {
     return (await api.get(`workspace/${workspaceSlug}/members`)).data;
@@ -51,11 +41,11 @@ export default function MembersTable({
     VIEWER: "bg-gray-100 text-gray-700",
   };
 
-  const filteredMembers = members.filter((m) =>
-    `${m.user.name ?? ""} ${m.user.email}`
-      .toLowerCase()
-      .includes(query.toLowerCase())
-  );
+  // const filteredMembers = members.filter((m) =>
+  //   `${m.user.name ?? ""} ${m.user.email}`
+  //     .toLowerCase()
+  //     .includes(query.toLowerCase())
+  // );
 
   async function handleRoleChange(id: string, role: WorkspaceRole) {
     try {
@@ -81,7 +71,6 @@ export default function MembersTable({
   useEffect(() => {
     (async () => {
       let members = await fetchMembers();
-
       setMembers(members.members);
     })();
     return () => {};
@@ -120,7 +109,7 @@ export default function MembersTable({
           </thead>
 
           <tbody>
-            {filteredMembers.map((member) => (
+            {members.map((member) => (
               <tr key={member.id} className="border-t hover:bg-muted/20">
                 <td className="p-3">
                   <Checkbox />
@@ -130,22 +119,18 @@ export default function MembersTable({
                 <td className="p-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={member.user.image ?? ""} />
-                      <AvatarFallback>
-                        {member.user.name?.[0] ?? "U"}
-                      </AvatarFallback>
+                      <AvatarImage src={member.image ?? ""} />
+                      <AvatarFallback>{member.name?.[0] ?? "U"}</AvatarFallback>
                     </Avatar>
 
                     <span className="font-medium">
-                      {member.user.name ?? "Unnamed"}
+                      {member.name ?? "Unnamed"}
                     </span>
                   </div>
                 </td>
 
                 {/* EMAIL */}
-                <td className="p-3 text-muted-foreground">
-                  {member.user.email}
-                </td>
+                <td className="p-3 text-muted-foreground">{member.email}</td>
 
                 {/* ROLE */}
                 <td className="p-3">
@@ -197,7 +182,7 @@ export default function MembersTable({
               </tr>
             ))}
 
-            {filteredMembers.length === 0 && (
+            {members.length === 0 && (
               <tr>
                 <td
                   colSpan={5}

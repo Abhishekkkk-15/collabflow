@@ -222,33 +222,33 @@ export class WorkspaceService {
     }
   }
 
-  async getWorkspaceMembers(slug: string, limit: number) {
-    try {
-      const ws = await prisma.workspace.findUnique({
-        where: { slug },
-        select: { id: true },
-      });
-      const count = await prisma.workspaceMember.count({
-        where: {
-          workspaceId: ws?.id,
-        },
-      });
-      const members = await prisma.workspaceMember.findMany({
-        where: {
-          workspaceId: ws?.id,
-        },
+  async getWorkspaceMembers(id: string, limit = 5) {
+    console.log('id', id);
+    const ws = await prisma.workspace.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!limit) limit = 10;
+    if (!ws) {
+      throw new NotFoundException('Workspace not found');
+    }
+
+    const [members, count] = await prisma.$transaction([
+      prisma.workspaceMember.findMany({
+        where: { workspaceId: ws.id },
+        take: limit,
         include: {
           user: {
-            select: { name: true, image: true, id: true, email: true },
+            select: { id: true, name: true, email: true, image: true },
           },
         },
-      });
-      console.log('fet', members);
-      if (!members) throw new NotFoundException('Members not found');
-      return { members, count };
-    } catch (error) {
-      throw error;
-    }
+      }),
+      prisma.workspaceMember.count({
+        where: { workspaceId: ws.id },
+      }),
+    ]);
+    let users = members.map((m) => ({ ...m.user, role: m.role }));
+    return { members: users, count };
   }
 
   async findOneById(id: string) {
