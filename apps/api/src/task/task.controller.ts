@@ -25,8 +25,14 @@ export class TaskController {
   }
 
   @Get()
-  findAll(@Query('wsSlug') wsSlug: string, @Query('pSlug') pSlug: string) {
-    return this.taskService.findAll(wsSlug, pSlug);
+  findAll(
+    @Query('id') id: string,
+    @Query('pSlug') pSlug: string,
+    @Query('limit') limit: string,
+    @Query('page') page: string,
+    @Query('q') query: string,
+  ) {
+    return this.taskService.findAll(id, pSlug);
   }
 
   @Get(':id')

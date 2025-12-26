@@ -202,7 +202,7 @@ export default function InviteMemberSheet({
               return (
                 <div
                   key={m.id}
-                  className={`
+                  className={`  
                     flex items-center gap-3 p-2 rounded cursor-pointer
                     ${selected ? "bg-muted" : "hover:bg-muted/40"}
                   `}
@@ -222,10 +222,7 @@ export default function InviteMemberSheet({
                     </div>
                   </div>
 
-                  {/* ROLE SELECT (active only when selected) */}
-                  <div
-                    onClick={(e) => e.stopPropagation()} // prevent row toggle
-                  >
+                  <div onClick={(e) => e.stopPropagation()}>
                     <Select
                       disabled={!selected}
                       value={role}

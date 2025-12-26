@@ -30,11 +30,20 @@ import { WorkspaceRole } from "@prisma/client";
 import { api } from "@/lib/api/api";
 import { Spinner } from "../ui/spinner";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@radix-ui/react-select";
 
 type Selected = Record<
   string,
   { user: User; role: WorkspaceRole | ProjectRole }
 >;
+
+const LIMIT = 10;
 
 export function InviteMembers({
   onChange,
@@ -77,12 +86,12 @@ export function InviteMembers({
         let res;
         if (roleType == "WORKSPACE") {
           res = await api.get(
-            `/user?limit=${3}&cursor=${pageParam ?? ""}&q=${debouncedQuery}`
+            `/user?limit=${LIMIT}&cursor=${pageParam ?? ""}&q=${debouncedQuery}`
           );
           return res.data;
         }
         res = await api.get(
-          `workspace/${slug}/members?limit=${3}&cursor=${
+          `workspace/${slug}/members?limit=${LIMIT}&cursor=${
             pageParam ?? ""
           }&q=${debouncedQuery}`
         );
@@ -163,7 +172,12 @@ export function InviteMembers({
       return next;
     });
   };
-
+  // function setUserRole(user: User, role: WorkspaceRole) {
+  //   (prev) =>
+  //     prev.map((p) =>
+  //       p.userId === user.id ? { ...p, role, email: user.email! } : p
+  //     );
+  // }
   const isSelected = (id: string) => !!selected[id];
 
   return (
@@ -200,39 +214,50 @@ export function InviteMembers({
               />
               <CommandList>
                 <CommandGroup>
-                  <ScrollArea className="max-h-50 ">
-                    {users?.map((u) => (
-                      <CommandItem
-                        key={u.id}
-                        onSelect={() => toggleSelect(u)}
-                        className="flex items-center gap-3 px-3 py-2 hover:bg-muted/20">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            {u.image ? (
-                              <AvatarImage src={u.image} />
-                            ) : (
-                              <AvatarFallback>{u.name!}</AvatarFallback>
-                            )}
-                          </Avatar>
+                  <ScrollArea className="h-auto ">
+                    {users?.map((u) => {
+                      const selectedd = Object.values(selected).find(
+                        (u) => u.user.id == u.user.id
+                      );
+                      const role = Object.values(selected).find(
+                        (u) => u.user.id == u.user.id
+                      )?.role;
 
-                          <div className="min-w-0">
-                            <div className="text-sm font-medium truncate">
-                              {u.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground truncate">
-                              {u.email}
+                      // )?.role;
+                      selected[""];
+                      return (
+                        <CommandItem
+                          key={u.id}
+                          onSelect={() => toggleSelect(u)}
+                          className="flex items-center gap-3 px-3 py-2 hover:bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              {u.image ? (
+                                <AvatarImage src={u.image} />
+                              ) : (
+                                <AvatarFallback>{u.name!}</AvatarFallback>
+                              )}
+                            </Avatar>
+
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium truncate">
+                                {u.name}
+                              </div>
+                              <div className="text-xs text-muted-foreground truncate">
+                                {u.email}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="ml-auto">
-                          {isSelected(u.id!) ? (
-                            <Check className="h-4 w-4" />
-                          ) : null}
-                        </div>
-                      </CommandItem>
-                    ))}
-                    {hasNextPage && <div ref={loadMoreRef} />}
+                          <div className="ml-auto">
+                            {isSelected(u.id!) ? (
+                              <Check className="h-4 w-4" />
+                            ) : null}
+                          </div>
+                        </CommandItem>
+                      );
+                    })}
+                    {hasNextPage && <div ref={loadMoreRef} className="h-4" />}
 
                     {(isFetching || isFetchingNextPage) && (
                       <div className="flex  items-center justify-center m-5">
@@ -254,7 +279,7 @@ export function InviteMembers({
           <div className="border-t pt-3">
             <div className="text-xs font-medium mb-2">People with access</div>
 
-            <ScrollArea className="max-h-40">
+            <ScrollArea className="h-full">
               <div className="flex flex-col gap-2">
                 {Object.values(selected).length === 0 && (
                   <div className="text-sm text-muted-foreground">

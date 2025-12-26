@@ -287,7 +287,7 @@ export class WorkspaceService {
       members.length > 0 ? members[members.length - 1].id : null;
 
     let users = members.map((m) => ({ ...m.user, role: m.role }));
-    return { members: users, hasNextPage, nextCursor };
+    return { members: users, hasNextPage, nextCursor, totalPage: count };
   }
 
   async findOneById(id: string) {

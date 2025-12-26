@@ -67,68 +67,71 @@ export class TaskService {
     });
   }
 
-  async findAll(wsSlug: string, pSlug: string) {
-    const ws = await this.wsService.findOne(wsSlug);
-    if (!ws) throw new BadGatewayException('Not found');
+  async findAll(
+    workspaceId: string,
+    pSlug: string,
+    limit = 10,
+    page = 1,
+    query = '',
+  ) {
+    const ws = await this.wsService.findOneById(workspaceId);
+    if (!ws) throw new BadGatewayException('Workspace not found');
 
-    let pr: Project | any;
+    let project: Project | null = null;
 
     if (pSlug) {
-      pr = await this.pService.findOne('', pSlug);
-      if (!pr) throw new BadGatewayException('Not found');
+      project = await this.pService.findOne('', pSlug);
+      if (!project) throw new BadGatewayException('Project not found');
     }
-    let tasks;
-    if (pSlug) {
-      tasks = await prisma.task.findMany({
-        where: {
-          AND: [{ workspaceId: ws.id }, { projectId: pr.id }],
-        },
-        include: {
-          assignees: {
-            select: {
-              user: {
-                select: {
-                  name: true,
-                  image: true,
-                  email: true,
-                  id: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: {
-          dueDate: 'desc',
-        },
-      });
 
-      if (!tasks) throw new NotFoundException('Tasks not found');
-      return tasks;
-    }
-    tasks = await prisma.task.findMany({
-      where: {
-        workspaceId: ws.id,
+    const skip = (page - 1) * limit;
+
+    const whereClause: any = {
+      workspaceId: ws.id,
+      ...(project && { projectId: project.id }),
+      ...(query && {
+        OR: [
+          { title: { contains: query, mode: 'insensitive' } },
+          { description: { contains: query, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
+    // 🔢 total count
+    const totalCount = await prisma.task.count({
+      where: whereClause,
+    });
+
+    // 📦 paginated data
+    const tasks = await prisma.task.findMany({
+      where: whereClause,
+      skip,
+      take: limit,
+      orderBy: {
+        dueDate: 'desc',
       },
       include: {
         assignees: {
           select: {
             user: {
               select: {
-                name: true,
-                image: true,
-                email: true,
                 id: true,
+                name: true,
+                email: true,
+                image: true,
               },
             },
           },
         },
       },
-      orderBy: {
-        dueDate: 'desc',
-      },
     });
-    if (!tasks) throw new NotFoundException('Tasks not found');
-    return tasks;
+
+    return {
+      tasks,
+      page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+    };
   }
 
   async findOne(id: string) {
