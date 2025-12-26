@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { UserPlus, Loader2 } from "lucide-react";
 
 import {
@@ -24,6 +24,8 @@ import { Input } from "../ui/input";
 
 import { WorkspaceRole, User } from "@prisma/client";
 import { api } from "@/lib/api/api";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { Spinner } from "../ui/spinner";
 
 export type InviteEntry = {
   userId: string;
@@ -36,8 +38,9 @@ type InviteMemberSheetProps = {
   onOpenChange: (v: boolean) => void;
   onInvite?: (members: InviteEntry[]) => Promise<void> | void;
   disabled?: boolean;
-  workspaceSlug: string;
+  workspaceId: string;
   currentPath: "PROJECT" | "WORKSPACE";
+  slug: string;
 };
 
 export default function InviteMemberSheet({
@@ -45,48 +48,81 @@ export default function InviteMemberSheet({
   onOpenChange,
   onInvite,
   disabled = false,
-  workspaceSlug,
+  workspaceId,
   currentPath,
+  slug,
 }: InviteMemberSheetProps) {
-  const [inviteSelected, setInviteSelected] = useState<InviteEntry[]>([]);
-  const [nonMembers, setNonMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [inviteSelected, setInviteSelected] = useState<InviteEntry[]>([]);
   const [query, setQuery] = useState("");
+  const [cursor, setCursor] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  // const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 500);
+    return () => clearTimeout(t);
+  }, [query]);
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ["members", debouncedQuery],
+      enabled: open,
+      queryFn: async ({ pageParam }) => {
+        console.log("cursor", cursor);
+        const res = await api.get(
+          `user/workspaces/${workspaceId}/users?limit=4&cursor=${
+            pageParam ?? ""
+          }&q=${debouncedQuery}&wsSlug=${slug}`
+        );
+        console.log("mem", res);
+        return res.data;
+      },
+      initialPageParam: null,
+      refetchOnMount: true,
+      getNextPageParam: (lastPage) => {
+        return lastPage.hasNextPage ? lastPage.nextCursor : undefined;
+      },
+    });
+  const members = data?.pages.flatMap((page) => page.users) ?? [];
 
-  async function fetchNonMembers() {
-    try {
-      console.log("wslug", workspaceSlug);
-      const res = await api.get(
-        `user/workspaces/${workspaceSlug}/users?limit=20&page=1`
-      );
+  useEffect(() => {
+    if (!ref.current || !hasNextPage) return;
 
-      if (Array.isArray(res.data)) {
-        setNonMembers(res.data);
-      } else {
-        setNonMembers([]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage();
+        }
+      },
+
+      {
+        root: scrollContainerRef.current,
+        rootMargin: "200px",
       }
-    } catch (e) {
-      console.error("Failed fetching non-members", e);
-    }
-  }
+    );
 
-  async function fetchNonMembersP() {
-    try {
-      const res = await api.get(
-        `user/project/${workspaceSlug}/users?limit=20&page=1`
-      );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage]);
 
-      console.log(res);
+  // async function fetchNonMembersP() {
+  //   try {
+  //     const res = await api.get(
+  //       `user/project/${workspaceSlug}/users?limit=20&page=1`
+  //     );
 
-      if (Array.isArray(res.data)) {
-        setNonMembers(res.data);
-      } else {
-        setNonMembers([]);
-      }
-    } catch (e) {
-      console.error("Failed fetching non-members", e);
-    }
-  }
+  //     console.log(res);
+
+  //     if (Array.isArray(res.data)) {
+  //       setNonMembers(res.data);
+  //     } else {
+  //       setNonMembers([]);
+  //     }
+  //   } catch (e) {
+  //     console.error("Failed fetching non-members", e);
+  //   }
+  // }
 
   useEffect(() => {
     if (open) {
@@ -94,21 +130,6 @@ export default function InviteMemberSheet({
       setQuery("");
     }
   }, [open]);
-  useEffect(() => {
-    if (currentPath == "WORKSPACE") {
-      fetchNonMembers();
-    }
-    if (currentPath == "PROJECT") {
-      fetchNonMembersP();
-    }
-  }, [open]);
-
-  const filtered = nonMembers.filter((u) => {
-    const q = query.toLowerCase();
-    return (
-      u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)
-    );
-  });
 
   function toggleSelectUser(user: User) {
     const exists = inviteSelected.find((x) => x.userId === user.id);
@@ -130,9 +151,6 @@ export default function InviteMemberSheet({
     );
   }
 
-  // ----------------------------
-  // Submit
-  // ----------------------------
   async function handleInvite() {
     if (!inviteSelected.length) return;
 
@@ -174,8 +192,10 @@ export default function InviteMemberSheet({
           </div>
 
           {/* USERS LIST */}
-          <div className="max-h-[48vh] overflow-auto border rounded p-2 space-y-2">
-            {filtered.map((m) => {
+          <div
+            className="max-h-[48vh] h-full overflow-auto border  rounded p-2 space-y-2"
+            ref={scrollContainerRef}>
+            {members.map((m) => {
               const selected = inviteSelected.some((s) => s.userId === m.id);
               const role = inviteSelected.find((s) => s.userId === m.id)?.role;
 
@@ -225,8 +245,13 @@ export default function InviteMemberSheet({
                 </div>
               );
             })}
+            <div ref={ref} className="h-12"></div>
           </div>
-
+          {isFetching && (
+            <div>
+              <Spinner />
+            </div>
+          )}
           {/* ACTION BUTTONS */}
           <div className="flex justify-end gap-2">
             <Button

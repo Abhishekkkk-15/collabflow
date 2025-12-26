@@ -74,8 +74,17 @@ export function InviteMembers({
     useInfiniteQuery({
       queryKey: ["users", debouncedQuery],
       queryFn: async ({ pageParam }) => {
-        const res = await api.get(
-          `/user?limit=${3}&cursor=${pageParam ?? ""}&q=${debouncedQuery}`
+        let res;
+        if (roleType == "WORKSPACE") {
+          res = await api.get(
+            `/user?limit=${3}&cursor=${pageParam ?? ""}&q=${debouncedQuery}`
+          );
+          return res.data;
+        }
+        res = await api.get(
+          `workspace/${slug}/members?limit=${3}&cursor=${
+            pageParam ?? ""
+          }&q=${debouncedQuery}`
         );
         console.log("res", res.data);
         return res.data;

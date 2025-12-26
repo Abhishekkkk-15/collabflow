@@ -546,12 +546,14 @@ export default function WorkspaceDashboard() {
                       {projects.length}{" "}
                       {projects.length === 1 ? "project" : "projects"}
                     </Badge>
-                    <PlusIcon
-                      className="cursor-pointer"
-                      onClick={() =>
-                        setOpenCreateProjectDialog(!openCreateProjectDialog)
-                      }
-                    />
+                    {hasWorkspacePermission("canCreateProject") && (
+                      <PlusIcon
+                        className="cursor-pointer disabled:true"
+                        onClick={() =>
+                          setOpenCreateProjectDialog(!openCreateProjectDialog)
+                        }
+                      />
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -734,8 +736,9 @@ export default function WorkspaceDashboard() {
       </div>
 
       <InviteMemberSheet
-        workspaceSlug={selectedWorkspace.slug!}
+        workspaceId={selectedWorkspace.id!}
         open={inviteOpen}
+        slug={selectedWorkspace.slug!}
         onOpenChange={setInviteOpen}
         currentPath="WORKSPACE"
         onInvite={handleInvite}

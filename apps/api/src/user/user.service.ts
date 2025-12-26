@@ -59,24 +59,58 @@ export class UserService {
     return { members: users, hasNextPage, nextCursor };
   }
 
-  async findAllUserNotInWs(wsSlug: string) {
+  async findAllUserNotInWs(
+    id: string,
+    limit = 10,
+    cursor?: string,
+    query?: string,
+  ) {
     const wsExist = await prisma.workspace.findUnique({
       where: {
-        slug: wsSlug,
+        id,
       },
     });
     if (!wsExist) throw new NotFoundException('Workspace not found');
-    return await prisma.user.findMany({
+    const users = await prisma.user.findMany({
       where: {
-        NOT: {
-          workspaceMemberships: {
-            some: {
-              workspaceId: wsExist.id,
-            },
+        workspaceMemberships: {
+          none: {
+            workspaceId: wsExist.id,
           },
         },
+        ...(query?.trim()
+          ? {
+              OR: [
+                {
+                  email: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  name: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            }
+          : {}),
+      },
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: query ? 0 : cursor ? 1 : 0,
+      orderBy: {
+        id: 'asc',
       },
     });
+    const hasNextPage = users.length > limit;
+    if (hasNextPage) {
+      users.pop();
+    }
+    const nextCursor = users.length > 0 ? users[users.length - 1].id : null;
+    console.log('users', users);
+    return { users, hasNextPage, nextCursor };
   }
   async findAllUserNotInP(pId: string) {
     const wsExist = await prisma.project.findUnique({

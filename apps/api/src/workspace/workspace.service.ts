@@ -222,8 +222,12 @@ export class WorkspaceService {
     }
   }
 
-  async getWorkspaceMembers(id: string, limit = 5) {
-    console.log('id', id);
+  async getWorkspaceMembers(
+    id: string,
+    limit = 10,
+    cursor: string,
+    query: string,
+  ) {
     const ws = await prisma.workspace.findUnique({
       where: { id },
       select: { id: true },
@@ -235,8 +239,36 @@ export class WorkspaceService {
 
     const [members, count] = await prisma.$transaction([
       prisma.workspaceMember.findMany({
-        where: { workspaceId: ws.id },
+        where: {
+          workspaceId: ws.id,
+          ...(query?.trim()
+            ? {
+                OR: [
+                  {
+                    user: {
+                      email: {
+                        contains: query,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                  {
+                    user: {
+                      name: {
+                        contains: query,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                ],
+              }
+            : {}),
+        },
         take: limit,
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: {
+          joinedAt: 'asc',
+        },
         include: {
           user: {
             select: { id: true, name: true, email: true, image: true },
@@ -247,8 +279,15 @@ export class WorkspaceService {
         where: { workspaceId: ws.id },
       }),
     ]);
+    const hasNextPage = members.length > limit;
+    if (hasNextPage) {
+      members.pop();
+    }
+    const nextCursor =
+      members.length > 0 ? members[members.length - 1].id : null;
+
     let users = members.map((m) => ({ ...m.user, role: m.role }));
-    return { members: users, count };
+    return { members: users, hasNextPage, nextCursor };
   }
 
   async findOneById(id: string) {

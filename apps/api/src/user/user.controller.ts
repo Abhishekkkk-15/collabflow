@@ -46,10 +46,15 @@ export class UserController {
     return this.userService.currentUserRoles(req.user.id);
   }
 
-  @Get('/workspaces/:wsSlug/users')
+  @Get('/workspaces/:id/users')
   @UseGuards(WsAuthorizationGuard)
-  usersNotInWs(@Param('wsSlug') wsSlug: string) {
-    return this.userService.findAllUserNotInWs(wsSlug);
+  usersNotInWs(
+    @Param('id') id: string,
+    @Query('limit') limit: string,
+    @Query('cursor') cursor: string,
+    @Query('q') query: string,
+  ) {
+    return this.userService.findAllUserNotInWs(id, +limit, cursor, query);
   }
   @Get('/project/:pId/users')
   // @UseGuards()
