@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 import { ThemeProvider } from "@/components/theme-provider";
 
 import ReduxProvider from "@/lib/redux/provider";
-
+import ReactQueryProvider from "@/lib/react-query/Provider";
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -30,17 +30,18 @@ export default async function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ReduxProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange>
-            {children}
-
-            <Toaster />
-          </ThemeProvider>
-        </ReduxProvider>
+        <ReactQueryProvider>
+          <ReduxProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem
+              disableTransitionOnChange>
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </ReduxProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );

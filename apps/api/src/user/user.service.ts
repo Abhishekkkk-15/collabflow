@@ -44,13 +44,12 @@ export class UserService {
           : {}),
       },
       take: limit + 1,
-      // cursor: cursor ? { id: cursor } : undefined,
-      // skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
       orderBy: {
         id: 'asc',
       },
     });
-    console.log('search filter result', users);
     const hasNextPage = users.length > limit;
     if (hasNextPage) {
       users.pop();

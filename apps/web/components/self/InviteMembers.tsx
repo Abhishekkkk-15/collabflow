@@ -14,9 +14,9 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
@@ -24,13 +24,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Check, MoreHorizontal, UserPlus } from "lucide-react";
-import type { ProjectRole, User, WorkspaceMember } from "@collabflow/types";
-import axios, { Axios, AxiosResponse } from "axios";
+import { Check, UserPlus } from "lucide-react";
+import type { ProjectRole, User } from "@collabflow/types";
 import { WorkspaceRole } from "@prisma/client";
-import { email } from "zod";
 import { api } from "@/lib/api/api";
 import { Spinner } from "../ui/spinner";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 type Selected = Record<
   string,
@@ -56,7 +55,6 @@ export function InviteMembers({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [selected, setSelected] = useState<Selected>(() => {
     const map: Selected = {};
     initialSelected.forEach(
@@ -64,83 +62,46 @@ export function InviteMembers({
     );
     return map;
   });
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [loading, setLoading] = useState(false);
-  const cursorRef = useRef<string | null>(null);
-  const queryRef = useRef("");
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
 
   useEffect(() => {
-    cursorRef.current = cursor;
-    queryRef.current = query;
-  }, [cursor, query]);
-  async function fetchUsers(
-    q?: string,
-    nextCursor?: string | null,
-    isFirstPage = false
-  ) {
-    if (!isFirstPage && (!hasMore || loading)) return;
-    setLoading(true);
-    let res: AxiosResponse;
-    const LIMIT = 3;
-
-    if (roleType == "WORKSPACE") {
-      res = await api.get(
-        `/user?limit=${LIMIT}&cursor=${nextCursor ?? ""}&q=${q}`
-      );
-      console.log(res.config.url);
-      console.log("cursor : ", res.data);
-      setAllUsers((prev) => [...prev!, ...res.data.members]);
-      setHasMore(res.data.hasNextPage);
-      setCursor(res.data?.nextCursor);
-      setLoading(false);
-      return res.data.members;
-    }
-    res = await api.get(`workspace/${slug}/members`);
-    setAllUsers((prev) => [...prev!, ...res.data.members]);
-    return res;
-  }
+    const t = setTimeout(() => setDebouncedQuery(query), 500);
+    return () => clearTimeout(t);
+  }, [query]);
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ["users", debouncedQuery],
+      queryFn: async ({ pageParam }) => {
+        const res = await api.get(
+          `/user?limit=${3}&cursor=${pageParam ?? ""}&q=${debouncedQuery}`
+        );
+        console.log("res", res.data);
+        return res.data;
+      },
+      initialPageParam: null,
+      getNextPageParam: (lastPage) => {
+        return lastPage.hasNextPage ? lastPage.nextCursor : undefined;
+      },
+    });
+  const users: User[] = data?.pages.flatMap((page) => page.members) ?? [];
 
   useEffect(() => {
-    if (!ref.current) return;
+    if (!loadMoreRef.current || !hasNextPage) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          fetchUsers(queryRef.current, cursorRef.current, false);
+          fetchNextPage();
         }
       },
-      {
-        root: null,
-        rootMargin: "200px",
-        threshold: 0,
-      }
+      { rootMargin: "200px" }
     );
-    observer.observe(ref.current);
+
+    observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [fetchUsers]);
-
-  function debounce<T extends (...args: any[]) => void>(delay: number, fn: T) {
-    let timer: NodeJS.Timeout;
-    return (...args: Parameters<T>) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        fn(...args);
-      }, delay);
-    };
-  }
-  function setter(e: string) {
-    setQuery(e);
-  }
-  const debouncedSearch = useMemo(() => debounce(1000, fetchUsers), []);
-
-  useEffect(() => {
-    setAllUsers([]);
-    setCursor(null);
-
-    console.log("from bounce");
-    debouncedSearch(queryRef.current, cursorRef.current!, true);
-  }, [query]);
+  }, [fetchNextPage, hasNextPage]);
 
   const toggleSelect = (user: User) => {
     setSelected((prev) => {
@@ -222,60 +183,62 @@ export function InviteMembers({
           </div>
 
           <div className="mb-2">
-            <Command>
+            <Command shouldFilter={false}>
               <CommandInput
                 placeholder="Search or enter email..."
                 value={query}
-                onValueChange={setter}
+                onValueChange={setQuery}
               />
-              <CommandGroup>
-                <ScrollArea className="max-h-52 h-40">
-                  {allUsers?.map((u) => (
-                    <CommandItem
-                      key={u.id}
-                      onSelect={() => toggleSelect(u)}
-                      className="flex items-center gap-3 px-3 py-2 hover:bg-muted/20">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          {u.image ? (
-                            <AvatarImage src={u.image} />
-                          ) : (
-                            <AvatarFallback>{u.name!}</AvatarFallback>
-                          )}
-                        </Avatar>
+              <CommandList>
+                <CommandGroup>
+                  <ScrollArea className="max-h-50 ">
+                    {users?.map((u) => (
+                      <CommandItem
+                        key={u.id}
+                        onSelect={() => toggleSelect(u)}
+                        className="flex items-center gap-3 px-3 py-2 hover:bg-muted/20">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            {u.image ? (
+                              <AvatarImage src={u.image} />
+                            ) : (
+                              <AvatarFallback>{u.name!}</AvatarFallback>
+                            )}
+                          </Avatar>
 
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium truncate">
-                            {u.name}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {u.email}
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium truncate">
+                              {u.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {u.email}
+                            </div>
                           </div>
                         </div>
+
+                        <div className="ml-auto">
+                          {isSelected(u.id!) ? (
+                            <Check className="h-4 w-4" />
+                          ) : null}
+                        </div>
+                      </CommandItem>
+                    ))}
+                    {hasNextPage && <div ref={loadMoreRef} />}
+
+                    {(isFetching || isFetchingNextPage) && (
+                      <div className="flex  items-center justify-center m-5">
+                        <Spinner aria-label="Loading" width={20} height={20} />
                       </div>
+                    )}
 
-                      <div className="ml-auto">
-                        {isSelected(u.id!) ? (
-                          <Check className="h-4 w-4" />
-                        ) : null}
+                    {users?.length === 0 && (
+                      <div className="p-3 text-sm text-muted-foreground">
+                        No users found
                       </div>
-                    </CommandItem>
-                  ))}
-                  {hasMore && <div ref={ref} className="h-10" />}
-
-                  {loading && (
-                    <div className="flex  items-center justify-center m-5">
-                      <Spinner aria-label="Loading" width={20} height={20} />
-                    </div>
-                  )}
-
-                  {allUsers?.length === 0 && (
-                    <div className="p-3 text-sm text-muted-foreground">
-                      No users found
-                    </div>
-                  )}
-                </ScrollArea>
-              </CommandGroup>
+                    )}
+                  </ScrollArea>
+                </CommandGroup>
+              </CommandList>
             </Command>
           </div>
 
