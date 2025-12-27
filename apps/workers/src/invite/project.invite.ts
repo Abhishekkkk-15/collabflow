@@ -10,7 +10,7 @@ import { transformSocketToNotification } from "../lib/notifPayload";
 export const projectInviteQueue = new Queue("projectInviteQueue", {
   connection,
 });
-const emailQueue = new Queue("emailQueue", { connection }); // reuse existing email queue
+const emailQueue = new Queue("emailQueue", { connection });
 
 type ProjectMemberPayload = {
   projectId: string;
@@ -20,11 +20,6 @@ type ProjectMemberPayload = {
 
 let BULK_PROJECT_MEMBER_STORE: ProjectMemberPayload[] = [];
 const PROJECT_BATCH_SIZE = 2;
-
-/**
- * Push into in-memory buffer and flush when threshold reached.
- * Deduplicates by projectId:userId before DB write.
- */
 async function pushAndMaybeFlushProject(item: ProjectMemberPayload) {
   const key = `${item.projectId}:${item.userId}`;
   const exists = BULK_PROJECT_MEMBER_STORE.some(
@@ -161,12 +156,12 @@ export function startProjectInviteWorker() {
           actorId: invitedBy?.id ?? null,
           projectId: project.id,
           workspaceId: project.workspaceId ?? null,
-          type: "INVITE",
+          type: "GENERAL",
           title: "Project Invitation",
           body: `${invitedBy?.name ?? "Someone"} invited you to join project ${
             project.name
           }`,
-          link: `/workspaces/${project.workspaceId}/projects/${project.slug}`,
+          link: `/workspace/${project.workspaceId}/project/${project.slug}`,
           meta: {
             projectName: project.name,
             projectId: project.id,
@@ -191,7 +186,7 @@ export function startProjectInviteWorker() {
           room: `user:${members.userId}`,
           payload: transformSocketToNotification({
             notification,
-            event: "INVITE",
+            event: "GENERAL",
             user: invitedBy,
           }),
         })

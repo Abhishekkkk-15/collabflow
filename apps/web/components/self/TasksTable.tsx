@@ -38,9 +38,11 @@ export default function TasksTable({
   fetchedTasks,
 }: {
   project: string;
-  fetchedTasks: IExtendedTask[];
+  fetchedTasks: any;
 }) {
-  const [tasks, setTasks] = useState<IExtendedTask[]>(fetchedTasks || []);
+  const [tasks, setTasks] = useState<IExtendedTask[]>(
+    fetchedTasks?.tasks || []
+  );
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
 
@@ -147,7 +149,7 @@ export default function TasksTable({
   return (
     <div>
       {/* ---------------------- TOP TOOLBAR ---------------------- */}
-      <div className="p-4 flex justify-between items-center">
+      <div className="p-4 flex justify-between items-center ">
         {/* LEFT: filter area */}
         <div className="flex gap-2 items-center">
           <Input placeholder="Filter tasks..." className="w-64" />

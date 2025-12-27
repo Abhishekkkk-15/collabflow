@@ -22,13 +22,11 @@ export class TaskService {
   ) {}
 
   async create(dto: CreateTaskDto, user: User) {
-    console.log('id', dto.projectId);
     return prisma.$transaction(async (tx) => {
-      const project = await tx.project.findUnique({
-        where: {
-          id: dto.projectId,
-        },
-      });
+      const project = await this.pService.findOne(
+        dto.projectId!,
+        dto.projectId!,
+      );
       if (!project) throw new NotFoundException('Project not found');
       const task = await tx.task.create({
         data: {
@@ -40,7 +38,7 @@ export class TaskService {
           dueDate: dto.dueDate,
           creatorId: user.id,
           workspaceId: project.workspaceId,
-          projectId: dto.projectId ?? null,
+          projectId: project.id,
           assignees: {
             createMany: {
               data: dto.assignedTo.map((id: string) => ({ userId: id })),
@@ -78,10 +76,10 @@ export class TaskService {
     workspaceId: string,
     pSlug: string,
     limit = 10,
-    page = 1,
+    cursor: string | null,
     query = '',
   ) {
-    const ws = await this.wsService.findOneById(workspaceId);
+    const ws = await this.wsService.findOne(workspaceId);
     if (!ws) throw new BadGatewayException('Workspace not found');
 
     let project: Project | null = null;
@@ -90,8 +88,6 @@ export class TaskService {
       project = await this.pService.findOne('', pSlug);
       if (!project) throw new BadGatewayException('Project not found');
     }
-
-    const skip = (page - 1) * limit;
 
     const whereClause: any = {
       workspaceId: ws.id,
@@ -110,8 +106,11 @@ export class TaskService {
 
     const tasks = await prisma.task.findMany({
       where: whereClause,
-      skip,
-      take: limit,
+
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
+
       orderBy: {
         dueDate: 'desc',
       },
@@ -130,12 +129,18 @@ export class TaskService {
         },
       },
     });
+    const hasNextPage = tasks.length > limit;
+    if (hasNextPage) {
+      tasks.pop();
+    }
+    const nextCursor = tasks.length > 0 ? tasks[tasks.length - 1].id : null;
 
     return {
       tasks,
-      page,
       totalPages: Math.ceil(totalCount / limit),
       totalCount,
+      nextCursor,
+      hasNextPage,
     };
   }
 
