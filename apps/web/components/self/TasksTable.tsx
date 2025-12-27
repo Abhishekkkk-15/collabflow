@@ -25,10 +25,10 @@ import {
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Task, TaskPriority, TaskStatus, TaskTag, User } from "@prisma/client";
-import AddTaskDialog from "../task/AddTaskDialog";
 import { api } from "@/lib/api/api";
 import { toast } from "sonner";
-
+import { usePathname } from "next/navigation";
+import AddTaskDialog from "../task/AddTaskDialog";
 interface IExtendedTask extends Task {
   assignees: { user: User }[];
 }
@@ -59,14 +59,15 @@ export default function TasksTable({
 
   const statuses = ["ALL", "TODO", "IN_PROGRESS", "BLOCKED", "DONE", "REVIEW"];
   const priorities = ["ALL", "LOW", "MEDIUM", "HIGH"];
-
+  const pathName = usePathname();
   // Toggle column visibility
   function toggleField(field: string) {
     setVisibleFields((prev) =>
       prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
     );
   }
-
+  console.log(pathName.startsWith("/workspace"));
+  console.log(pathName);
   const allFields = [
     { key: "id", label: "Task ID" },
     { key: "title", label: "Title" },
@@ -219,6 +220,7 @@ export default function TasksTable({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+          {/* <AddTaskDialog /> */}
         </div>
       </div>
 
@@ -319,25 +321,27 @@ export default function TasksTable({
                   </td>
                 )}
 
-                <td className="p-3">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal size={16} />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="p-1">
-                      <div className="px-2 py-1 text-sm hover:bg-muted rounded">
-                        Edit
-                      </div>
-                      <div
-                        className="px-2 py-1 text-sm hover:bg-muted rounded"
-                        onClick={() => handleTaskDelete(task.id)}>
-                        Delete
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </td>
+                {pathName.startsWith("/dashboard") && (
+                  <td className="p-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="p-1">
+                        <div className="px-2 py-1 text-sm hover:bg-muted rounded">
+                          Edit
+                        </div>
+                        <div
+                          className="px-2 py-1 text-sm hover:bg-muted rounded"
+                          onClick={() => handleTaskDelete(task.id)}>
+                          Delete
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

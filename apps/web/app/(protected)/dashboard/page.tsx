@@ -65,7 +65,7 @@ import { EmptyDemo } from "@/components/project/EmptyProjects";
 import { CreateProjectDialog } from "@/components/self/CreateProjectDialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import AddTaskDialog from "@/components/task/AddTaskDialog";
-
+import { useRouter } from "next/navigation";
 type EWorkspace = Workspace & {
   projects: Project[];
   permissions: WorkspacePermission;
@@ -91,7 +91,7 @@ export default function WorkspaceDashboard() {
   const [openProjectSidebar, setOpenProjectSidebar] = useState(false);
   const [openInviteMemberInP, setOpenInviteMembersInP] = useState(false);
   const user = useUser();
-
+  const router = useRouter();
   const [isOwner, setIsOwner] = useState(false);
 
   async function fetchWorkspace() {
@@ -602,8 +602,10 @@ export default function WorkspaceDashboard() {
                       <div
                         key={project.id}
                         onClick={() => {
-                          setSelectedProject(project);
-                          setOpenProjectSidebar(true);
+                          if (hasWorkspacePermission("canCreateProject")) {
+                            setSelectedProject(project);
+                            setOpenProjectSidebar(true);
+                          }
                         }}
                         className="group flex cursor-pointer items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50">
                         <div className="flex-1 space-y-1">
@@ -675,7 +677,12 @@ export default function WorkspaceDashboard() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          className="w-full">
+                          className="w-full"
+                          onClick={() =>
+                            router.push(
+                              `dashboard/workspace/${selectedWorkspace.slug}/project/${selectedProject.slug}/tasks`
+                            )
+                          }>
                           Manage tasks
                         </Button>
 
@@ -683,7 +690,8 @@ export default function WorkspaceDashboard() {
                         <AddTaskDialog projectId={selectedProject.id} />
                         <Button
                           className="flex gap-2 bg-primary text-primary-foreground w-full"
-                          onClick={() => setOpenInviteMembersInP(true)}>
+                          onClick={() => setOpenInviteMembersInP(true)}
+                          disabled={hasWorkspacePermission("canCreateProject")}>
                           <Plus size={16} /> Add Members
                         </Button>
                         <InviteMemberSheet

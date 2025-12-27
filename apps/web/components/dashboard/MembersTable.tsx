@@ -61,7 +61,6 @@ export default function MembersTable({
     });
   const members = data?.pages.flatMap((page) => page.members) ?? [];
   const scrollParentRef = useRef<HTMLDivElement | null>(null);
-  console.log("d", data);
   useEffect(() => {
     if (!ref.current || !hasNextPage) return;
 
@@ -88,6 +87,10 @@ export default function MembersTable({
   };
 
   async function handleRoleChange(id: string, role: WorkspaceRole) {
+    if (!isOwner)
+      return toast.warning("Only Workspace owner can change members role's", {
+        position: "top-right",
+      });
     try {
       await onRoleChange(id, role);
       toast.success("Role updated");
@@ -184,7 +187,9 @@ export default function MembersTable({
                       </Button>
                     </DropdownMenuTrigger>
 
-                    <DropdownMenuContent className="w-40">
+                    <DropdownMenuContent
+                      className="w-40"
+                      aria-disabled={isOwner}>
                       {roles.map((role) => (
                         <div
                           key={role}

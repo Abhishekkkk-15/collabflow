@@ -305,9 +305,16 @@ export class WorkspaceService {
     const ws = await this.findOneById(dto.workspaceId);
     if (ws?.ownerId != user.id)
       throw new ForbiddenException('Not permited to perform this task');
+    let m = await prisma.workspaceMember.findFirst({
+      where: {
+        userId: dto.id,
+      },
+    });
+
+    console.log(ws, dto, m);
     await prisma.workspaceMember.update({
       where: {
-        id: dto.id,
+        id: m!.id,
       },
       data: {
         role: dto.role,
