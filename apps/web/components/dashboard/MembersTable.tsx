@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,46 +11,72 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Settings } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { User, WorkspaceRole } from "@prisma/client";
+import { User, WorkspacePermission, WorkspaceRole } from "@prisma/client";
 import { api } from "@/lib/api/api";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { Spinner } from "../ui/spinner";
 
-const LIMIT = 2;
+const LIMIT = 10;
 
 export default function MembersTable({
   workspaceSlug,
   onRoleChange,
   onRemove,
+  permissions,
+  isOwner = false,
 }: {
   workspaceSlug: string;
   onRoleChange: (id: string, role: WorkspaceRole) => void;
   onRemove: (id: string) => void;
+  permissions: WorkspacePermission;
+  isOwner: boolean;
 }) {
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-
-  // reset page when searching
+  const ref = useRef<HTMLTableRowElement | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  // const loadMoreRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    setPage(1);
+    const t = setTimeout(() => setDebouncedQuery(query), 500);
+    return () => clearTimeout(t);
   }, [query]);
 
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["members", workspaceSlug, page, query],
-    queryFn: async () => {
-      const res = await api.get(`workspace/${workspaceSlug}/members`, {
-        params: {
-          limit: LIMIT,
-          page,
-          q: query,
-        },
-      });
-      return res.data;
-    },
-  });
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ["members", workspaceSlug, debouncedQuery],
+      queryFn: async ({ pageParam }) => {
+        console.log("pageParam", pageParam);
+        const res = await api.get(
+          `workspace/${workspaceSlug}/members?limit=${LIMIT}&cursor=${
+            pageParam ?? ""
+          }&q=${debouncedQuery}`
+        );
+        return res.data;
+      },
+      initialPageParam: undefined,
+      refetchOnMount: true,
+      getNextPageParam: (lastPage) => {
+        return lastPage.hasNextPage ? lastPage.nextCursor : undefined;
+      },
+    });
+  const members = data?.pages.flatMap((page) => page.members) ?? [];
+  const scrollParentRef = useRef<HTMLDivElement | null>(null);
   console.log("d", data);
-  const members: User[] = data?.members ?? [];
-  const totalPages = data?.totalPage || false;
+  useEffect(() => {
+    if (!ref.current || !hasNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "200px", root: scrollParentRef.current }
+    );
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const roles: WorkspaceRole[] = ["MAINTAINER", "CONTRIBUTOR", "VIEWER"];
 
@@ -78,6 +104,16 @@ export default function MembersTable({
       toast.error("Failed to remove member");
     }
   }
+  type WorkspacePermissionKey =
+    | "canCreateProject"
+    | "canInviteMembers"
+    | "canModifySettings"
+    | "canDeleteResources";
+  function hasWorkspacePermission(key: WorkspacePermissionKey) {
+    if (!permissions) return;
+    if (isOwner) return true;
+    return permissions![key] == true;
+  }
 
   return (
     <div>
@@ -97,7 +133,10 @@ export default function MembersTable({
       </div>
 
       {/* ---------------- TABLE ---------------- */}
-      <div className="border rounded-md overflow-hidden">
+      <div
+        className="border rounded-md overflow-y-auto"
+        style={{ maxHeight: "420px" }}
+        ref={scrollParentRef}>
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-muted-foreground uppercase text-xs border-b">
             <tr>
@@ -162,7 +201,7 @@ export default function MembersTable({
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       asChild
-                      disabled={member.role === "OWNER"}>
+                      disabled={hasWorkspacePermission("canInviteMembers")}>
                       <Button variant="ghost" size="icon">
                         <MoreHorizontal size={16} />
                       </Button>
@@ -179,8 +218,13 @@ export default function MembersTable({
                 </td>
               </tr>
             ))}
+            {hasNextPage && (
+              <tr ref={ref}>
+                <td colSpan={5} className="h-6" />
+              </tr>
+            )}
 
-            {members.length === 0 && !isLoading && (
+            {members.length === 0 && !isFetching && (
               <tr>
                 <td
                   colSpan={5}
@@ -192,35 +236,9 @@ export default function MembersTable({
           </tbody>
         </table>
       </div>
-
-      {/* ---------------- PAGINATION ---------------- */}
-      <div className="flex justify-between items-center p-4">
-        <span className="text-sm text-muted-foreground">
-          Page {page} of {totalPages / LIMIT}
-        </span>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}>
-            Previous
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => p + 1)}>
-            Next
-          </Button>
-        </div>
-      </div>
-
       {isFetching && (
         <div className="text-center text-xs text-muted-foreground pb-4">
-          Updating…
+          <Spinner alphabetic={"some"} />
         </div>
       )}
     </div>

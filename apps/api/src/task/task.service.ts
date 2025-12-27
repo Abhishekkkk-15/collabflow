@@ -22,7 +22,14 @@ export class TaskService {
   ) {}
 
   async create(dto: CreateTaskDto, user: User) {
+    console.log('id', dto.projectId);
     return prisma.$transaction(async (tx) => {
+      const project = await tx.project.findUnique({
+        where: {
+          id: dto.projectId,
+        },
+      });
+      if (!project) throw new NotFoundException('Project not found');
       const task = await tx.task.create({
         data: {
           title: dto.title,
@@ -32,7 +39,7 @@ export class TaskService {
           priority: dto.priority,
           dueDate: dto.dueDate,
           creatorId: user.id,
-          workspaceId: dto.workspaceId, // MUST NOT be undefined
+          workspaceId: project.workspaceId,
           projectId: dto.projectId ?? null,
           assignees: {
             createMany: {
@@ -97,12 +104,10 @@ export class TaskService {
       }),
     };
 
-    // 🔢 total count
     const totalCount = await prisma.task.count({
       where: whereClause,
     });
 
-    // 📦 paginated data
     const tasks = await prisma.task.findMany({
       where: whereClause,
       skip,

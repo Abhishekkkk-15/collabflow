@@ -152,10 +152,10 @@ export class ProjectService {
     return { message: 'Done' };
   }
 
-  async getProjectMembers(slug: string, limit: number) {
-    console.log(slug);
+  async getProjectMembers(id: string, limit: number) {
+    console.log(id);
     const project = await prisma.project.findFirst({
-      where: { slug: slug as string },
+      where: { id },
       select: { id: true },
     });
     if (!project) throw new BadRequestException("Project doesn't exit's");

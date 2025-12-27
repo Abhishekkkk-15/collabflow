@@ -164,7 +164,7 @@ export default function AddTaskDialog({
     }
 
     setLoading(true);
-
+    console.log(ws);
     const payload = {
       id: taskTempId,
       title,
@@ -174,11 +174,8 @@ export default function AddTaskDialog({
       tags,
       assignedTo: assignees.map((u) => u.id),
       dueDate: dueDate ?? null,
-      projectId: proj?.id,
-      workspaceId: ws?.id,
+      projectId: projectId,
     };
-
-    console.log(payload);
 
     try {
       const res = await api.post("/task", {

@@ -22,9 +22,9 @@ import { WsAuthorizationGuard } from '../common/guards/ws-authorization.guard';
 @Controller('project')
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
-  @Get(':slug/members')
-  getProjectMembers(@Param('slug') slug: string, @Query('limit') limit = 5) {
-    return this.projectService.getProjectMembers(slug, limit);
+  @Get(':id/members')
+  getProjectMembers(@Param('id') id: string, @Query('limit') limit = 5) {
+    return this.projectService.getProjectMembers(id, limit);
   }
   @Get()
   @UseGuards(AuthGuard, MemberGuard)

@@ -41,9 +41,6 @@ export class CreateTaskDto {
   @ArrayNotEmpty()
   assignedTo!: string[];
 
-  @IsString()
-  workspaceId!: string;
-
   @IsOptional()
   @IsString()
   projectId?: string;

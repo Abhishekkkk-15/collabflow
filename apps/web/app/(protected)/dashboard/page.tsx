@@ -63,6 +63,8 @@ import {
 import { useUser, useUserRoles } from "@/lib/redux/hooks/use-user";
 import { EmptyDemo } from "@/components/project/EmptyProjects";
 import { CreateProjectDialog } from "@/components/self/CreateProjectDialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import AddTaskDialog from "@/components/task/AddTaskDialog";
 
 type EWorkspace = Workspace & {
   projects: Project[];
@@ -85,6 +87,9 @@ export default function WorkspaceDashboard() {
   const [permissions, setPermissions] = useState<WorkspacePermission>();
   const [openCreateProjectDialog, setOpenCreateProjectDialog] = useState(false);
   const { workspaceRoles } = useUserRoles();
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [openProjectSidebar, setOpenProjectSidebar] = useState(false);
+
   const user = useUser();
 
   const [isOwner, setIsOwner] = useState(false);
@@ -110,7 +115,6 @@ export default function WorkspaceDashboard() {
   useEffect(() => {
     if (selectedWorkspace) {
       setProjects(selectedWorkspace?.projects);
-      console.log("permissions ", selectedWorkspace.permissions);
       setPermissions(selectedWorkspace.permissions);
       let roles = workspaceRoles.find(
         (w) => w.workspaceId == selectedWorkspace?.id
@@ -526,6 +530,8 @@ export default function WorkspaceDashboard() {
                   workspaceSlug={selectedWorkspace.id!}
                   onRoleChange={handleChangeRole}
                   onRemove={handleRemoveMember}
+                  permissions={permissions!}
+                  isOwner={isOwner}
                 />
               </CardContent>
             </Card>
@@ -578,13 +584,18 @@ export default function WorkspaceDashboard() {
                     {projects.map((project) => (
                       <div
                         key={project.id}
-                        className="group flex items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50">
+                        onClick={() => {
+                          setSelectedProject(project);
+                          setOpenProjectSidebar(true);
+                        }}
+                        className="group flex cursor-pointer items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50">
                         <div className="flex-1 space-y-1">
                           <p className="font-medium">{project.name}</p>
                           <p className="text-xs text-muted-foreground">
                             /{project.slug}
                           </p>
                         </div>
+
                         <Badge variant={getStatusVariant(project.status)}>
                           {project.status}
                         </Badge>
@@ -595,6 +606,86 @@ export default function WorkspaceDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+          <Sheet open={openProjectSidebar} onOpenChange={setOpenProjectSidebar}>
+            <SheetContent
+              side="right"
+              className="flex w-[380px] flex-col p-0 sm:w-[420px]">
+              {selectedProject && (
+                <>
+                  {/* ---------- HEADER ---------- */}
+                  <div className="space-y-1 border-b px-6 py-5">
+                    <h2 className="text-base font-semibold leading-none">
+                      {selectedProject.name}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      /{selectedProject.slug}
+                    </p>
+                  </div>
+
+                  {/* ---------- CONTENT ---------- */}
+                  <div className="flex flex-1 flex-col gap-6 px-6 py-5">
+                    {/* ---------- PROJECT DETAILS ---------- */}
+                    <section className="space-y-3">
+                      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Project
+                      </h3>
+
+                      <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2">
+                        <span className="text-sm text-muted-foreground">
+                          Status
+                        </span>
+                        <Badge
+                          variant={getStatusVariant(selectedProject.status)}
+                          className="text-xs">
+                          {selectedProject.status}
+                        </Badge>
+                      </div>
+
+                      {/* Future:
+                - description
+                - owner
+                - created date
+            */}
+                    </section>
+
+                    {/* ---------- TASKS ---------- */}
+                    <section className="space-y-3">
+                      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Tasks
+                      </h3>
+
+                      <div className="space-y-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="w-full">
+                          Manage tasks
+                        </Button>
+
+                        {/* 🔽 ADD TASK DIALOG GOES HERE 🔽 */}
+                        <AddTaskDialog projectId={selectedProject.id} />
+
+                        <p className="text-xs text-muted-foreground">
+                          Create, assign and track tasks inside this project.
+                        </p>
+                      </div>
+                    </section>
+                  </div>
+
+                  {/* ---------- FOOTER ACTIONS ---------- */}
+                  <div className="border-t px-6 py-4 space-y-2">
+                    <Button variant="outline" size="sm" className="w-full">
+                      Project settings
+                    </Button>
+
+                    <Button variant="destructive" size="sm" className="w-full">
+                      Archive project
+                    </Button>
+                  </div>
+                </>
+              )}
+            </SheetContent>
+          </Sheet>
 
           <TabsContent value="permissions">
             <Card>
