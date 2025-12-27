@@ -89,7 +89,7 @@ export default function WorkspaceDashboard() {
   const { workspaceRoles } = useUserRoles();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [openProjectSidebar, setOpenProjectSidebar] = useState(false);
-
+  const [openInviteMemberInP, setOpenInviteMembersInP] = useState(false);
   const user = useUser();
 
   const [isOwner, setIsOwner] = useState(false);
@@ -152,7 +152,24 @@ export default function WorkspaceDashboard() {
           members,
         }
       );
-    } catch (error) {}
+    } catch (error) {
+      console.log("error while inviteing users in workspace");
+    }
+  };
+
+  const handleProjectInvite = async (members: InviteEntry[]) => {
+    if (permissions?.canInviteMembers == false) return;
+    try {
+      let res = await api.post(
+        `/invite/project/${selectedProject?.id}?wsSlug=${selectedWorkspace?.slug}`,
+        {
+          members,
+        }
+      );
+      console.log(res);
+    } catch (error) {
+      console.log("error while inviteing users in workspace");
+    }
   };
 
   const handleDelete = async () => {
@@ -664,7 +681,19 @@ export default function WorkspaceDashboard() {
 
                         {/* 🔽 ADD TASK DIALOG GOES HERE 🔽 */}
                         <AddTaskDialog projectId={selectedProject.id} />
-
+                        <Button
+                          className="flex gap-2 bg-primary text-primary-foreground w-full"
+                          onClick={() => setOpenInviteMembersInP(true)}>
+                          <Plus size={16} /> Add Members
+                        </Button>
+                        <InviteMemberSheet
+                          workspaceId={selectedProject.id}
+                          slug={selectedProject.slug}
+                          currentPath="PROJECT"
+                          open={openInviteMemberInP}
+                          onOpenChange={setOpenInviteMembersInP}
+                          onInvite={handleProjectInvite}
+                        />
                         <p className="text-xs text-muted-foreground">
                           Create, assign and track tasks inside this project.
                         </p>

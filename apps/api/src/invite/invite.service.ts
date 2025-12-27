@@ -9,12 +9,15 @@ import { SendInviteDto } from './dto/send-invite.dto';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import { WorkspaceService } from '../workspace/workspace.service';
+import { ProjectService } from '../project/project.service';
 @Injectable()
 export class InviteService {
   constructor(
     private readonly notificationService: NotificationService,
-    @InjectQueue('workspaceQueue') private workspaceQueue: Queue,
     private readonly workspaceService: WorkspaceService,
+    private readonly projectService: ProjectService,
+    @InjectQueue('workspaceQueue') private workspaceQueue: Queue,
+    @InjectQueue('projectQueue') private projectQueue: Queue,
   ) {}
   async acceptInvite(dto: AcceptInviteDto, user: User) {
     let notification = await this.notificationService.findOne(
@@ -57,6 +60,18 @@ export class InviteService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async pAdd(id: string, dto: SendInviteDto, owner: User) {
+    const project = await this.projectService.findOne(id, '');
+    if (!project) throw new NotFoundException('Project not found');
+
+    this.projectQueue.add('project:create', {
+      project,
+      members: dto.members,
+      invitedBy: owner,
+    });
+    return { message: 'Success' };
   }
 
   findAll() {

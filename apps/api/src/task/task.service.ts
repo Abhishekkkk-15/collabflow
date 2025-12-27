@@ -106,11 +106,9 @@ export class TaskService {
 
     const tasks = await prisma.task.findMany({
       where: whereClause,
-
-      take: limit + 1,
-      cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : 0,
-
+      // take: limit + 1,
+      // cursor: cursor ? { id: cursor } : undefined,
+      // skip: cursor ? 1 : 0,
       orderBy: {
         dueDate: 'desc',
       },

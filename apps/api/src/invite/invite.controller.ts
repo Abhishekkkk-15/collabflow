@@ -35,6 +35,14 @@ export class InviteController {
     console.log('id', id);
     this.inviteService.wsInvite(id, body, user);
   }
+  @Post('project/:id')
+  handleAddProjectMembers(
+    @Param('id') id: string,
+    @Body() body: SendInviteDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.inviteService.pAdd(id, body, user);
+  }
 
   @Get()
   findAll() {

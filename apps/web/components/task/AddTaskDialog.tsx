@@ -200,7 +200,7 @@ export default function AddTaskDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex gap-2 bg-primary text-primary-foreground">
+        <Button className="flex gap-2 bg-primary text-primary-foreground w-full">
           <Plus size={16} /> Add Task
         </Button>
       </DialogTrigger>

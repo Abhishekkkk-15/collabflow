@@ -112,14 +112,20 @@ export class UserService {
     console.log('users', users);
     return { users, hasNextPage, nextCursor };
   }
-  async findAllUserNotInP(pId: string) {
+
+  async findAllUserNotInP(
+    pId: string,
+    limit: number,
+    cursor: string,
+    query: string,
+  ) {
     const wsExist = await prisma.project.findUnique({
       where: {
         id: pId,
       },
     });
     if (!wsExist) throw new NotFoundException('Project not found');
-    return await prisma.user.findMany({
+    const users = await prisma.user.findMany({
       where: {
         NOT: {
           projectMemberships: {
@@ -128,8 +134,33 @@ export class UserService {
             },
           },
         },
+        ...(query?.trim()
+          ? {
+              OR: [
+                {
+                  email: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  name: {
+                    contains: query,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            }
+          : {}),
       },
     });
+    const hasNextPage = users.length > limit;
+    if (hasNextPage) {
+      users.pop();
+    }
+    const nextCursor = users.length > 0 ? users[users.length - 1].id : null;
+    console.log('users', users);
+    return { users, hasNextPage, nextCursor };
   }
   async currentUserRoles(id: string) {
     try {

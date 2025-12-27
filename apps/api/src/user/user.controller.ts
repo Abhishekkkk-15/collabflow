@@ -58,8 +58,13 @@ export class UserController {
   }
   @Get('/project/:pId/users')
   // @UseGuards()
-  usersNotInP(@Param('pId') wsId: string) {
-    return this.userService.findAllUserNotInP(wsId);
+  usersNotInP(
+    @Param('pId') wsId: string,
+    @Query('limit') limit: string,
+    @Query('cursor') cursor: string,
+    @Query('q') query: string,
+  ) {
+    return this.userService.findAllUserNotInP(wsId, +limit, cursor, query);
   }
 
   @Patch(':id')

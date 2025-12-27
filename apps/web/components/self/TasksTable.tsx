@@ -219,15 +219,9 @@ export default function TasksTable({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <AddTaskDialog
-            projectId={project}
-            onCreate={(task) => setTasks((prev) => [task, ...prev])}
-          />
         </div>
       </div>
 
-      {/* ---------------------- TABLE ---------------------- */}
       <div className="border rounded-md overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-muted-foreground uppercase text-xs border-b">

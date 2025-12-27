@@ -158,7 +158,7 @@ export function startProjectInviteWorker() {
           workspaceId: project.workspaceId ?? null,
           type: "GENERAL",
           title: "Project Invitation",
-          body: `${invitedBy?.name ?? "Someone"} invited you to join project ${
+          body: `${invitedBy?.name ?? "Someone"} Added you to the project ${
             project.name
           }`,
           link: `/workspace/${project.workspaceId}/project/${project.slug}`,
