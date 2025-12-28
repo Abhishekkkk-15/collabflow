@@ -1,19 +1,11 @@
 "use client";
 
-import React, { JSX, useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-} from "@/components/ui/dropdown-menu";
-
+import { JSX, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 import {
   Filter,
   Settings,
-  ArrowUpDown,
   MoreHorizontal,
   Check,
   Circle,
@@ -23,212 +15,231 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Task, TaskPriority, TaskStatus, TaskTag, User } from "@prisma/client";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+import { Task, TaskStatus, TaskTag, User } from "@prisma/client";
 import { api } from "@/lib/api/api";
-import { toast } from "sonner";
-import { usePathname } from "next/navigation";
-import AddTaskDialog from "../task/AddTaskDialog";
-interface IExtendedTask extends Task {
+import { useQuery } from "@tanstack/react-query";
+import Error from "next/error";
+import getQueryClient from "@/lib/react-query/query-client";
+import { Spinner } from "../ui/spinner";
+
+interface ExtendedTask extends Task {
   assignees: { user: User }[];
 }
 
-export default function TasksTable({
-  project,
-  fetchedTasks,
-}: {
+interface TasksTableProps {
   project: string;
-  fetchedTasks: any;
-}) {
-  const [tasks, setTasks] = useState<IExtendedTask[]>(
-    fetchedTasks?.tasks || []
+  workspace: string;
+}
+
+const STATUSES: Array<"ALL" | TaskStatus> = [
+  "ALL",
+  "TODO",
+  "IN_PROGRESS",
+  "BLOCKED",
+  "REVIEW",
+  "DONE",
+];
+
+const PRIORITIES = ["ALL", "LOW", "MEDIUM", "HIGH"] as const;
+
+const ALL_FIELDS = [
+  { key: "id", label: "Task ID" },
+  { key: "title", label: "Title" },
+  { key: "description", label: "Description" },
+  { key: "tags", label: "Tags" },
+  { key: "status", label: "Status" },
+  { key: "priority", label: "Priority" },
+  { key: "dueDate", label: "Due Date" },
+  { key: "assignees", label: "Assigned To" },
+] as const;
+
+const STATUS_ICONS: Record<TaskStatus, JSX.Element> = {
+  TODO: (
+    <span className="flex items-center gap-2">
+      <Circle className="h-3 w-3 text-muted-foreground" /> Todo
+    </span>
+  ),
+  IN_PROGRESS: (
+    <span className="flex items-center gap-2">
+      <Loader2 className="h-3 w-3 text-blue-500 animate-spin" /> In Progress
+    </span>
+  ),
+  BLOCKED: (
+    <span className="flex items-center gap-2">
+      <Clock className="h-3 w-3 text-orange-500" /> Blocked
+    </span>
+  ),
+  DONE: (
+    <span className="flex items-center gap-2">
+      <CheckCircle2 className="h-3 w-3 text-green-500" /> Done
+    </span>
+  ),
+  REVIEW: (
+    <span className="flex items-center gap-2">
+      <XCircle className="h-3 w-3 text-red-500" /> Review
+    </span>
+  ),
+};
+
+const TAG_COLORS: Record<TaskTag, string> = {
+  BUG: "bg-red-100 text-red-700 border-red-200",
+  FEATURE: "bg-purple-100 text-purple-700 border-purple-200",
+  IMPROVEMENT: "bg-blue-100 text-blue-700 border-blue-200",
+  REFACTOR: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  DESIGN: "bg-pink-100 text-pink-700 border-pink-200",
+  DOCUMENTATION: "bg-gray-100 text-gray-700 border-gray-200",
+  FRONTEND: "bg-green-100 text-green-700 border-green-200",
+  BACKEND: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  DATABASE: "bg-orange-100 text-orange-700 border-orange-200",
+  SECURITY: "bg-rose-100 text-rose-700 border-rose-200",
+  PERFORMANCE: "bg-teal-100 text-teal-700 border-teal-200",
+};
+
+interface TasksResponse {
+  tasks: ExtendedTask[];
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+export default function TasksTable({ project, workspace }: TasksTableProps) {
+  const pathname = usePathname();
+  const [visibleFields, setVisibleFields] = useState<string[]>(
+    ALL_FIELDS.map((f) => f.key)
   );
+
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
+  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
 
-  const [visibleFields, setVisibleFields] = useState<string[]>([
-    "id",
-    "title",
-    "description",
-    "status",
-    "priority",
-    "tags",
-    "dueDate",
-    "assignees",
-  ]);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 500);
+    return () => clearTimeout(t);
+  }, [query]);
+  const { data, isFetching } = useQuery<TasksResponse, Error, TasksResponse>({
+    queryKey: ["tasks", { workspace, project, page, debouncedQuery }],
+    queryFn: async () => {
+      const res = await api.get(
+        `/task?wsSlug=${workspace}&pSlug=${project}&page=${page}&limit=10&q=${debouncedQuery}`
+      );
+      return res.data;
+    },
+    keepPreviousData: true,
+  });
 
-  const statuses = ["ALL", "TODO", "IN_PROGRESS", "BLOCKED", "DONE", "REVIEW"];
-  const priorities = ["ALL", "LOW", "MEDIUM", "HIGH"];
-  const pathName = usePathname();
-  // Toggle column visibility
+  const filteredTasks = useMemo(() => {
+    if (!data?.tasks) return [];
+
+    return data.tasks.filter((task) => {
+      const statusMatch =
+        statusFilter === "ALL" || task.status === statusFilter;
+      const priorityMatch =
+        priorityFilter === "ALL" || task.priority === priorityFilter;
+
+      return statusMatch && priorityMatch;
+    });
+  }, [data?.tasks, statusFilter, priorityFilter]);
+
   function toggleField(field: string) {
     setVisibleFields((prev) =>
       prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
     );
   }
-  console.log(pathName.startsWith("/workspace"));
-  console.log(pathName);
-  const allFields = [
-    { key: "id", label: "Task ID" },
-    { key: "title", label: "Title" },
-    { key: "description", label: "Description" },
-    { key: "tags", label: "Tags" },
-    { key: "status", label: "Status" },
-    { key: "priority", label: "Priority" },
-    { key: "dueDate", label: "Due Date" },
-    { key: "assignees", label: "Assigned To" },
-  ];
 
-  // Status Icons
-  const statusIcons: Record<TaskStatus, JSX.Element> = {
-    TODO: (
-      <span className="flex items-center gap-2">
-        <Circle className="h-3 w-3 text-gray-400" /> Todo
-      </span>
-    ),
-    IN_PROGRESS: (
-      <span className="flex items-center gap-2">
-        <Loader2 className="h-3 w-3 text-blue-500 animate-spin" /> In Progress
-      </span>
-    ),
-    BLOCKED: (
-      <span className="flex items-center gap-2">
-        <Clock className="h-3 w-3 text-orange-500" /> Backlog
-      </span>
-    ),
-    DONE: (
-      <span className="flex items-center gap-2">
-        <CheckCircle2 className="h-3 w-3 text-green-500" /> Done
-      </span>
-    ),
-    REVIEW: (
-      <span className="flex items-center gap-2">
-        <XCircle className="h-3 w-3 text-red-500" /> Canceled
-      </span>
-    ),
-  };
+  const queryClient = getQueryClient();
 
-  // Tag Colors
-  const tagColors: Record<TaskTag, string> = {
-    BUG: "bg-red-100 text-red-700 border-red-200",
-    FEATURE: "bg-purple-100 text-purple-700 border-purple-200",
-    IMPROVEMENT: "bg-blue-100 text-blue-700 border-blue-200",
-    REFACTOR: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    DESIGN: "bg-pink-100 text-pink-700 border-pink-200",
-    DOCUMENTATION: "bg-gray-100 text-gray-700 border-gray-200",
-    FRONTEND: "bg-green-100 text-green-700 border-green-200",
-    BACKEND: "bg-indigo-100 text-indigo-700 border-indigo-200",
-    DATABASE: "bg-orange-100 text-orange-700 border-orange-200",
-    SECURITY: "bg-rose-100 text-rose-700 border-rose-200",
-    PERFORMANCE: "bg-teal-100 text-teal-700 border-teal-200",
-  };
-
-  const filteredTasks = tasks.filter((t) => {
-    const matchStatus = statusFilter === "ALL" || t.status === statusFilter;
-    const matchPriority =
-      priorityFilter === "ALL" || t.priority === priorityFilter;
-    return matchStatus && matchPriority;
-  });
-
-  async function handleTaskDelete(id: string) {
+  async function handleDelete(taskId: string) {
     try {
-      await api.delete(`/task/${id}`);
-      toast.info("Task deleted", {
-        position: "top-center",
+      await api.delete(`/task/${taskId}`);
+
+      toast.success("Task deleted");
+
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", { workspace, project }],
       });
-      setTasks((prev) => {
-        return prev.filter((t) => t.id !== id);
-      });
-    } catch (error: any) {
-      toast.error("Error while deleting task", {
-        position: "top-center",
-        description: error.data.message,
-      });
+    } catch {
+      toast.error("Failed to delete task");
     }
   }
 
+  function onStatusChange(v: string) {
+    setStatusFilter(v);
+    setPage(1);
+  }
+
+  function onPriorityChange(v: string) {
+    setPriorityFilter(v);
+    setPage(1);
+  }
+
   return (
-    <div>
-      {/* ---------------------- TOP TOOLBAR ---------------------- */}
-      <div className="p-4 flex justify-between items-center ">
-        {/* LEFT: filter area */}
-        <div className="flex gap-2 items-center">
-          <Input placeholder="Filter tasks..." className="w-64" />
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <Input
+            placeholder="Search tasks..."
+            className="w-64"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
+          />
 
-          {/* Status Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex gap-2">
-                <Filter size={16} /> Status
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-40 p-1">
-              {statuses.map((s) => (
-                <div
-                  key={s}
-                  onClick={() => setStatusFilter(s)}
-                  className={`px-3 py-2 text-sm rounded-md cursor-pointer 
-                  hover:bg-muted flex justify-between
-                  ${statusFilter === s ? "bg-muted" : ""}`}>
-                  {s}
-                  {statusFilter === s && <Check size={14} />}
-                </div>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <FilterDropdown
+            label="Status"
+            options={STATUSES}
+            value={statusFilter}
+            onChange={onStatusChange}
+          />
 
-          {/* Priority Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex gap-2">
-                <Filter size={16} /> Priority
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-40 p-1">
-              {priorities.map((p) => (
-                <div
-                  key={p}
-                  onClick={() => setPriorityFilter(p)}
-                  className={`px-3 py-2 text-sm rounded-md cursor-pointer hover:bg-muted flex justify-between
-                  ${priorityFilter === p ? "bg-muted" : ""}`}>
-                  {p}
-                  {priorityFilter === p && <Check size={14} />}
-                </div>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <FilterDropdown
+            label="Priority"
+            options={PRIORITIES}
+            value={priorityFilter}
+            onChange={onPriorityChange}
+          />
         </div>
 
-        {/* RIGHT: Add + View */}
-        <div className="flex gap-2">
-          {/* Column Visibility */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex gap-2">
-                <Settings size={16} /> View
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48 p-1">
-              {allFields.map((f) => (
-                <div
-                  key={f.key}
-                  className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-muted"
-                  onClick={() => toggleField(f.key)}>
-                  <Checkbox checked={visibleFields.includes(f.key)} />
-                  {f.label}
-                </div>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {/* <AddTaskDialog /> */}
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <Settings size={16} /> View
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-48 p-1">
+            {ALL_FIELDS.map((field) => (
+              <div
+                key={field.key}
+                className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-muted"
+                onClick={() => toggleField(field.key)}>
+                <Checkbox checked={visibleFields.includes(field.key)} />
+                {field.label}
+              </div>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <div className="border rounded-md overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-muted-foreground uppercase text-xs border-b">
+      <div className="overflow-x-auto border rounded-md">
+        <table className="min-w-[900px] w-full text-sm">
+          <thead className="bg-muted/40 border-b text-xs uppercase">
             <tr>
-              <th className="p-3 w-[40px]">
+              <th className="p-3 w-10">
                 <Checkbox />
               </th>
               {visibleFields.includes("id") && <th className="p-3">ID</th>}
@@ -251,13 +262,13 @@ export default function TasksTable({
               {visibleFields.includes("assignees") && (
                 <th className="p-3">Assigned</th>
               )}
-              <th className="p-3 w-[50px]"></th>
+              {pathname.startsWith("/dashboard") && <th className="p-3 w-10" />}
             </tr>
           </thead>
 
           <tbody>
             {filteredTasks.map((task) => (
-              <tr key={task.id} className="border-t hover:bg-muted/20">
+              <tr key={task.id} className="border-t hover:bg-muted/30">
                 <td className="p-3">
                   <Checkbox />
                 </td>
@@ -273,9 +284,7 @@ export default function TasksTable({
                 )}
 
                 {visibleFields.includes("description") && (
-                  <td className="p-3 max-w-[300px] truncate">
-                    {task.description}
-                  </td>
+                  <td className="p-3 max-w-xs truncate">{task.description}</td>
                 )}
 
                 {visibleFields.includes("tags") && (
@@ -283,7 +292,7 @@ export default function TasksTable({
                     {task.tags.map((tag) => (
                       <span
                         key={tag}
-                        className={`px-2 py-0.5 rounded-md text-xs border ${tagColors[tag]}`}>
+                        className={`px-2 py-0.5 text-xs border rounded ${TAG_COLORS[tag]}`}>
                         {tag}
                       </span>
                     ))}
@@ -291,7 +300,7 @@ export default function TasksTable({
                 )}
 
                 {visibleFields.includes("status") && (
-                  <td className="p-3">{statusIcons[task.status]}</td>
+                  <td className="p-3">{STATUS_ICONS[task.status]}</td>
                 )}
 
                 {visibleFields.includes("priority") && (
@@ -309,19 +318,17 @@ export default function TasksTable({
                 {visibleFields.includes("assignees") && (
                   <td className="p-3">
                     <div className="flex -space-x-2">
-                      {task.assignees.map((a) => (
-                        <Avatar
-                          key={a.user.id}
-                          className="h-6 w-6 border rounded-full">
-                          <AvatarImage src={a.user.image ?? ""} />
-                          <AvatarFallback>{a.user.name?.[0]}</AvatarFallback>
+                      {task.assignees.map(({ user }) => (
+                        <Avatar key={user.id} className="h-6 w-6 border">
+                          <AvatarImage src={user.image ?? ""} />
+                          <AvatarFallback>{user.name?.[0]}</AvatarFallback>
                         </Avatar>
                       ))}
                     </div>
                   </td>
                 )}
 
-                {pathName.startsWith("/dashboard") && (
+                {pathname.startsWith("/dashboard") && (
                   <td className="p-3">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -335,7 +342,7 @@ export default function TasksTable({
                         </div>
                         <div
                           className="px-2 py-1 text-sm hover:bg-muted rounded"
-                          onClick={() => handleTaskDelete(task.id)}>
+                          onClick={() => handleDelete(task.id)}>
                           Delete
                         </div>
                       </DropdownMenuContent>
@@ -346,7 +353,62 @@ export default function TasksTable({
             ))}
           </tbody>
         </table>
+        {isFetching && <Spinner />}
+      </div>
+      <div className="flex items-center justify-between mt-4">
+        <Button
+          variant="outline"
+          disabled={!data?.hasPrevPage}
+          onClick={() => setPage((p) => p - 1)}>
+          Prev
+        </Button>
+
+        <span className="text-sm">
+          Page {page} of {data?.totalPages}
+        </span>
+
+        <Button
+          variant="outline"
+          disabled={!data?.hasNextPage}
+          onClick={() => setPage((p) => p + 1)}>
+          Next
+        </Button>
       </div>
     </div>
+  );
+}
+
+function FilterDropdown<T extends readonly string[]>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: T;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="gap-2">
+          <Filter size={16} /> {label}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-40 p-1">
+        {options.map((option) => (
+          <div
+            key={option}
+            onClick={() => onChange(option)}
+            className={`flex justify-between px-3 py-2 text-sm rounded cursor-pointer hover:bg-muted ${
+              value === option ? "bg-muted" : ""
+            }`}>
+            {option}
+            {value === option && <Check size={14} />}
+          </div>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -29,10 +29,10 @@ export class TaskController {
     @Query('wsSlug') wsSlug: string,
     @Query('pSlug') pSlug: string,
     @Query('limit') limit: string,
-    @Query('cursor') cursor: string,
+    @Query('page') page: string,
     @Query('q') query: string,
   ) {
-    return this.taskService.findAll(wsSlug, pSlug, +limit, cursor, query);
+    return this.taskService.findAll(wsSlug, pSlug, +limit, +page, query);
   }
 
   @Get(':id')

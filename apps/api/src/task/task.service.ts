@@ -76,9 +76,10 @@ export class TaskService {
     workspaceId: string,
     pSlug: string,
     limit = 10,
-    cursor: string | null,
+    page = 1,
     query = '',
   ) {
+    if (!limit) limit = 10;
     const ws = await this.wsService.findOne(workspaceId);
     if (!ws) throw new BadGatewayException('Workspace not found');
 
@@ -88,6 +89,7 @@ export class TaskService {
       project = await this.pService.findOne('', pSlug);
       if (!project) throw new BadGatewayException('Project not found');
     }
+    console.log('query', query);
 
     const whereClause: any = {
       workspaceId: ws.id,
@@ -104,11 +106,12 @@ export class TaskService {
       where: whereClause,
     });
 
+    const totalPages = Math.ceil(totalCount / limit);
+
     const tasks = await prisma.task.findMany({
       where: whereClause,
-      // take: limit + 1,
-      // cursor: cursor ? { id: cursor } : undefined,
-      // skip: cursor ? 1 : 0,
+      take: limit,
+      skip: (page - 1) * limit,
       orderBy: {
         dueDate: 'desc',
       },
@@ -127,18 +130,15 @@ export class TaskService {
         },
       },
     });
-    const hasNextPage = tasks.length > limit;
-    if (hasNextPage) {
-      tasks.pop();
-    }
-    const nextCursor = tasks.length > 0 ? tasks[tasks.length - 1].id : null;
 
     return {
       tasks,
-      totalPages: Math.ceil(totalCount / limit),
+      page,
+      limit,
       totalCount,
-      nextCursor,
-      hasNextPage,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
     };
   }
 

@@ -1,10 +1,9 @@
 import TasksTable from "@/components/self/TasksTable";
-import { api } from "@/lib/api/api";
-import { Task, User } from "@prisma/client";
 import { cookies } from "next/headers";
-interface IExtendedTask extends Task {
-  assignees: { user: User }[];
-}
+import getQueryClient from "@/lib/react-query/query-client";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import { api } from "@/lib/api/api";
+
 async function page({
   params,
 }: {
@@ -12,25 +11,29 @@ async function page({
 }) {
   const cookieStore = cookies();
   const { workspaceSlug, projectSlug } = await params;
-  let tasks;
-  try {
-    tasks = await api.get(
-      `/task?wsSlug=${workspaceSlug}&pSlug=${projectSlug}`,
-      {
-        headers: {
-          Cookie: (await cookieStore).toString(),
-        },
-        withCredentials: true,
-      }
-    );
-    console.log("tasks", tasks.data);
-  } catch (error) {
-    console.log("tasks", error);
-  }
+  console.log("wsSlug", workspaceSlug);
+  const queryClient = getQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ["tasks", { workspaceSlug, projectSlug, page: 1, query: "" }],
+    queryFn: async () => {
+      const res = await api.get(
+        `/task?wsSlug=${workspaceSlug}&pSlug=${projectSlug}&page=1&limit=10`,
+        {
+          headers: {
+            Cookie: cookieStore.toString(),
+          },
+          withCredentials: true,
+        }
+      );
+      return res.data;
+    },
+  });
+
   return (
-    <>
-      <TasksTable project={projectSlug} fetchedTasks={tasks?.data} />
-    </>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <TasksTable workspace={workspaceSlug} project={projectSlug} />
+    </HydrationBoundary>
   );
 }
 
