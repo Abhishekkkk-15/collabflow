@@ -113,7 +113,6 @@ export default function AddTaskDialog({
   useEffect(() => {
     (async () => {
       try {
-        console.log("project id", projectId);
         const res = await api.get(`/project/${projectId}/members`);
         setMembers(res.data.members.map((m: any) => m.user));
         console.log(res);

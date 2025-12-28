@@ -39,6 +39,11 @@ export class UserController {
     return this.userService.findAll(user, +limit, cursor, searchQuery);
   }
 
+  @Get('/dashboard/me')
+  async getMyDashboard(@CurrentUser() user: User) {
+    return this.userService.getMyDashboard(user.id);
+  }
+
   @Get('/roles')
   @UseGuards(AuthGuard)
   currentUserRoles(@Req() req: any) {

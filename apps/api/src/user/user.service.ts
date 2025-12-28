@@ -190,6 +190,97 @@ export class UserService {
       console.log(error);
     }
   }
+  async getMyDashboard(userId: string) {
+    const now = new Date();
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const assignedTasks = await prisma.task.findMany({
+      where: {
+        assignees: {
+          some: { userId },
+        },
+        status: { not: 'DONE' },
+      },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        priority: true,
+        dueDate: true,
+        project: { select: { id: true, name: true } },
+      },
+    });
+
+    const stats = {
+      assigned: assignedTasks.length,
+      dueToday: assignedTasks.filter(
+        (t) => t.dueDate && t.dueDate <= endOfToday,
+      ).length,
+      overdue: assignedTasks.filter((t) => t.dueDate && t.dueDate < now).length,
+      urgent: assignedTasks.filter((t) => t.priority === 'URGENT').length,
+    };
+
+    const todayTasks = assignedTasks.filter(
+      (t) => t.dueDate && t.dueDate <= endOfToday,
+    );
+
+    const upcomingTasks = assignedTasks.filter(
+      (t) => t.dueDate && t.dueDate > endOfToday,
+    );
+
+    const urgentTasks = assignedTasks.filter((t) => t.priority === 'URGENT');
+
+    const notifications = await prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        type: true,
+        isRead: true,
+        createdAt: true,
+      },
+    });
+
+    const taskIds = assignedTasks.map((t) => t.id);
+
+    const recentTaskActivities = await prisma.taskActivity.findMany({
+      where: {
+        taskId: { in: taskIds },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+      select: {
+        id: true,
+        field: true,
+        oldValue: true,
+        newValue: true,
+        createdAt: true,
+        task: { select: { title: true } },
+        user: { select: { name: true } },
+      },
+    });
+
+    const activityFeed = recentTaskActivities.map((a) => ({
+      id: a.id,
+      message: a.user
+        ? `${a.user.name} updated ${a.task.title} (${a.field})`
+        : `Task updated: ${a.task.title}`,
+      createdAt: a.createdAt,
+    }));
+
+    return {
+      stats,
+      todayTasks,
+      upcomingTasks,
+      urgentTasks,
+      notifications,
+      recentTaskActivities: activityFeed,
+    };
+  }
 
   update(id: number, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;

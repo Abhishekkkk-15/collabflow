@@ -1,185 +1,157 @@
-// Reference image (for layout & visual guidance):
-// /mnt/data/ChatGPT Image Nov 23, 2025, 10_06_07 PM.png
 "use client";
-import React from "react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-} from "@/components/ui/breadcrumb";
+
+import { useQuery } from "@tanstack/react-query";
+import { dashboardQueryOptions } from "@/lib/react-query/dashboard.query";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "lucide-react";
+import { AlertCircle, Bell, Calendar, CheckCircle2, Flame } from "lucide-react";
+import { User } from "next-auth";
 
-type Stats = { label: string; value: string; sub?: string };
+export default function DashboardClient({ user }: { user?: User }) {
+  const { data, isLoading } = useQuery(dashboardQueryOptions);
+  if (isLoading || !data) {
+    return <div className="p-6 text-muted-foreground">Loading dashboard…</div>;
+  }
 
-const stats: Stats[] = [
-  { label: "Workspaces", value: "3", sub: "Projects" },
-  { label: "Projects", value: "6", sub: "Tasks" },
-  { label: "Tasks", value: "4", sub: "Due Today" },
-];
-
-const workspaces = [
-  {
-    title: "Fun E-commerce Team",
-    meta: "Members · 3 Projects · 1 ul ago",
-    time: "5 min ago",
-  },
-  {
-    title: "Blogging App Team",
-    meta: "Members · 2 Projects",
-    time: "12 min ago",
-  },
-  {
-    title: "College Final Year Project",
-    meta: "Members · 1 Project",
-    time: "1 hr ago",
-  },
-];
-
-export default function DefaultDashboard({
-  user,
-}: {
-  user?: { name?: string; image?: string };
-}) {
   return (
-    <div>
-      {/* BODY */}
-      <div className="p-6">
-        <div className="flex items-start gap-6">
-          <div className="flex-1">
-            <h1 className="text-3xl font-extrabold">
-              Hello, {user?.name ?? "Abhishek"} <span>👋</span>
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Here’s your workspace summary for today
-            </p>
+    <div className="p-4 md:p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold">
+          Hello, {user?.name ?? "Abhishek"} 👋
+        </h1>
+        <p className="text-muted-foreground">
+          Here’s what you need to focus on today
+        </p>
+      </div>
 
-            <div className="mt-6 grid grid-cols-3 gap-4">
-              {stats.map((s) => (
-                <Card key={s.label} className="p-4">
-                  <CardContent className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-md bg-sky-100 flex items-center justify-center text-sky-600 font-semibold">
-                        {/* icon placeholder */}
-                        📁
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          {s.sub}
-                        </div>
-                        <div className="text-lg font-semibold">
-                          {s.label}: {s.value}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Stat title="Assigned" value={data.stats.assigned} />
+        <Stat title="Due Today" value={data.stats.dueToday} />
+        <Stat title="Overdue" value={data.stats.overdue} danger />
+        <Stat title="Urgent" value={data.stats.urgent} accent />
+      </div>
 
-            <h3 className="mt-6 text-lg font-semibold">Your Workspaces</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <TaskSection title="Today’s Tasks" tasks={data.todayTasks} />
+          <TaskSection title="Upcoming Tasks" tasks={data.upcomingTasks} />
+          <UrgentTasks tasks={data.urgentTasks} />
+        </div>
 
-            <div className="mt-3 space-y-3">
-              {workspaces.map((w) => (
-                <div
-                  key={w.title}
-                  className="border rounded-lg p-4 flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold">{w.title}</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {w.meta}
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">{w.time}</div>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell size={18} /> Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {data?.recentActivities?.map((a) => (
+                <div key={a.id} className="text-sm">
+                  <p>{a.message}</p>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(a.createdAt).toLocaleTimeString()}
+                  </span>
                 </div>
               ))}
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="mt-6">
-              <h4 className="font-semibold">Recent Activity</h4>
-              <ul className="list-disc mt-3 text-sm text-muted-foreground space-y-2 shadow-sm border rounded-lg p-4 pl-8 ">
-                <li>
-                  Aayush moved "Login Page UI" to Done{" "}
-                  <span className="text-xs text-muted-foreground ml-6">
-                    5 nh ago
-                  </span>
-                </li>
-                <li>
-                  Rohan commented on task "Navbar Fix"{" "}
-                  <span className="text-xs text-muted-foreground ml-6">
-                    20 min ago
-                  </span>
-                </li>
-                <li>
-                  You created workspace "College Final Year"{" "}
-                  <span className="text-xs text-muted-foreground ml-6">
-                    1 hour ago
-                  </span>
-                </li>
-                <li>
-                  Shyam added new project "API Cleanup"{" "}
-                  <span className="text-xs text-muted-foreground ml-6">
-                    2 hours ago
-                  </span>
-                </li>
-              </ul>
-
-              <div className="mt-6">
-                <h4 className="font-semibold">Upcoming Deadlines</h4>
-                <ul className="list-disc mt-3 text-sm text-muted-foreground space-y-2 shadow-sm border rounded-lg p-4 pl-8">
-                  <li>
-                    Fix DB schema{" "}
-                    <span className="ml-6 text-xs">Due tomorrow</span>
-                  </li>
-                  <li>
-                    Write product description{" "}
-                    <span className="ml-6 text-xs">Due in clays</span>
-                  </li>
-                  <li>
-                    Add refresh tokens to login system{" "}
-                    <span className="ml-6 text-xs">4 days</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT RAIL */}
-          <div className="w-64 space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Deadlines</CardTitle>
-              </CardHeader>
-              <CardContent className="h-28 flex items-center justify-center text-muted-foreground">
-                Chart Placeholder
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Workspace Contribution</CardTitle>
-              </CardHeader>
-              <CardContent className="h-28 flex items-center justify-center text-muted-foreground">
-                Chart Placeholder
-              </CardContent>
-            </Card>
-
-            <div className="mt-2 text-center text-xs text-muted-foreground"></div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar size={18} /> Tip
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Finish urgent tasks first to reduce stress.
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
+  );
+}
+
+function Stat({
+  title,
+  value,
+  danger,
+  accent,
+}: {
+  title: string;
+  value: number;
+  danger?: boolean;
+  accent?: boolean;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="text-sm text-muted-foreground">{title}</div>
+        <div
+          className={`text-2xl font-bold ${
+            danger ? "text-red-600" : accent ? "text-orange-500" : ""
+          }`}>
+          {value}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TaskSection({ title, tasks }: { title: string; tasks: any[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {tasks.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No tasks 🎉</p>
+        ) : (
+          tasks.map((t) => (
+            <div
+              key={t.id}
+              className="flex items-center justify-between border rounded-md p-3">
+              <div>
+                <p className="font-medium">{t.title}</p>
+                {t.dueDate && (
+                  <p className="text-xs text-muted-foreground">
+                    Due {new Date(t.dueDate).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              {t.status === "DONE" ? (
+                <CheckCircle2 className="text-green-500" />
+              ) : (
+                <AlertCircle className="text-yellow-500" />
+              )}
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function UrgentTasks({ tasks }: { tasks: any[] }) {
+  if (tasks.length === 0) return null;
+
+  return (
+    <Card className="border-red-200">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-red-600">
+          <Flame size={18} /> Urgent Tasks
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {tasks.map((t) => (
+          <div key={t.id} className="flex items-center justify-between text-sm">
+            <span>{t.title}</span>
+            <Badge variant="destructive">URGENT</Badge>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }

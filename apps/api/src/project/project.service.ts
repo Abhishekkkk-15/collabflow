@@ -153,7 +153,6 @@ export class ProjectService {
   }
 
   async getProjectMembers(id: string, limit: number) {
-    console.log(id);
     const project = await prisma.project.findFirst({
       where: { OR: [{ id }, { slug: id }] },
       select: { id: true },

@@ -11,7 +11,6 @@ async function page({
 }) {
   const cookieStore = cookies();
   const { workspaceSlug, projectSlug } = await params;
-  console.log("wsSlug", workspaceSlug);
   const queryClient = getQueryClient();
 
   await queryClient.prefetchQuery({
@@ -21,7 +20,7 @@ async function page({
         `/task?wsSlug=${workspaceSlug}&pSlug=${projectSlug}&page=1&limit=10`,
         {
           headers: {
-            Cookie: cookieStore.toString(),
+            Cookie: (await cookieStore).toString(),
           },
           withCredentials: true,
         }
@@ -32,7 +31,15 @@ async function page({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <TasksTable workspace={workspaceSlug} project={projectSlug} />
+      <section className="space-y-4 p-4">
+        <header>
+          <h1 className="text-xl font-semibold">Tasks</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage tasks for this project
+          </p>
+        </header>
+        <TasksTable workspace={workspaceSlug} project={projectSlug} />
+      </section>
     </HydrationBoundary>
   );
 }
