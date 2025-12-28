@@ -82,7 +82,9 @@
     "tailwind-merge": "^3.4.0",
     "tippy.js": "^6.3.7",
     "uuid": "^13.0.0",
-    "zod": "^4.1.12"
+    "zod": "^4.1.12",
+        "@collabflow/db": "workspace:*",
+    "@collabflow/types": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
