@@ -125,7 +125,7 @@ export default function WorkspaceDashboard() {
   }, [selectedWorkspace]);
 
   const handleSave = async () => {
-    if (permissions?.canModifySettings == false || permissions == null) return;
+    if (hasWorkspacePermission("canModifySettings")) return;
     setSaving(true);
     const payload = {
       name: selectedWorkspace?.name,

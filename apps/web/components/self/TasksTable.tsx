@@ -31,6 +31,7 @@ import { useQuery } from "@tanstack/react-query";
 import Error from "next/error";
 import getQueryClient from "@/lib/react-query/query-client";
 import { Spinner } from "../ui/spinner";
+import TaskDetailDialog from "../task/TaskDetailDialog";
 
 interface ExtendedTask extends Task {
   assignees: { user: User }[];
@@ -125,6 +126,9 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState(query);
+
+  const [selectedTask, setSelectedTask] = useState<ExtendedTask | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query), 500);
@@ -280,7 +284,14 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
                 )}
 
                 {visibleFields.includes("title") && (
-                  <td className="p-3">{task.title}</td>
+                  <td
+                    className="p-3 font-medium cursor-pointer hover:underline"
+                    onClick={() => {
+                      setSelectedTask(task);
+                      setDetailOpen(true);
+                    }}>
+                    {task.title}
+                  </td>
                 )}
 
                 {visibleFields.includes("description") && (
@@ -374,6 +385,11 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
           Next
         </Button>
       </div>
+      <TaskDetailDialog
+        task={selectedTask}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
     </div>
   );
 }
