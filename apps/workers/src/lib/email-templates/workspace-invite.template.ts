@@ -1,4 +1,4 @@
-function WORKSPACE_INVITE_TEMPLATE(
+export function WORKSPACE_INVITE_TEMPLATE(
   workspaceName: string,
   inviterName: string,
   inviterEmail: string,

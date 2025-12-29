@@ -707,9 +707,9 @@ export default function WorkspaceDashboard() {
                           <Button
                             className="flex gap-2 bg-primary text-primary-foreground w-full"
                             onClick={() => setOpenInviteMembersInP(true)}
-                            disabled={hasWorkspacePermission(
-                              "canCreateProject"
-                            )}>
+                            disabled={
+                              !hasWorkspacePermission("canCreateProject")
+                            }>
                             <Plus size={16} /> Add Members
                           </Button>
                           <InviteMemberSheet

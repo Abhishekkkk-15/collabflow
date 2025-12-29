@@ -63,10 +63,14 @@ export class InviteService {
   }
 
   async pAdd(id: string, dto: SendInviteDto, owner: User) {
-    const project = await this.projectService.findOne(id, '');
+    console.log('id', id);
+    const project = await prisma.project.findFirst({
+      where: {
+        id,
+      },
+    });
     if (!project) throw new NotFoundException('Project not found');
-
-    this.projectQueue.add('project:create', {
+    await this.projectQueue.add('project:create', {
       project,
       members: dto.members,
       invitedBy: owner,

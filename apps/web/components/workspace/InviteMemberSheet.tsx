@@ -251,7 +251,7 @@ export default function InviteMemberSheet({
             <div ref={ref} className="h-12"></div>
           </div>
           {isFetching && (
-            <div>
+            <div className="flex justify-center items-center">
               <Spinner />
             </div>
           )}

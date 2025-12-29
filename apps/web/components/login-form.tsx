@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { signIn } from "next-auth/react";
-import loginImg from "../public/login.png";
 import { useState } from "react";
 export function LoginForm({
   className,
@@ -69,7 +68,7 @@ export function LoginForm({
                   variant="outline"
                   type="button"
                   onClick={() =>
-                    signIn("google", { callbackUrl: "/dashboard" })
+                    signIn("google", { callbackUrl: "/workspace" })
                   }>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path

@@ -1,11 +1,12 @@
-// apps/workers/src/project-invite/index.ts
 import { Queue, Worker } from "bullmq";
-import { redisPub } from "../"; // your existing redis publisher client
-import { connection } from "../"; // bullmq connection config
+import { redisPub } from "../";
+import { connection } from "../";
 import { prisma } from "@collabflow/db";
 import { NotificationType, ProjectRole } from "@collabflow/types";
-import type { User } from "@prisma/client";
+import type { Project, User } from "@prisma/client";
 import { transformSocketToNotification } from "../lib/notifPayload";
+import { EmailJobData } from "../email";
+import { EmailType } from "../email/email.types";
 
 export const projectInviteQueue = new Queue("projectInviteQueue", {
   connection,
@@ -38,7 +39,6 @@ async function pushAndMaybeFlushProject(item: ProjectMemberPayload) {
   }
 
   if (BULK_PROJECT_MEMBER_STORE.length >= PROJECT_BATCH_SIZE) {
-    // create unique array by key
     const unique = Array.from(
       new Map(
         BULK_PROJECT_MEMBER_STORE.map((m) => [`${m.projectId}:${m.userId}`, m])
@@ -52,7 +52,6 @@ async function pushAndMaybeFlushProject(item: ProjectMemberPayload) {
           projectId: m.projectId,
           userId: m.userId,
           role: m.role,
-          // joinedAt will default to now() in schema
         })),
         skipDuplicates: true,
       });
@@ -65,7 +64,6 @@ async function pushAndMaybeFlushProject(item: ProjectMemberPayload) {
   }
 }
 
-/** Flush remaining buffered project members (used on shutdown) */
 async function flushRemainingProject() {
   if (BULK_PROJECT_MEMBER_STORE.length === 0) return;
 
@@ -118,27 +116,28 @@ export function startProjectInviteWorker() {
     "projectInviteQueue",
     async (job) => {
       const { project, members, invitedBy } = job.data as {
-        project: any; // minimal project info: id, name, slug, workspaceId
+        project: Project;
         members: { userId: string; role: ProjectRole; email?: string };
         invitedBy?: User | null;
       };
       console.log(project, members, invitedBy.image);
 
-      // 1) Enqueue email for this member (if email present)
-      if (members?.email) {
-        await emailQueue.add(
-          "email:project-invite",
-          {
-            to: members.email,
-            subject: `You're invited to project ${project.name}`,
-            projectId: project.id,
-            invitedUserId: members.userId,
+      await emailQueue.add(
+        "send:email",
+        {
+          to: members.email,
+          subject: `You'r been added to project ${project.name}`,
+          type: EmailType.PROJECT_ADDED,
+          payload: {
+            userName: members.email,
             projectName: project.name,
-            workspaceId: project.workspaceId,
+            workspaceName: "",
+            addedByName: invitedBy.name,
+            projectUrl: ``,
           },
-          { attempts: 3, backoff: { type: "exponential", delay: 2000 } }
-        );
-      }
+        } as EmailJobData,
+        {}
+      );
 
       // 2) Buffer project member for batched DB insert
       const payload: ProjectMemberPayload = {
