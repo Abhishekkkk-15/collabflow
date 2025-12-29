@@ -120,7 +120,6 @@ export default function MembersTable({
 
   return (
     <div>
-      {/* ---------------- TOP BAR ---------------- */}
       <div className="p-4 flex justify-between items-center">
         <Input
           placeholder="Search members..."
@@ -135,7 +134,6 @@ export default function MembersTable({
         </Button>
       </div>
 
-      {/* ---------------- TABLE ---------------- */}
       <div
         className="border rounded-md overflow-y-auto"
         style={{ maxHeight: "420px" }}
@@ -176,9 +174,7 @@ export default function MembersTable({
 
                 <td className="p-3">
                   <DropdownMenu>
-                    <DropdownMenuTrigger
-                      asChild
-                      disabled={member.role === "OWNER"}>
+                    <DropdownMenuTrigger asChild disabled={!isOwner}>
                       <Button
                         variant="outline"
                         size="sm"
@@ -203,23 +199,27 @@ export default function MembersTable({
                 </td>
 
                 <td className="p-3">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      asChild
-                      disabled={hasWorkspacePermission("canInviteMembers")}>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal size={16} />
-                      </Button>
-                    </DropdownMenuTrigger>
+                  {member.role != "OWNER" ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        asChild
+                        disabled={hasWorkspacePermission("canInviteMembers")}>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
 
-                    <DropdownMenuContent align="end">
-                      <div
-                        className="px-2 py-1 text-sm text-red-600 hover:bg-muted rounded cursor-pointer"
-                        onClick={() => handleRemove(member.id)}>
-                        Remove
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      <DropdownMenuContent align="end">
+                        <div
+                          className="px-2 py-1 text-sm text-red-600 hover:bg-muted rounded cursor-pointer"
+                          onClick={() => handleRemove(member.id)}>
+                          Remove
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    ""
+                  )}
                 </td>
               </tr>
             ))}
@@ -243,7 +243,7 @@ export default function MembersTable({
       </div>
       {isFetching && (
         <div className="text-center text-xs text-muted-foreground pb-4">
-          <Spinner alphabetic={"some"} />
+          <Spinner />
         </div>
       )}
     </div>
