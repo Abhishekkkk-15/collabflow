@@ -171,7 +171,6 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
   async function handleDelete(taskId: string) {
     try {
       if (checkedTasks.length > 0) {
-        console.log("checked tasks", checkedTasks);
         await api.delete(`/task/multi`, {
           data: {
             ids: checkedTasks,
@@ -275,12 +274,12 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          {pathname.startsWith("/dashboard") && (
+          {pathname.startsWith("/dashboard") && checkedTasks.length > 0 && (
             <Button
               variant="outline"
-              className="gap-2 pr-1"
+              className="gap-2 pr-1 bg-red-500"
               onClick={() => handleDelete("")}>
-              <Trash2 size={16} /> Delete All
+              <Trash2 size={16} /> Delete
             </Button>
           )}
         </div>

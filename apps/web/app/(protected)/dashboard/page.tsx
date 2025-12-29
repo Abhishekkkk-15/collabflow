@@ -336,7 +336,7 @@ export default function WorkspaceDashboard() {
           </div>
 
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:inline-grid sm:grid-cols-5">
+            <TabsList className="grid w-full grid-cols-3 bg-transparent pb-12 border-accent sm:border-0 border-2 sm:w-auto sm:inline-grid sm:grid-cols-5">
               <TabsTrigger value="general" className="gap-2">
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">General</span>
