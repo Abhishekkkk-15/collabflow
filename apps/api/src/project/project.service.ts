@@ -102,35 +102,83 @@ export class ProjectService {
     }
   }
 
-  async findOne(id: string, slug: string) {
+  async findOne(id?: string, slug?: string, user?: User) {
     const project = await prisma.project.findFirst({
       where: {
-        OR: [{ id }, { slug }],
+        OR: [id ? { id } : undefined, slug ? { slug } : undefined].filter(
+          Boolean,
+        ) as any,
       },
       include: {
         owner: {
           select: {
-            name: true,
-            image: true,
             id: true,
+            name: true,
             email: true,
+            image: true,
+          },
+        },
+
+        members: {
+          take: 5,
+          orderBy: {
+            joinedAt: 'desc',
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+
+        _count: {
+          select: {
+            members: true,
+            tasks: true,
           },
         },
       },
     });
-    if (!project) throw new NotFoundException('Project not found');
-    return project;
+    const myTasks = await prisma.task.findMany({
+      where: {
+        projectId: project?.id,
+        assignees: {
+          some: {
+            userId: user!.id,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    return {
+      project,
+      totalMembers: project._count.members,
+      totalTasks: project._count.tasks,
+      membersPreview: project.members,
+      myTasks,
+    };
   }
 
   async update(slug: string, uDto: UpdateProjectDto) {
     try {
-      const proj = await this.findOne('', slug);
+      const proj = await (await this.findOne('', slug)).project;
       if (!proj) throw new NotFoundException('Project not found');
 
       const { members, workspaceId, ...allowedFields } = uDto;
 
       return prisma.project.update({
-        where: { id: proj.id },
+        where: { id: proj!.id },
         data: allowedFields,
       });
     } catch (err: any) {
@@ -142,7 +190,7 @@ export class ProjectService {
   }
 
   async remove(slug: string) {
-    const proj = await this.findOne('', slug);
+    const proj = await (await this.findOne('', slug)).project;
     if (!proj) throw new NotFoundException('Not found');
     await prisma.project.delete({
       where: {

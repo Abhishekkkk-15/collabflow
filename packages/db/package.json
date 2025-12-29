@@ -5,6 +5,7 @@
   "main": "dist/client.js",
   "types": "dist/client.d.ts",
   "scripts": {
+    "postinstall": "prisma generate",
     "build": "tsc -p tsconfig.json",
     "generate": "prisma generate",
     "studio": "prisma studio",

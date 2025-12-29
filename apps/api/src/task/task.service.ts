@@ -37,8 +37,8 @@ export class TaskService {
           priority: dto.priority,
           dueDate: dto.dueDate,
           creatorId: user.id,
-          workspaceId: project.workspaceId,
-          projectId: project.id,
+          workspaceId: project.project.workspaceId,
+          projectId: project.project.id,
           assignees: {
             createMany: {
               data: dto.assignedTo.map((id: string) => ({ userId: id })),
@@ -79,14 +79,19 @@ export class TaskService {
     page = 1,
     query = '',
   ) {
+    console.log('bbing');
     if (!limit) limit = 10;
     const ws = await this.wsService.findOne(workspaceId);
     if (!ws) throw new BadGatewayException('Workspace not found');
 
-    let project: Project | null = null;
+    let project: any;
 
     if (pSlug) {
-      project = await this.pService.findOne('', pSlug);
+      project = await prisma.project.findFirst({
+        where: {
+          OR: [{ id: pSlug }, { slug: pSlug }],
+        },
+      });
       if (!project) throw new BadGatewayException('Project not found');
     }
     console.log('query', query);

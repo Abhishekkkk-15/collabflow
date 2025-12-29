@@ -21,7 +21,7 @@ async function page({
         `/task?wsSlug=${workspace}&pSlug=${project}&page=1&limit=10`,
         {
           headers: {
-            Cookie: cookieStore.toString(),
+            Cookie: (await cookieStore).toString(),
           },
           withCredentials: true,
         }

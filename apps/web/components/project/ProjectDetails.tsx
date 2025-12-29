@@ -7,12 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 import {
   FolderKanban,
@@ -25,12 +19,10 @@ import {
   ExternalLink,
   ArrowRight,
 } from "lucide-react";
+import { Task, TaskStatus, User } from "@prisma/client";
 
 type Member = {
-  id: string;
-  name: string;
-  email?: string;
-  image?: string;
+  user: User;
   role?: string;
 };
 
@@ -44,7 +36,7 @@ type Project = {
   workspaceId?: string;
   workspaceSlug?: string;
   unreadCount?: number;
-  taskCount?: number;
+  totalTasks?: number;
   members?: Member[];
   ownerId?: string;
   owner?: { id: string; name?: string; email?: string; image?: string };
@@ -55,29 +47,57 @@ type Project = {
 export default function ProjectDetails({
   project: projectProp,
   members: membersProp,
+  totalTasks,
+  totalMembers,
+  myTasks,
 }: {
   project?: Project;
   members?: Member[];
+  totalTasks: number;
+  totalMembers: number;
+  myTasks: Task[];
 }) {
   const project = projectProp ?? ({} as Project);
   const members = membersProp ?? project.members ?? [];
-
-  const statusColor = {
-    DRAFT: "secondary",
-    isActive: "default",
-    PAUSED: "secondary",
-    COMPLETED: "default",
-  } as Record<string, any>;
+  console.log(project);
 
   const priorityColor = {
     LOW: "secondary",
     MEDIUM: "default",
     HIGH: "destructive",
+    URGENT: "",
   } as Record<string, any>;
 
+  // enum TaskStatus {
+  //   TODO
+  //   IN_PROGRESS
+  //   REVIEW
+  //   DONE
+  //   BLOCKED
+  // }
+
+  // enum TaskPriority {
+  //   LOW
+  //   MEDIUM
+  //   HIGH
+  //   URGENT
+  // }
   const visibleMembers = members.slice(0, 6);
   const remainingMembers = Math.max(0, members.length - visibleMembers.length);
+  const statusColor = {
+    TODO: "secondary",
+    IN_PROGRESS: "default",
+    DONE: "outline",
+    BLOCKED: "",
+    REVIEW: "",
+  } as const;
 
+  const priorityDot = {
+    LOW: "bg-muted-foreground",
+    MEDIUM: "bg-yellow-500",
+    HIGH: "bg-red-500",
+    URGENT: "red",
+  } as const;
   if (!project || !project.id) {
     return (
       <div className="flex items-center justify-center min-h-[600px]">
@@ -100,12 +120,10 @@ export default function ProjectDetails({
 
   return (
     <div className="space-y-8 pb-8">
-      {/* Hero Section */}
       <Card className="overflow-hidden border-2 shadow-sm">
         <div className="bg-gradient-to-br ">
           <CardContent className="p-8">
             <div className="flex flex-col lg:flex-row gap-8 items-start">
-              {/* Project Icon & Title */}
               <div className="flex gap-6 items-start flex-1">
                 <div className="relative shrink-0 ">
                   <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 dark:from-blue-400 dark:via-blue-300 dark:to-blue-200 flex items-center justify-center shadow-xl ring-4 ring-background">
@@ -135,7 +153,10 @@ export default function ProjectDetails({
                     </Badge>
                     {project.status && (
                       <Badge
-                        variant={statusColor[project.status] || "secondary"}
+                        variant={
+                          statusColor[project.status as TaskStatus] ||
+                          "secondary"
+                        }
                         className="text-xs">
                         {project.status === "isActive"
                           ? "Active"
@@ -152,16 +173,13 @@ export default function ProjectDetails({
               </div>
             </div>
 
-            {/* Stats Bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60">
                 <div className="h-10 w-10 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center">
                   <CheckCircle2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">
-                    {project.taskCount ?? 0}
-                  </div>
+                  <div className="text-2xl font-bold">{totalTasks ?? 0}</div>
                   <div className="text-xs text-muted-foreground">Tasks</div>
                 </div>
               </div>
@@ -211,9 +229,7 @@ export default function ProjectDetails({
       </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Main Content */}
         <div className="xl:col-span-2 space-y-6">
-          {/* Overview Section */}
           <Card className="shadow-sm">
             <CardHeader className="border-b bg-muted/30">
               <CardTitle className="flex items-center gap-2 text-xl">
@@ -233,7 +249,9 @@ export default function ProjectDetails({
                     Status
                   </div>
                   <Badge
-                    variant={statusColor[project.status || ""] || "secondary"}
+                    variant={
+                      statusColor[project.status as TaskStatus] || "secondary"
+                    }
                     className="font-medium">
                     {project.status === "isActive"
                       ? "Active"
@@ -255,7 +273,6 @@ export default function ProjectDetails({
             </CardContent>
           </Card>
 
-          {/* Team Members */}
           {members.length > 0 && (
             <Card className="shadow-sm">
               <CardHeader className="border-b bg-muted/30">
@@ -265,7 +282,7 @@ export default function ProjectDetails({
                     Team Members
                   </CardTitle>
                   <Badge variant="secondary" className="text-sm">
-                    {members.length}
+                    {totalMembers}
                   </Badge>
                 </div>
               </CardHeader>
@@ -273,20 +290,23 @@ export default function ProjectDetails({
                 <div className="space-y-3">
                   {visibleMembers.map((member) => (
                     <div
-                      key={member.id}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                      key={member.user.id}
+                      className="flex items-center gap-3  p-1 rounded-lg hover:bg-muted/50 transition-colors">
                       <Avatar className="h-10 w-10 border">
-                        {member.image ? (
-                          <AvatarImage src={member.image} alt={member.name} />
+                        {member.user.image ? (
+                          <AvatarImage
+                            src={member.user.image!}
+                            alt={member.user.name!}
+                          />
                         ) : (
                           <AvatarFallback className="text-sm">
-                            {member.name?.[0]?.toUpperCase() || "U"}
+                            {member.user.name?.[0]?.toUpperCase() || "U"}
                           </AvatarFallback>
                         )}
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium truncate">
-                          {member.name}
+                          {member.user.name}
                         </div>
                         <div className="text-xs text-muted-foreground truncate">
                           {member.role
@@ -313,9 +333,7 @@ export default function ProjectDetails({
           )}
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Project Owner */}
           {project.owner && (
             <Card className="shadow-sm">
               <CardHeader className="border-b bg-muted/30">
@@ -348,7 +366,6 @@ export default function ProjectDetails({
             </Card>
           )}
 
-          {/* Project Info */}
           <Card className="shadow-sm">
             <CardHeader className="border-b bg-muted/30">
               <CardTitle className="text-base flex items-center gap-2">
@@ -361,9 +378,7 @@ export default function ProjectDetails({
                 <span className="text-sm text-muted-foreground">
                   Total Tasks
                 </span>
-                <div className="text-2xl font-bold">
-                  {project.taskCount ?? 0}
-                </div>
+                <div className="text-2xl font-bold">{totalTasks ?? 0}</div>
               </div>
 
               <Separator />
@@ -396,7 +411,6 @@ export default function ProjectDetails({
             </CardContent>
           </Card>
 
-          {/* Quick Links */}
           {project.workspaceSlug && (
             <Card className="shadow-sm">
               <CardHeader className="border-b bg-muted/30">
@@ -421,6 +435,65 @@ export default function ProjectDetails({
                   <span>Back to Workspace</span>
                   <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
+              </CardContent>
+            </Card>
+          )}
+          {myTasks && myTasks.length > 0 && (
+            <Card className="shadow-sm">
+              <CardHeader className="border-b bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    My Tasks
+                  </CardTitle>
+                  <Badge variant="secondary">{myTasks.length}</Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="p-4 space-y-3">
+                {myTasks.slice(0, 5).map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-start gap-3 rounded-lg border p-3 hover:bg-muted/40 transition-colors">
+                    {/* Priority indicator */}
+                    <span
+                      className={`mt-1 h-2.5 w-2.5 rounded-full ${
+                        priorityDot[task.priority]
+                      }`}
+                    />
+
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate">
+                          {task.title}
+                        </p>
+                        <Badge
+                          variant={statusColor[task.status] || "default"}
+                          className="text-[10px] px-1.5 py-0">
+                          {task.status.replace("_", " ")}
+                        </Badge>
+                      </div>
+
+                      {task.dueDate && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(task.dueDate).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {project?.workspaceSlug && (
+                  <Link
+                    href={`/dashboard/${project.workspaceSlug}/${project.slug}/tasks?assigned=me`}
+                    className="block text-sm font-medium text-primary hover:underline pt-2">
+                    View all my tasks →
+                  </Link>
+                )}
               </CardContent>
             </Card>
           )}

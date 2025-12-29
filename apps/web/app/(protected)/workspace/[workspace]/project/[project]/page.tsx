@@ -1,5 +1,6 @@
 import ProjectDetails from "@/components/project/ProjectDetails";
 import { api } from "@/lib/api/api";
+import { Task } from "@prisma/client";
 import { Axios } from "axios";
 import { cookies } from "next/headers";
 
@@ -29,7 +30,12 @@ async function page({
 
   return (
     <div>
-      <ProjectDetails project={p?.data} />
+      <ProjectDetails
+        project={p?.data.project}
+        totalTasks={p?.data.totalTasks as number}
+        totalMembers={p?.data.totalMembers as number}
+        myTasks={p?.data.myTasks as Task[]}
+      />
     </div>
   );
 }

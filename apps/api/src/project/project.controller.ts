@@ -36,7 +36,7 @@ export class ProjectController {
   ) {
     if (!slug && !id)
       throw new BadRequestException('Slug or Project id must be provided');
-    return this.projectService.findOne(id, slug);
+    return this.projectService.findOne(id, slug, user);
   }
   @Post()
   @UseGuards(MemberGuard, AuthGuard)
