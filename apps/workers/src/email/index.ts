@@ -22,7 +22,7 @@ export function startEmailWorker() {
       };
 
       const html = renderEmail(type, payload);
-
+      console.log("data", to, subject, type, payload);
       try {
         await resend.emails.send({
           from: "CollabFlow <no-reply@mail.collabflow.abhishekkkk.in>",

@@ -6,6 +6,7 @@ import {
   IsArray,
   ArrayNotEmpty,
   IsDateString,
+  ValidateNested,
 } from 'class-validator';
 
 import {
@@ -14,6 +15,7 @@ import {
   ETaskTag,
   TaskStatus,
 } from '@collabflow/types';
+import { Type } from 'class-transformer';
 export class CreateTaskDto {
   @IsString()
   @IsNotEmpty()
@@ -37,11 +39,22 @@ export class CreateTaskDto {
   @IsDateString()
   dueDate!: string;
 
-  @IsArray()
-  @ArrayNotEmpty()
-  assignedTo!: string[];
+  @ValidateNested({ each: true })
+  @Type(() => AssigneToUser)
+  assignedTo!: AssigneToUser[];
 
   @IsOptional()
   @IsString()
   projectId?: string;
+}
+
+export class AssigneToUser {
+  @IsString()
+  id!: string;
+  @IsString()
+  name!: string;
+  @IsString()
+  email!: string;
+  @IsString()
+  image!: string;
 }

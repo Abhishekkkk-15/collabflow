@@ -171,7 +171,7 @@ export default function AddTaskDialog({
       status,
       priority,
       tags,
-      assignedTo: assignees.map((u) => u.id),
+      assignedTo: assignees,
       dueDate: dueDate ?? null,
       projectId: projectId,
     };

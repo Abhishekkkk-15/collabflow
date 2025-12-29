@@ -23,10 +23,11 @@ export class TaskService {
 
   async create(dto: CreateTaskDto, user: User) {
     return prisma.$transaction(async (tx) => {
-      const project = await this.pService.findOne(
-        dto.projectId!,
-        dto.projectId!,
-      );
+      const project = await prisma.project.findFirst({
+        where: {
+          OR: [{ id: dto.projectId! }, { slug: dto.projectId! }],
+        },
+      });
       if (!project) throw new NotFoundException('Project not found');
       const task = await tx.task.create({
         data: {
@@ -37,11 +38,11 @@ export class TaskService {
           priority: dto.priority,
           dueDate: dto.dueDate,
           creatorId: user.id,
-          workspaceId: project.project.workspaceId,
-          projectId: project.project.id,
+          workspaceId: project.workspaceId,
+          projectId: project.id,
           assignees: {
             createMany: {
-              data: dto.assignedTo.map((id: string) => ({ userId: id })),
+              data: dto.assignedTo.map((u: any) => ({ userId: u.id })),
             },
           },
         },
@@ -66,6 +67,8 @@ export class TaskService {
         assignedBy: user,
         assignedTo: dto.assignedTo,
         task: task,
+        project: project,
+        workspace: await this.wsService.findOneById(task.workspaceId),
       });
 
       return task;
@@ -79,7 +82,6 @@ export class TaskService {
     page = 1,
     query = '',
   ) {
-    console.log('bbing');
     if (!limit) limit = 10;
     const ws = await this.wsService.findOne(workspaceId);
     if (!ws) throw new BadGatewayException('Workspace not found');
@@ -94,7 +96,6 @@ export class TaskService {
       });
       if (!project) throw new BadGatewayException('Project not found');
     }
-    console.log('query', query);
 
     const whereClause: any = {
       workspaceId: ws.id,
