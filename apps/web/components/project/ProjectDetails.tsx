@@ -18,6 +18,8 @@ import {
   TrendingUp,
   ExternalLink,
   ArrowRight,
+  MoveRight,
+  MoveLeftIcon,
 } from "lucide-react";
 import { Task, TaskStatus, User } from "@prisma/client";
 
@@ -173,7 +175,7 @@ export default function ProjectDetails({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 pt-8 border-t">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60">
                 <div className="h-10 w-10 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center">
                   <CheckCircle2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -473,7 +475,6 @@ export default function ProjectDetails({
                           {task.status.replace("_", " ")}
                         </Badge>
                       </div>
-
                       {task.dueDate && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />

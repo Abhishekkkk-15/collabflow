@@ -19,14 +19,15 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@collabflow/db": "workspace:*",
+    "@collabflow/types": "workspace:*",
     "bullmq": "5.65.0",
     "redis": "5.10.0",
-    "@collabflow/db": "workspace:*",
-    "@collabflow/types": "workspace:*"
+    "resend": "^6.6.0"
   },
   "devDependencies": {
-    "ts-node-dev": "^2.0.0",
     "concurrently": "^7.0.0",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }
 }

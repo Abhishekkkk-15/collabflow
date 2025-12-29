@@ -364,7 +364,13 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
             ))}
           </tbody>
         </table>
-        {isFetching && <Spinner />}
+        {isFetching && (
+          <div className="text-center flex justify-center items-center">
+            <div className="h-full">
+              <Spinner hanging={10} height={20} width={20} />
+            </div>
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-between mt-4">
         <Button

@@ -44,6 +44,8 @@ import {
   ArrowUp,
   PlusCircleIcon,
   PlusIcon,
+  CircleArrowRight,
+  CircleArrowLeft,
 } from "lucide-react";
 import MembersTable from "@/components/dashboard/MembersTable";
 import InviteMemberSheet, {
@@ -264,619 +266,640 @@ export default function WorkspaceDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">
-              Workspace Settings
-            </h1>
-            <p className="text-muted-foreground">
-              Manage your workspace configuration and team
-            </p>
+    <div>
+      <div
+        className="relative md:top-16 md:left-6 left-4 top-8"
+        onClick={() => router.back()}>
+        <CircleArrowLeft />
+      </div>
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 ">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold tracking-tight">
+                Workspace Settings
+              </h1>
+              <p className="text-muted-foreground">
+                Manage your workspace configuration and team
+              </p>
+            </div>
+
+            <Button
+              onClick={handleSave}
+              disabled={!hasWorkspacePermission("canModifySettings")}
+              size="lg"
+              className="gap-2 shadow-sm">
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
           </div>
 
-          <Button
-            onClick={handleSave}
-            disabled={!hasWorkspacePermission("canModifySettings")}
-            size="lg"
-            className="gap-2 shadow-sm">
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Save Changes
-              </>
-            )}
-          </Button>
-        </div>
+          <div className="mb-8">
+            <Label htmlFor="workspace-select" className="text-sm font-medium">
+              Current Workspace
+            </Label>
+            <Select
+              value={selectedWorkspace.slug!}
+              onValueChange={(value) => {
+                const ws = workspaces.find((w) => w.slug === value);
+                if (ws) setSelectedWorkspace(ws);
+              }}>
+              <SelectTrigger
+                id="workspace-select"
+                className="mt-2 w-full sm:max-w-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {workspaces.map((ws) => (
+                  <SelectItem key={ws.id} value={ws.slug!}>
+                    <div className="flex items-center gap-2">
+                      {ws.status == "DRAFT" ? (
+                        <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                      ) : (
+                        <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                      )}
+                      {ws.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="mb-8">
-          <Label htmlFor="workspace-select" className="text-sm font-medium">
-            Current Workspace
-          </Label>
-          <Select
-            value={selectedWorkspace.slug!}
-            onValueChange={(value) => {
-              const ws = workspaces.find((w) => w.slug === value);
-              if (ws) setSelectedWorkspace(ws);
-            }}>
-            <SelectTrigger
-              id="workspace-select"
-              className="mt-2 w-full sm:max-w-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {workspaces.map((ws) => (
-                <SelectItem key={ws.id} value={ws.slug!}>
-                  <div className="flex items-center gap-2">
-                    {ws.status == "DRAFT" ? (
-                      <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                    ) : (
-                      <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                    )}
-                    {ws.name}
+          <Tabs defaultValue="general" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:inline-grid sm:grid-cols-5">
+              <TabsTrigger value="general" className="gap-2">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">General</span>
+              </TabsTrigger>
+              <TabsTrigger value="members" className="gap-2">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Members</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="projects"
+                className="gap-2"
+                onClick={() => setProjects(selectedWorkspace.projects)}>
+                <FolderKanban className="h-4 w-4" />
+                <span className="hidden sm:inline">Projects</span>
+              </TabsTrigger>
+              <TabsTrigger value="permissions" className="gap-2">
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">Permissions</span>
+              </TabsTrigger>
+              <TabsTrigger value="danger" className="gap-2" disabled={!isOwner}>
+                <AlertTriangle className="h-4 w-4" />
+                <span className="hidden sm:inline">Danger</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="general" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Workspace Information</CardTitle>
+                  <CardDescription>
+                    Update your workspace details and visibility settings
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="workspace-name">Workspace Name</Label>
+                      <Input
+                        id="workspace-name"
+                        value={selectedWorkspace.name}
+                        disabled={!hasWorkspacePermission("canModifySettings")}
+                        onChange={(e) =>
+                          setSelectedWorkspace({
+                            ...selectedWorkspace,
+                            name: e.target.value,
+                          })
+                        }
+                        placeholder="Enter workspace name"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="workspace-slug">Workspace Slug</Label>
+                      <Input
+                        id="workspace-slug"
+                        value={selectedWorkspace.slug!}
+                        disabled
+                        className="bg-muted"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Slug cannot be changed after creation
+                      </p>
+                    </div>
                   </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
-        <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:inline-grid sm:grid-cols-5">
-            <TabsTrigger value="general" className="gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">General</span>
-            </TabsTrigger>
-            <TabsTrigger value="members" className="gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Members</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="projects"
-              className="gap-2"
-              onClick={() => setProjects(selectedWorkspace.projects)}>
-              <FolderKanban className="h-4 w-4" />
-              <span className="hidden sm:inline">Projects</span>
-            </TabsTrigger>
-            <TabsTrigger value="permissions" className="gap-2">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Permissions</span>
-            </TabsTrigger>
-            <TabsTrigger value="danger" className="gap-2" disabled={!isOwner}>
-              <AlertTriangle className="h-4 w-4" />
-              <span className="hidden sm:inline">Danger</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="general" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Workspace Information</CardTitle>
-                <CardDescription>
-                  Update your workspace details and visibility settings
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="workspace-name">Workspace Name</Label>
-                    <Input
-                      id="workspace-name"
-                      value={selectedWorkspace.name}
+                    <Label htmlFor="workspace-description">Description</Label>
+                    <Textarea
+                      id="workspace-description"
+                      value={selectedWorkspace.description ?? ""}
                       disabled={!hasWorkspacePermission("canModifySettings")}
                       onChange={(e) =>
                         setSelectedWorkspace({
                           ...selectedWorkspace,
-                          name: e.target.value,
+                          description: e.target.value,
                         })
                       }
-                      placeholder="Enter workspace name"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="workspace-slug">Workspace Slug</Label>
-                    <Input
-                      id="workspace-slug"
-                      value={selectedWorkspace.slug!}
-                      disabled
-                      className="bg-muted"
+                      placeholder="Describe your workspace purpose and goals..."
+                      rows={4}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Slug cannot be changed after creation
+                      Help team members understand what this workspace is for
                     </p>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="workspace-description">Description</Label>
-                  <Textarea
-                    id="workspace-description"
-                    value={selectedWorkspace.description ?? ""}
-                    disabled={!hasWorkspacePermission("canModifySettings")}
-                    onChange={(e) =>
-                      setSelectedWorkspace({
-                        ...selectedWorkspace,
-                        description: e.target.value,
-                      })
-                    }
-                    placeholder="Describe your workspace purpose and goals..."
-                    rows={4}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Help team members understand what this workspace is for
-                  </p>
-                </div>
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select
-                      disabled={!hasWorkspacePermission("canModifySettings")}
-                      value={selectedWorkspace.status}
-                      onValueChange={(value) =>
-                        setSelectedWorkspace({
-                          ...selectedWorkspace,
-                          status: value as Status,
-                        })
-                      }
-                      defaultValue={selectedWorkspace.status}>
-                      <SelectTrigger
-                        id="workspace-status"
-                        className="mt-2 w-full">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        <SelectItem value="isActive">
-                          <div className="flex items-center gap-2">Active</div>
-                        </SelectItem>
-
-                        <SelectItem value="DRAFT">
-                          <div className="flex items-center gap-2">DRAFT</div>
-                        </SelectItem>
-
-                        <SelectItem value="PAUSED">
-                          <div className="flex items-center gap-2">PAUSED</div>
-                        </SelectItem>
-                        <SelectItem value="COMPLETED">
-                          <div className="flex items-center gap-2">
-                            COMPLETED
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="ARCHIVED">
-                          <div className="flex items-center gap-2">
-                            ARCHIVED
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Priority</Label>
-                    <Select
-                      disabled={!hasWorkspacePermission("canModifySettings")}
-                      value={selectedWorkspace.priority}
-                      onValueChange={(value) =>
-                        setSelectedWorkspace({
-                          ...selectedWorkspace,
-                          priority: value as "LOW" | "MEDIUM" | "HIGH",
-                        })
-                      }
-                      defaultValue={selectedWorkspace.priority}>
-                      <SelectTrigger
-                        id="workspace-priority"
-                        className="mt-2 w-full">
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        <SelectItem value="LOW">
-                          <div className="flex items-center gap-2">Low</div>
-                        </SelectItem>
-
-                        <SelectItem value="MEDIUM">
-                          <div className="flex items-center gap-2">Medium</div>
-                        </SelectItem>
-
-                        <SelectItem value="HIGH">
-                          <div className="flex items-center gap-2">High</div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <Separator />
-
-                <div className="flex items-start justify-between gap-4 rounded-lg border bg-muted/50 p-4">
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Lock className="h-4 w-4 text-muted-foreground" />
-                      <p className="font-medium">Private Workspace</p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      When enabled, only invited members can discover and access
-                      this workspace
-                    </p>
-                  </div>
-                  <Switch
-                    disabled={!hasWorkspacePermission("canModifySettings")}
-                    checked={selectedWorkspace.isActive}
-                    onCheckedChange={(v) =>
-                      setSelectedWorkspace({
-                        ...selectedWorkspace,
-                        isActive: v,
-                      })
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="members">
-            <Card>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle>Team Members</CardTitle>
-                    <CardDescription>
-                      Invite and manage people who can access this workspace
-                    </CardDescription>
-                  </div>
-                  <Button
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => setInviteOpen(true)}
-                    disabled={!hasWorkspacePermission("canInviteMembers")}>
-                    <Plus className="h-4 w-4" />
-                    Invite Member
-                  </Button>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <MembersTable
-                  workspaceSlug={selectedWorkspace.id!}
-                  onRoleChange={handleChangeRole}
-                  onRemove={handleRemoveMember}
-                  permissions={permissions!}
-                  isOwner={isOwner}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="projects">
-            <Card>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle>Projects</CardTitle>
-                    <CardDescription>
-                      All projects created within this workspace
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {projects.length}{" "}
-                      {projects.length === 1 ? "project" : "projects"}
-                    </Badge>
-                    {hasWorkspacePermission("canCreateProject") && (
-                      <PlusIcon
-                        className="cursor-pointer disabled:true"
-                        onClick={() =>
-                          setOpenCreateProjectDialog(!openCreateProjectDialog)
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select
+                        disabled={!hasWorkspacePermission("canModifySettings")}
+                        value={selectedWorkspace.status}
+                        onValueChange={(value) =>
+                          setSelectedWorkspace({
+                            ...selectedWorkspace,
+                            status: value as Status,
+                          })
                         }
-                      />
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
+                        defaultValue={selectedWorkspace.status}>
+                        <SelectTrigger
+                          id="workspace-status"
+                          className="mt-2 w-full">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
 
-              <CardContent>
-                {projects.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    {/* <FolderKanban className="h-12 w-12 text-muted-foreground/50" />
+                        <SelectContent>
+                          <SelectItem value="isActive">
+                            <div className="flex items-center gap-2">
+                              Active
+                            </div>
+                          </SelectItem>
+
+                          <SelectItem value="DRAFT">
+                            <div className="flex items-center gap-2">DRAFT</div>
+                          </SelectItem>
+
+                          <SelectItem value="PAUSED">
+                            <div className="flex items-center gap-2">
+                              PAUSED
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="COMPLETED">
+                            <div className="flex items-center gap-2">
+                              COMPLETED
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="ARCHIVED">
+                            <div className="flex items-center gap-2">
+                              ARCHIVED
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Priority</Label>
+                      <Select
+                        disabled={!hasWorkspacePermission("canModifySettings")}
+                        value={selectedWorkspace.priority}
+                        onValueChange={(value) =>
+                          setSelectedWorkspace({
+                            ...selectedWorkspace,
+                            priority: value as "LOW" | "MEDIUM" | "HIGH",
+                          })
+                        }
+                        defaultValue={selectedWorkspace.priority}>
+                        <SelectTrigger
+                          id="workspace-priority"
+                          className="mt-2 w-full">
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                          <SelectItem value="LOW">
+                            <div className="flex items-center gap-2">Low</div>
+                          </SelectItem>
+
+                          <SelectItem value="MEDIUM">
+                            <div className="flex items-center gap-2">
+                              Medium
+                            </div>
+                          </SelectItem>
+
+                          <SelectItem value="HIGH">
+                            <div className="flex items-center gap-2">High</div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Separator />
+
+                  <div className="flex items-start justify-between gap-4 rounded-lg border bg-muted/50 p-4">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-muted-foreground" />
+                        <p className="font-medium">Private Workspace</p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        When enabled, only invited members can discover and
+                        access this workspace
+                      </p>
+                    </div>
+                    <Switch
+                      disabled={!hasWorkspacePermission("canModifySettings")}
+                      checked={selectedWorkspace.isActive}
+                      onCheckedChange={(v) =>
+                        setSelectedWorkspace({
+                          ...selectedWorkspace,
+                          isActive: v,
+                        })
+                      }
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="members">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle>Team Members</CardTitle>
+                      <CardDescription>
+                        Invite and manage people who can access this workspace
+                      </CardDescription>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => setInviteOpen(true)}
+                      disabled={!hasWorkspacePermission("canInviteMembers")}>
+                      <Plus className="h-4 w-4" />
+                      Invite Member
+                    </Button>
+                  </div>
+                </CardHeader>
+
+                <CardContent>
+                  <MembersTable
+                    workspaceSlug={selectedWorkspace.id!}
+                    onRoleChange={handleChangeRole}
+                    onRemove={handleRemoveMember}
+                    permissions={permissions!}
+                    isOwner={isOwner}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="projects">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle>Projects</CardTitle>
+                      <CardDescription>
+                        All projects created within this workspace
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {projects.length}{" "}
+                        {projects.length === 1 ? "project" : "projects"}
+                      </Badge>
+                      {hasWorkspacePermission("canCreateProject") && (
+                        <PlusIcon
+                          className="cursor-pointer disabled:true"
+                          onClick={() =>
+                            setOpenCreateProjectDialog(!openCreateProjectDialog)
+                          }
+                        />
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent>
+                  {projects.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      {/* <FolderKanban className="h-12 w-12 text-muted-foreground/50" />
                     <h3 className="mt-4 text-lg font-semibold">
                       No projects yet
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
                       Projects created in this workspace will appear here
                     </p> */}
-                    <EmptyDemo
-                      workspaceId={selectedWorkspace.id}
-                      disabled={!hasWorkspacePermission("canCreateProject")}
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {projects.map((project) => (
-                      <div
-                        key={project.id}
-                        onClick={() => {
-                          if (hasWorkspacePermission("canCreateProject")) {
-                            setSelectedProject(project);
-                            setOpenProjectSidebar(true);
-                          }
-                        }}
-                        className="group flex cursor-pointer items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50">
-                        <div className="flex-1 space-y-1">
-                          <p className="font-medium">{project.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            /{project.slug}
-                          </p>
+                      <EmptyDemo
+                        workspaceId={selectedWorkspace.id}
+                        disabled={!hasWorkspacePermission("canCreateProject")}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {projects.map((project) => (
+                        <div
+                          key={project.id}
+                          onClick={() => {
+                            if (hasWorkspacePermission("canCreateProject")) {
+                              setSelectedProject(project);
+                              setOpenProjectSidebar(true);
+                            }
+                          }}
+                          className="group flex cursor-pointer items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50">
+                          <div className="flex-1 space-y-1">
+                            <p className="font-medium">{project.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              /{project.slug}
+                            </p>
+                          </div>
+
+                          <Badge variant={getStatusVariant(project.status)}>
+                            {project.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <Sheet
+              open={openProjectSidebar}
+              onOpenChange={setOpenProjectSidebar}>
+              <SheetContent
+                side="right"
+                className="flex w-[380px] flex-col p-0 sm:w-[420px]">
+                {selectedProject && (
+                  <>
+                    {/* ---------- HEADER ---------- */}
+                    <div className="space-y-1 border-b px-6 py-5">
+                      <h2 className="text-base font-semibold leading-none">
+                        {selectedProject.name}
+                      </h2>
+                      <p className="text-xs text-muted-foreground">
+                        /{selectedProject.slug}
+                      </p>
+                    </div>
+
+                    {/* ---------- CONTENT ---------- */}
+                    <div className="flex flex-1 flex-col gap-6 px-6 py-5">
+                      {/* ---------- PROJECT DETAILS ---------- */}
+                      <section className="space-y-3">
+                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Project
+                        </h3>
+
+                        <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2">
+                          <span className="text-sm text-muted-foreground">
+                            Status
+                          </span>
+                          <Badge
+                            variant={getStatusVariant(selectedProject.status)}
+                            className="text-xs">
+                            {selectedProject.status}
+                          </Badge>
                         </div>
 
-                        <Badge variant={getStatusVariant(project.status)}>
-                          {project.status}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <Sheet open={openProjectSidebar} onOpenChange={setOpenProjectSidebar}>
-            <SheetContent
-              side="right"
-              className="flex w-[380px] flex-col p-0 sm:w-[420px]">
-              {selectedProject && (
-                <>
-                  {/* ---------- HEADER ---------- */}
-                  <div className="space-y-1 border-b px-6 py-5">
-                    <h2 className="text-base font-semibold leading-none">
-                      {selectedProject.name}
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      /{selectedProject.slug}
-                    </p>
-                  </div>
-
-                  {/* ---------- CONTENT ---------- */}
-                  <div className="flex flex-1 flex-col gap-6 px-6 py-5">
-                    {/* ---------- PROJECT DETAILS ---------- */}
-                    <section className="space-y-3">
-                      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Project
-                      </h3>
-
-                      <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2">
-                        <span className="text-sm text-muted-foreground">
-                          Status
-                        </span>
-                        <Badge
-                          variant={getStatusVariant(selectedProject.status)}
-                          className="text-xs">
-                          {selectedProject.status}
-                        </Badge>
-                      </div>
-
-                      {/* Future:
+                        {/* Future:
                 - description
                 - owner
                 - created date
             */}
-                    </section>
+                      </section>
 
-                    {/* ---------- TASKS ---------- */}
-                    <section className="space-y-3">
-                      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Tasks
-                      </h3>
+                      {/* ---------- TASKS ---------- */}
+                      <section className="space-y-3">
+                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Tasks
+                        </h3>
 
-                      <div className="space-y-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="w-full"
-                          onClick={() =>
-                            router.push(
-                              `dashboard/workspace/${selectedWorkspace.slug}/project/${selectedProject.slug}/tasks`
-                            )
-                          }>
-                          Manage tasks
-                        </Button>
+                        <div className="space-y-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="w-full"
+                            onClick={() =>
+                              router.push(
+                                `dashboard/workspace/${selectedWorkspace.slug}/project/${selectedProject.slug}/tasks`
+                              )
+                            }>
+                            Manage tasks
+                          </Button>
 
-                        {/* 🔽 ADD TASK DIALOG GOES HERE 🔽 */}
-                        <AddTaskDialog projectId={selectedProject.id} />
-                        <Button
-                          className="flex gap-2 bg-primary text-primary-foreground w-full"
-                          onClick={() => setOpenInviteMembersInP(true)}
-                          disabled={hasWorkspacePermission("canCreateProject")}>
-                          <Plus size={16} /> Add Members
-                        </Button>
-                        <InviteMemberSheet
-                          workspaceId={selectedProject.id}
-                          slug={selectedProject.slug}
-                          currentPath="PROJECT"
-                          open={openInviteMemberInP}
-                          onOpenChange={setOpenInviteMembersInP}
-                          onInvite={handleProjectInvite}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Create, assign and track tasks inside this project.
+                          {/* 🔽 ADD TASK DIALOG GOES HERE 🔽 */}
+                          <AddTaskDialog projectId={selectedProject.id} />
+                          <Button
+                            className="flex gap-2 bg-primary text-primary-foreground w-full"
+                            onClick={() => setOpenInviteMembersInP(true)}
+                            disabled={hasWorkspacePermission(
+                              "canCreateProject"
+                            )}>
+                            <Plus size={16} /> Add Members
+                          </Button>
+                          <InviteMemberSheet
+                            workspaceId={selectedProject.id}
+                            slug={selectedProject.slug}
+                            currentPath="PROJECT"
+                            open={openInviteMemberInP}
+                            onOpenChange={setOpenInviteMembersInP}
+                            onInvite={handleProjectInvite}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Create, assign and track tasks inside this project.
+                          </p>
+                        </div>
+                      </section>
+                    </div>
+
+                    {/* ---------- FOOTER ACTIONS ---------- */}
+                    <div className="border-t px-6 py-4 space-y-2">
+                      <Button variant="outline" size="sm" className="w-full">
+                        Project settings
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="w-full">
+                        Archive project
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </SheetContent>
+            </Sheet>
+
+            <TabsContent value="permissions">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Member Permissions</CardTitle>
+                  <CardDescription>
+                    Control what members can do within this workspace
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                      <div className="flex-1 space-y-1">
+                        <p className="font-medium">Create Projects</p>
+                        <p className="text-sm text-muted-foreground">
+                          Allow members to create new projects in this workspace
                         </p>
                       </div>
-                    </section>
+                      <Switch
+                        defaultChecked={permissions?.canCreateProject}
+                        disabled={!isOwner}
+                        onClick={() =>
+                          handleChangePermission({
+                            canCreateProject: !permissions?.canCreateProject,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                      <div className="flex-1 space-y-1">
+                        <p className="font-medium">Invite Members</p>
+                        <p className="text-sm text-muted-foreground">
+                          Allow members to invite other people to the workspace
+                        </p>
+                      </div>
+                      <Switch
+                        defaultChecked={permissions?.canInviteMembers}
+                        disabled={!isOwner}
+                        onClick={() =>
+                          handleChangePermission({
+                            canInviteMembers: !permissions?.canInviteMembers,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                      <div className="flex-1 space-y-1">
+                        <p className="font-medium">Modify Settings</p>
+                        <p className="text-sm text-muted-foreground">
+                          Allow members to change workspace settings and
+                          configuration
+                        </p>
+                      </div>
+                      <Switch
+                        defaultChecked={permissions?.canModifySettings}
+                        disabled={!isOwner}
+                        onClick={() =>
+                          handleChangePermission({
+                            canModifySettings: !permissions?.canModifySettings,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                      <div className="flex-1 space-y-1">
+                        <p className="font-medium">Delete Resources</p>
+                        <p className="text-sm text-muted-foreground">
+                          Allow members to delete projects and other workspace
+                          resources
+                        </p>
+                      </div>
+                      <Switch
+                        defaultChecked={permissions?.canDeleteResources}
+                        disabled={!isOwner}
+                        onClick={() =>
+                          handleChangePermission({
+                            canDeleteResources:
+                              !permissions?.canDeleteResources,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
 
-                  {/* ---------- FOOTER ACTIONS ---------- */}
-                  <div className="border-t px-6 py-4 space-y-2">
-                    <Button variant="outline" size="sm" className="w-full">
-                      Project settings
+                  <div className="rounded-lg bg-muted p-4">
+                    <p className="text-sm text-muted-foreground">
+                      <strong className="text-foreground">Note:</strong>{" "}
+                      Workspace owners always have full permissions regardless
+                      of these settings.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="danger">
+              <Card className="border-destructive/50">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    <CardTitle className="text-destructive">
+                      Danger Zone
+                    </CardTitle>
+                  </div>
+                  <CardDescription>
+                    Irreversible actions that will permanently affect your
+                    workspace
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6">
+                    <h3 className="font-semibold">Delete Workspace</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Once you delete a workspace, there is no going back. This
+                      will permanently delete:
+                    </p>
+                    <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                      <li>• All projects and their data</li>
+                      <li>• All member associations</li>
+                      <li>• All workspace settings and configuration</li>
+                    </ul>
+                    <Button
+                      variant="destructive"
+                      className="mt-6 gap-2"
+                      disabled={!isOwner}
+                      onClick={handleDelete}>
+                      <Trash2 className="h-4 w-4" />
+                      Delete This Workspace
                     </Button>
-
-                    <Button variant="destructive" size="sm" className="w-full">
-                      Archive project
-                    </Button>
                   </div>
-                </>
-              )}
-            </SheetContent>
-          </Sheet>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
 
-          <TabsContent value="permissions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Member Permissions</CardTitle>
-                <CardDescription>
-                  Control what members can do within this workspace
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">Create Projects</p>
-                      <p className="text-sm text-muted-foreground">
-                        Allow members to create new projects in this workspace
-                      </p>
-                    </div>
-                    <Switch
-                      defaultChecked={permissions?.canCreateProject}
-                      disabled={!isOwner}
-                      onClick={() =>
-                        handleChangePermission({
-                          canCreateProject: !permissions?.canCreateProject,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">Invite Members</p>
-                      <p className="text-sm text-muted-foreground">
-                        Allow members to invite other people to the workspace
-                      </p>
-                    </div>
-                    <Switch
-                      defaultChecked={permissions?.canInviteMembers}
-                      disabled={!isOwner}
-                      onClick={() =>
-                        handleChangePermission({
-                          canInviteMembers: !permissions?.canInviteMembers,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">Modify Settings</p>
-                      <p className="text-sm text-muted-foreground">
-                        Allow members to change workspace settings and
-                        configuration
-                      </p>
-                    </div>
-                    <Switch
-                      defaultChecked={permissions?.canModifySettings}
-                      disabled={!isOwner}
-                      onClick={() =>
-                        handleChangePermission({
-                          canModifySettings: !permissions?.canModifySettings,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">Delete Resources</p>
-                      <p className="text-sm text-muted-foreground">
-                        Allow members to delete projects and other workspace
-                        resources
-                      </p>
-                    </div>
-                    <Switch
-                      defaultChecked={permissions?.canDeleteResources}
-                      disabled={!isOwner}
-                      onClick={() =>
-                        handleChangePermission({
-                          canDeleteResources: !permissions?.canDeleteResources,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-lg bg-muted p-4">
-                  <p className="text-sm text-muted-foreground">
-                    <strong className="text-foreground">Note:</strong> Workspace
-                    owners always have full permissions regardless of these
-                    settings.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="danger">
-            <Card className="border-destructive/50">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
-                  <CardTitle className="text-destructive">
-                    Danger Zone
-                  </CardTitle>
-                </div>
-                <CardDescription>
-                  Irreversible actions that will permanently affect your
-                  workspace
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6">
-                  <h3 className="font-semibold">Delete Workspace</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Once you delete a workspace, there is no going back. This
-                    will permanently delete:
-                  </p>
-                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    <li>• All projects and their data</li>
-                    <li>• All member associations</li>
-                    <li>• All workspace settings and configuration</li>
-                  </ul>
-                  <Button
-                    variant="destructive"
-                    className="mt-6 gap-2"
-                    disabled={!isOwner}
-                    onClick={handleDelete}>
-                    <Trash2 className="h-4 w-4" />
-                    Delete This Workspace
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <InviteMemberSheet
+          workspaceId={selectedWorkspace.id!}
+          open={inviteOpen}
+          slug={selectedWorkspace.slug!}
+          onOpenChange={setInviteOpen}
+          currentPath="WORKSPACE"
+          onInvite={handleInvite}
+          disabled={!hasWorkspacePermission("canInviteMembers")}
+        />
+        <CreateProjectDialog
+          open={openCreateProjectDialog}
+          onOpenChange={setOpenCreateProjectDialog}
+          workspaceId={selectedWorkspace.id}
+        />
       </div>
-
-      <InviteMemberSheet
-        workspaceId={selectedWorkspace.id!}
-        open={inviteOpen}
-        slug={selectedWorkspace.slug!}
-        onOpenChange={setInviteOpen}
-        currentPath="WORKSPACE"
-        onInvite={handleInvite}
-        disabled={!hasWorkspacePermission("canInviteMembers")}
-      />
-      <CreateProjectDialog
-        open={openCreateProjectDialog}
-        onOpenChange={setOpenCreateProjectDialog}
-        workspaceId={selectedWorkspace.id}
-      />
     </div>
   );
 }

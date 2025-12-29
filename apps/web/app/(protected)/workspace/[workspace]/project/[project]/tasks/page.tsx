@@ -11,7 +11,6 @@ async function page({
 }) {
   const cookieStore = cookies();
   const { workspace, project } = await params;
-  console.log("wsSlug", workspace);
   const queryClient = getQueryClient();
 
   await queryClient.prefetchQuery({

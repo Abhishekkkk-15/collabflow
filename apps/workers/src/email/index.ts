@@ -6,9 +6,6 @@ export function startEmailWorker() {
     "emailQueue",
     async (job) => {
       const { to, subject, workspaceId } = job.data;
-
-      // Real email or mock
-      console.log(`Email → ${to} | ${subject} | WS: ${workspaceId}`);
     },
     { connection }
   );
