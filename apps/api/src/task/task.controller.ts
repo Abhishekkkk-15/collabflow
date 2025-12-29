@@ -45,8 +45,13 @@ export class TaskController {
     return this.taskService.update(id, updateTaskDto);
   }
 
+  @Delete('/multi')
+  remove(@Body() body: { ids: string[] }) {
+    console.log('mi', body);
+    return this.taskService.remove(body);
+  }
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.taskService.remove(id);
+  removeSingle(@Param('id') id: string) {
+    return this.taskService.removeSingle(id);
   }
 }

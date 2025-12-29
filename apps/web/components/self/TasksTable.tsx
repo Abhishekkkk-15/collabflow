@@ -13,6 +13,8 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  DeleteIcon,
+  Trash2,
 } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -168,8 +170,23 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
 
   async function handleDelete(taskId: string) {
     try {
-      await api.delete(`/task/${taskId}`);
+      if (checkedTasks.length > 0) {
+        console.log("checked tasks", checkedTasks);
+        await api.delete(`/task/multi`, {
+          data: {
+            ids: checkedTasks,
+          },
+        });
 
+        toast.success("Task deleted");
+
+        queryClient.invalidateQueries({
+          queryKey: ["tasks", { workspace, project }],
+        });
+        return;
+      }
+      if (taskId == "") return;
+      await api.delete(`/task/${taskId}`);
       toast.success("Task deleted");
 
       queryClient.invalidateQueries({
@@ -188,6 +205,27 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
   function onPriorityChange(v: string) {
     setPriorityFilter(v);
     setPage(1);
+  }
+  const [checkedTasks, setCheckedTasks] = useState<string[]>([]);
+  const [allTasksSelected, setAllTasksSelected] = useState(false);
+  function handleToggleCheck(id: string) {
+    if (checkedTasks.includes(id)) {
+      setCheckedTasks((prev) => prev.filter((i) => i != id));
+      return;
+    }
+    setCheckedTasks((prev) => [...prev, id]);
+  }
+
+  function selectAll() {
+    if (checkedTasks.length == filteredTasks.length) {
+      setCheckedTasks([]);
+      setAllTasksSelected(false);
+      return;
+    }
+    setCheckedTasks([]);
+    const allTasksId = filteredTasks.map((t) => t.id);
+    setCheckedTasks(allTasksId);
+    setAllTasksSelected(true);
   }
 
   return (
@@ -218,32 +256,41 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
             onChange={onPriorityChange}
           />
         </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Settings size={16} /> View
+        <div className="flex flex-wrap gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Settings size={16} /> View
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48 p-1">
+              {ALL_FIELDS.map((field) => (
+                <div
+                  key={field.key}
+                  className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-muted"
+                  onClick={() => toggleField(field.key)}>
+                  <Checkbox checked={visibleFields.includes(field.key)} />
+                  {field.label}
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {pathname.startsWith("/dashboard") && (
+            <Button
+              variant="outline"
+              className="gap-2 pr-1"
+              onClick={() => handleDelete("")}>
+              <Trash2 size={16} /> Delete All
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-48 p-1">
-            {ALL_FIELDS.map((field) => (
-              <div
-                key={field.key}
-                className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-muted"
-                onClick={() => toggleField(field.key)}>
-                <Checkbox checked={visibleFields.includes(field.key)} />
-                {field.label}
-              </div>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+        </div>
       </div>
 
       <div className="overflow-x-auto border rounded-md">
         <table className="min-w-[900px] w-full text-sm">
           <thead className="bg-muted/40 border-b text-xs uppercase">
             <tr>
-              <th className="p-3 w-10">
+              <th className="p-3 w-10" onClick={selectAll}>
                 <Checkbox />
               </th>
               {visibleFields.includes("id") && <th className="p-3">ID</th>}
@@ -273,8 +320,8 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
           <tbody>
             {filteredTasks.map((task) => (
               <tr key={task.id} className="border-t hover:bg-muted/30">
-                <td className="p-3">
-                  <Checkbox />
+                <td className="p-3" onClick={() => handleToggleCheck(task.id)}>
+                  <Checkbox checked={checkedTasks.includes(task.id)} />
                 </td>
 
                 {visibleFields.includes("id") && (

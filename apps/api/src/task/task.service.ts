@@ -171,8 +171,19 @@ export class TaskService {
     }
   }
 
-  async remove(id: string) {
-    await prisma.task.delete({
+  async remove(body: { ids: string[] }) {
+    console.log('checked tasks');
+    return await prisma.task.deleteMany({
+      where: {
+        id: {
+          in: body.ids,
+        },
+      },
+    });
+  }
+
+  async removeSingle(id: string) {
+    return await prisma.task.delete({
       where: {
         id,
       },
