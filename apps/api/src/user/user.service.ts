@@ -208,7 +208,8 @@ export class UserService {
         status: true,
         priority: true,
         dueDate: true,
-        project: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true, slug: true } },
+        workspace: { select: { id: true, name: true, slug: true } },
       },
     });
 

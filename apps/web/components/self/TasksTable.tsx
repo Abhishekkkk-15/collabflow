@@ -27,16 +27,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { Task, TaskStatus, TaskTag, User } from "@prisma/client";
+import {
+  Project,
+  Task,
+  TaskStatus,
+  TaskTag,
+  User,
+  Workspace,
+} from "@prisma/client";
 import { api } from "@/lib/api/api";
 import { useQuery } from "@tanstack/react-query";
 import Error from "next/error";
 import getQueryClient from "@/lib/react-query/query-client";
 import { Spinner } from "../ui/spinner";
 import TaskDetailDialog from "../task/TaskDetailDialog";
+import Link from "next/link";
 
 interface ExtendedTask extends Task {
   assignees: { user: User }[];
+  workspace: Workspace;
+  project: Project;
 }
 
 interface TasksTableProps {
@@ -325,7 +335,10 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
 
                 {visibleFields.includes("id") && (
                   <td className="p-3 font-medium">
-                    TASK-{task.id.slice(-4).toUpperCase()}
+                    <Link
+                      href={`/workspace/${task.workspace.slug}/project/${task.project.slug}/tasks/${task.id}`}>
+                      TASK-{task.id.slice(-4).toUpperCase()}
+                    </Link>
                   </td>
                 )}
 

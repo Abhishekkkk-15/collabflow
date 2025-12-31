@@ -134,6 +134,16 @@ export class TaskService {
             },
           },
         },
+        workspace: {
+          select: {
+            slug: true,
+          },
+        },
+        project: {
+          select: {
+            slug: true,
+          },
+        },
       },
     });
 
@@ -150,11 +160,45 @@ export class TaskService {
 
   async findOne(id: string) {
     const task = await prisma.task.findUnique({
-      where: {
-        id,
+      where: { id },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        assignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
-    if (!task) throw new NotFoundException('Task not found');
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
     return task;
   }
 

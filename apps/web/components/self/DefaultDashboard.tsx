@@ -6,7 +6,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Bell, Calendar, CheckCircle2, Flame } from "lucide-react";
 import { User } from "next-auth";
-
+import Link from "next/link";
+import { Project, Task, Workspace } from "@prisma/client";
+interface TaskWithWsP extends Task {
+  project: Project;
+  workspace: Workspace;
+}
 export default function DashboardClient({ user }: { user?: User }) {
   const { data, isLoading } = useQuery(dashboardQueryOptions);
   if (isLoading || !data) {
@@ -110,7 +115,8 @@ function TaskSection({ title, tasks }: { title: string; tasks: any[] }) {
           <p className="text-sm text-muted-foreground">No tasks 🎉</p>
         ) : (
           tasks.map((t) => (
-            <div
+            <Link
+              href={`/workspace/${t.workspace.slug}/project/${t.project.slug}/tasks/${t.id}`}
               key={t.id}
               className="flex items-center justify-between border rounded-md p-3">
               <div>
@@ -126,7 +132,7 @@ function TaskSection({ title, tasks }: { title: string; tasks: any[] }) {
               ) : (
                 <AlertCircle className="text-yellow-500" />
               )}
-            </div>
+            </Link>
           ))
         )}
       </CardContent>
@@ -146,10 +152,13 @@ function UrgentTasks({ tasks }: { tasks: any[] }) {
       </CardHeader>
       <CardContent className="space-y-2">
         {tasks.map((t) => (
-          <div key={t.id} className="flex items-center justify-between text-sm">
+          <Link
+            href={`/workspace/${t.workspace.slug}/project/${t.project.slug}/tasks/${t.id}`}
+            key={t.id}
+            className="flex items-center justify-between text-sm">
             <span>{t.title}</span>
             <Badge variant="destructive">URGENT</Badge>
-          </div>
+          </Link>
         ))}
       </CardContent>
     </Card>
