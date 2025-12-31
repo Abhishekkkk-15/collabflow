@@ -10,6 +10,7 @@ import { UpdateWebsocketDto } from './dto/update-websocket.dto';
 import { Server, Socket } from 'socket.io';
 import { prisma } from '@collabflow/db';
 import { createClient } from 'redis';
+import { ChatWSService } from './chat/chat.websocket.service';
 
 @WebSocketGateway({
   cors: {
@@ -20,10 +21,14 @@ import { createClient } from 'redis';
 export class WebsocketGateway {
   @WebSocketServer()
   io!: Server;
-  constructor(private readonly websocketService: WebsocketService) {}
+  constructor(
+    private readonly websocketService: WebsocketService,
+    private readonly chatSocketService: ChatWSService,
+  ) {}
 
   async afterInit() {
     this.websocketService.setServer(this.io);
+    this.chatSocketService.setServer(this.io);
     const sub = createClient({ url: 'redis://localhost:6379' });
     await sub.connect();
 

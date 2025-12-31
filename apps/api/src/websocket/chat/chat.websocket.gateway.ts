@@ -1,24 +1,14 @@
 import {
   ConnectedSocket,
   MessageBody,
-  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
-  WebSocketServer,
 } from '@nestjs/websockets';
 import { ChatWSService } from './chat.websocket.service';
-import { Namespace, Server, Socket } from 'socket.io';
-import { prisma } from '@collabflow/db';
-import { WebsocketGateway } from '../websocket.gateway';
+import { Socket } from 'socket.io';
 @WebSocketGateway()
 export class chatWebsocketGateway {
-  constructor(
-    private readonly websocketGateway: WebsocketGateway,
-    private readonly chatService: ChatWSService,
-  ) {}
-  afterInit() {
-    this.chatService.setServer(this.websocketGateway.io);
-  }
+  constructor(private readonly chatService: ChatWSService) {}
 
   @SubscribeMessage('joinRoom')
   handleJoinRoom(@ConnectedSocket() socket: Socket, @MessageBody() body: any) {

@@ -7,8 +7,8 @@ import {
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { prisma } from '@collabflow/db';
-import { ETaskTag, Task, TaskStatus } from '@collabflow/types';
-import { Project, TaskTag, User } from '@prisma/client';
+import { TaskStatus } from '@collabflow/types';
+import { User } from '@prisma/client';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ProjectService } from '../project/project.service';

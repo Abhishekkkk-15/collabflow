@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import MentionDropdown from "./MentionDropdown";
 import { Input } from "@/components/ui/input";
 import { Socket } from "socket.io-client";
-
+import { v4 as uuidV4 } from "uuid";
 export default function ChatInput({
   user,
   members,
@@ -47,9 +47,11 @@ export default function ChatInput({
     if (!text.trim()) return;
     if (!socket) return;
     console.log("socket", socket);
+    let clientMessageId = uuidV4();
     socket.emit("send", {
       payload: {
         roomId,
+        clientMessageId,
         text,
         mentionedUser: selectedUser,
         user: {

@@ -5,23 +5,29 @@ import { transformSocketToNotification } from '../../common/utils/transformNotif
 import { prisma } from '@collabflow/db';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { parseRoomId } from '../../common/utils/parserRoomId';
 @Injectable()
 export class ChatWSService {
   private io!: Server;
-  constructor(@InjectQueue('chatQueue') private chatQueue: Queue) {}
+  constructor(
+    @InjectQueue('chatQueue') private chatQueue: Queue,
+    @InjectQueue('taskQueue') private q: Queue,
+  ) {}
   setServer(io: any) {
     this.io = io as Server;
   }
   async handleMessages(socket: Socket, payload: any): Promise<any> {
+    const { scope, slug } = parseRoomId(payload.roomId);
+    await this.chatQueue.add('chat:project', {
+      roomId: slug,
+      content: payload.text,
+      user: payload.user,
+      clientMessageId: payload.clientMessageId,
+    });
     if (payload.mentionedUser !== null) {
       let notif = transformSocketToNotification({
         ...payload,
         event: 'MENTION',
-      });
-      this.chatQueue.add('chat:project', {
-        roomId: payload.roomId,
-        content: payload.text,
-        user: payload.user,
       });
       this.io.to(`user:${payload.mentionedUser}`).emit('notification', {
         payload: notif,
@@ -31,10 +37,10 @@ export class ChatWSService {
     }
     console.log('chat payload', payload);
 
-    this.sendMessages(payload.roomId, 'message', payload);
+    this.sendMessages(socket, payload.roomId, 'message', payload);
   }
 
-  async sendMessages(to: string, event: string, payload: any) {
+  async sendMessages(socket: Socket, to: string, event: string, payload: any) {
     console.log('sending message', payload);
     this.io.to(to).emit(event, payload);
   }
@@ -49,6 +55,6 @@ export class ChatWSService {
   }
 
   handleUserTyping(socket: Socket, payload: any) {
-    this.sendMessages(payload.roomId, 'typing', payload);
+    this.sendMessages(socket, payload.roomId, 'typing', payload);
   }
 }

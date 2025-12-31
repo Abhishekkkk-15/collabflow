@@ -365,12 +365,23 @@ model ChatMessage {
   senderId      String
   sender        User     @relation(fields: [senderId], references: [id])
 
-  workspaceSlug String?
-  projectSlug   String?
+  slug   String
 
   clientMessageId String @unique
   createdAt     DateTime @default(now())
 
-  @@index([workspaceSlug, createdAt])
-  @@index([projectSlug, createdAt])
+  @@index([slug, createdAt])
+}
+model ChatReadState {
+  id        String   @id @default(cuid())
+
+  userId    String
+  roomKey   String  
+
+  lastReadAt DateTime
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, roomKey])
+  @@index([roomKey])
 }
