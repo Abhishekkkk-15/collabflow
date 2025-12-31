@@ -3,10 +3,12 @@ import { Server, Socket } from 'socket.io';
 import { Notification } from '@collabflow/types';
 import { transformSocketToNotification } from '../../common/utils/transformNotifPayload';
 import { prisma } from '@collabflow/db';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 @Injectable()
 export class ChatWSService {
   private io!: Server;
-  constructor() {}
+  constructor(@InjectQueue('chatQueue') private chatQueue: Queue) {}
   setServer(io: any) {
     this.io = io as Server;
   }
@@ -16,17 +18,19 @@ export class ChatWSService {
         ...payload,
         event: 'MENTION',
       });
+      this.chatQueue.add('chat:project', {
+        roomId: payload.roomId,
+        content: payload.text,
+        user: payload.user,
+      });
       this.io.to(`user:${payload.mentionedUser}`).emit('notification', {
         payload: notif,
         body: `You got menthion in workspace by ${payload.user.name}`,
         event: 'MENTIOIN',
       });
-      // Todo save to database
-
-      // await prisma.notification.create({
-      //   data:notif
-      // })
     }
+    console.log('chat payload', payload);
+
     this.sendMessages(payload.roomId, 'message', payload);
   }
 

@@ -9,6 +9,7 @@ import { startProjecteWorker } from "./project/index";
 export const connection = { host: "localhost", port: 6379 };
 export const redisPub = createClient({ url: "redis://localhost:6379" });
 import { startTaskWorker } from "./task/task.worker";
+import { startChatWorker } from "./chat";
 
 async function main() {
   try {
@@ -21,6 +22,7 @@ async function main() {
     startProjectInviteWorker();
     startProjecteWorker();
     startTaskWorker();
+    startChatWorker();
     //   startNotificationWorker();
   } catch (error) {
     console.log("error");

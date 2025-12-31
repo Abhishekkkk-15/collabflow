@@ -3,6 +3,8 @@ import { WebsocketService } from './websocket.service';
 import { WebsocketGateway } from './websocket.gateway';
 import { chatWebsocketGateway } from './chat/chat.websocket.gateway';
 import { ChatWSService } from './chat/chat.websocket.service';
+import { ChatModule } from './chat/chat.module';
+import { QueuesModule } from '../queues/queues.module';
 
 @Module({
   providers: [
@@ -12,5 +14,6 @@ import { ChatWSService } from './chat/chat.websocket.service';
     ChatWSService,
   ],
   exports: [WebsocketService, ChatWSService],
+  imports: [ChatModule, QueuesModule],
 })
 export class WebsocketModule {}

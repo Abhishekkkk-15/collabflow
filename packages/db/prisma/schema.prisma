@@ -34,6 +34,7 @@ taskAssignments  TaskAssignee[]
   createdTasks  Task[] @relation("TaskCreator")
   taskComments TaskComment[]
   taskActivities TaskActivity[]
+  chats ChatMessage[]
 
 }
 
@@ -235,6 +236,7 @@ model Notification {
 enum NotificationType {
   GENERAL
   INVITE
+  ADDED_TO_PROJECT
   MENTION
   TASK_ASSIGNED
   TASK_UPDATED
@@ -357,3 +359,18 @@ enum TaskTag {
   PERFORMANCE
 }
 
+model ChatMessage {
+  id            String   @id @default(cuid())
+  content       String
+  senderId      String
+  sender        User     @relation(fields: [senderId], references: [id])
+
+  workspaceSlug String?
+  projectSlug   String?
+
+  clientMessageId String @unique
+  createdAt     DateTime @default(now())
+
+  @@index([workspaceSlug, createdAt])
+  @@index([projectSlug, createdAt])
+}

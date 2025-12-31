@@ -27,7 +27,6 @@ export async function startTaskWorker() {
         workspace: Workspace;
         project: Project;
       } = await job.data;
-      console.log(assignedBy, assignedTo);
 
       const noto = [];
       assignedTo.forEach(async (t) => {

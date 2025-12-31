@@ -12,6 +12,7 @@ import { BullModule } from '@nestjs/bullmq';
       { name: 'notificationQueue' },
       { name: 'projectQueue' },
       { name: 'taskQueue' },
+      { name: 'chatQueue' },
     ),
   ],
   exports: [BullModule],
