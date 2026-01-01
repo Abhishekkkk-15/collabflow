@@ -42,7 +42,14 @@ export class ChatWSService {
 
   async sendMessages(socket: Socket, to: string, event: string, payload: any) {
     console.log('sending message', payload);
-    this.io.to(to).emit(event, payload);
+    this.io.to(to).emit(event, {
+      clientMessageId: payload.clientMessageId,
+      mentionedUser: payload?.mentionedUser,
+      slug: payload.roomId,
+      sender: payload.user,
+      senderId: payload.id,
+      content: payload.text,
+    });
   }
   joinWorkspaceRoom(socket: Socket, workspaceSlug: string) {
     console.log('Joining user to Workspace', `workspace:${workspaceSlug}`);

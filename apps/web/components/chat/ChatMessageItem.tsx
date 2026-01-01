@@ -7,13 +7,14 @@ export default function ChatMessageItem({
   msg: any;
   currentUserId: any;
 }) {
-  const isSelf = msg.user.id === currentUserId;
+  const isSelf = msg?.sender?.id === currentUserId;
+
   return (
     <div className={`flex gap-3 ${isSelf ? "justify-end" : ""}`}>
       {!isSelf && (
         <Avatar className="h-8 w-8">
-          <AvatarImage src={msg.user.image} />
-          <AvatarFallback>{msg.user.name[0]}</AvatarFallback>
+          <AvatarImage src={msg?.sender?.image} />
+          <AvatarFallback>{msg?.sender?.image[0]}</AvatarFallback>
         </Avatar>
       )}
 
@@ -22,9 +23,9 @@ export default function ChatMessageItem({
           isSelf ? "bg-primary text-primary-foreground" : "bg-muted"
         }`}>
         {!isSelf && (
-          <div className="text-xs font-semibold mb-1">{msg.user.name}</div>
+          <div className="text-xs font-semibold mb-1">{msg?.sender?.name}</div>
         )}
-        {msg.text}
+        {msg.content}
       </div>
     </div>
   );

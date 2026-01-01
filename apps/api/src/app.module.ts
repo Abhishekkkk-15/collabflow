@@ -12,7 +12,8 @@ import { QueuesModule } from './queues/queues.module';
 import { BullModule } from '@nestjs/bullmq';
 import { TaskModule } from './task/task.module';
 import { InviteModule } from './invite/invite.module';
-import { ChatModule } from './websocket/chat/chat.module';
+import { ChatWSModule } from './websocket/chat/chat.websocket.module';
+import { ChatModule } from './chat/chat.module';
 @Module({
   imports: [
     WorkspaceModule,
@@ -25,6 +26,7 @@ import { ChatModule } from './websocket/chat/chat.module';
     TaskModule,
     InviteModule,
     ChatModule,
+    ChatWSModule,
   ],
   controllers: [AppController],
   providers: [AppService],

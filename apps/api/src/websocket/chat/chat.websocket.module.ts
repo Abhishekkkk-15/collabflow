@@ -8,4 +8,4 @@ import { chatWebsocketGateway } from './chat.websocket.gateway';
   providers: [ChatWSService, chatWebsocketGateway],
   exports: [ChatWSService],
 })
-export class ChatModule {}
+export class ChatWSModule {}
