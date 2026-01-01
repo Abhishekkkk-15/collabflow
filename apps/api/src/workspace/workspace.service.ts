@@ -130,11 +130,10 @@ export class WorkspaceService {
 
   async findOne(slug: string): Promise<Workspace> {
     try {
+      console.log('slug', slug);
       if (!slug) throw new BadRequestException('Slug not provided');
       const workspace = await prisma.workspace.findUnique({
-        where: {
-          slug,
-        },
+        where: { slug },
         include: {
           projects: {
             select: {
@@ -144,9 +143,14 @@ export class WorkspaceService {
               ownerId: true,
               owner: {
                 select: {
+                  id: true,
                   name: true,
                   image: true,
-                  id: true,
+                },
+              },
+              _count: {
+                select: {
+                  tasks: true,
                 },
               },
             },
@@ -180,10 +184,12 @@ export class WorkspaceService {
           _count: {
             select: {
               members: true,
+              projects: true, // optional
             },
           },
         },
       });
+
       if (!workspace) throw new NotFoundException('workspace not found');
       return workspace;
     } catch (error) {

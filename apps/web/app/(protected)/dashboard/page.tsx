@@ -35,16 +35,7 @@ import {
   Lock,
   Globe,
   Loader2,
-  BackpackIcon,
-  ChevronLeft,
-  Archive,
-  PauseCircle,
-  ArrowDown,
-  Minus,
-  ArrowUp,
-  PlusCircleIcon,
   PlusIcon,
-  CircleArrowRight,
   CircleArrowLeft,
 } from "lucide-react";
 import MembersTable from "@/components/dashboard/MembersTable";
@@ -62,7 +53,7 @@ import {
   WorkspacePermission,
   WorkspaceRole,
 } from "@prisma/client";
-import { useUser, useUserRoles } from "@/lib/redux/hooks/use-user";
+import { useUser } from "@/lib/redux/hooks/use-user";
 import { EmptyDemo } from "@/components/project/EmptyProjects";
 import { CreateProjectDialog } from "@/components/self/CreateProjectDialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -88,7 +79,6 @@ export default function WorkspaceDashboard() {
   const [saving, setSaving] = useState(false);
   const [permissions, setPermissions] = useState<WorkspacePermission>();
   const [openCreateProjectDialog, setOpenCreateProjectDialog] = useState(false);
-  const { workspaceRoles } = useUserRoles();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [openProjectSidebar, setOpenProjectSidebar] = useState(false);
   const [openInviteMemberInP, setOpenInviteMembersInP] = useState(false);
@@ -118,10 +108,10 @@ export default function WorkspaceDashboard() {
     if (selectedWorkspace) {
       setProjects(selectedWorkspace?.projects);
       setPermissions(selectedWorkspace.permissions);
-      let roles = workspaceRoles.find(
-        (w) => w.workspaceId == selectedWorkspace?.id
-      );
-      console.log("ro", roles);
+      // let roles = workspaceRoles.find(
+      //   (w) => w.workspaceId == selectedWorkspace?.id
+      // );
+      // console.log("ro", roles);
       setIsOwner(selectedWorkspace.ownerId == user.id);
     }
   }, [selectedWorkspace]);

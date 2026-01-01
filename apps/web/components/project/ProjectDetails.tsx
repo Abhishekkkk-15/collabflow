@@ -46,6 +46,15 @@ type Project = {
   updatedAt?: Date;
 };
 
+interface TaskWithWSP extends Task {
+  workspace: {
+    slug: string;
+  };
+  project: {
+    slug: string;
+  };
+}
+
 export default function ProjectDetails({
   project: projectProp,
   members: membersProp,
@@ -57,7 +66,7 @@ export default function ProjectDetails({
   members?: Member[];
   totalTasks: number;
   totalMembers: number;
-  myTasks: Task[];
+  myTasks: TaskWithWSP[];
 }) {
   const project = projectProp ?? ({} as Project);
   const members = membersProp ?? project.members ?? [];
@@ -463,28 +472,33 @@ export default function ProjectDetails({
                         priorityDot[task.priority]
                       }`}
                     />
-
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate">
-                          {task.title}
-                        </p>
-                        <Badge
-                          variant={statusColor[task.status] || "default"}
-                          className="text-[10px] px-1.5 py-0">
-                          {task.status.replace("_", " ")}
-                        </Badge>
-                      </div>
-                      {task.dueDate && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(task.dueDate).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
+                    <Link
+                      href={`/workspace/${task.workspace.slug}/project/${task.project.slug}/tasks/${task.id}`}>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium truncate">
+                            {task.title}
+                          </p>
+                          <Badge
+                            variant={statusColor[task.status] || "default"}
+                            className="text-[10px] px-1.5 py-0">
+                            {task.status.replace("_", " ")}
+                          </Badge>
                         </div>
-                      )}
-                    </div>
+                        {task.dueDate && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(task.dueDate).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
                   </div>
                 ))}
 

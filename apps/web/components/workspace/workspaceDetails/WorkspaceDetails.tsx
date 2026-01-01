@@ -26,6 +26,7 @@ import {
   MessageSquare,
   TrendingUp,
 } from "lucide-react";
+import { useWorkspace } from "@/lib/react-query/useWorkspace";
 
 interface User {
   id: string;
@@ -42,6 +43,9 @@ interface Project {
   status?: string;
   taskCount?: number;
   unreadCount?: number;
+  _count: {
+    tasks: number;
+  };
 }
 
 interface WorkspaceMember {
@@ -70,11 +74,13 @@ interface WorkspaceDetailsProps {
 }
 
 export default function WorkspaceDetails({
-  workspace,
   userRole = "MEMBER",
-}: WorkspaceDetailsProps) {
-  console.log("worksapce", workspace);
-
+  workspaceSlug,
+}: {
+  userRole: string;
+  workspaceSlug: string;
+}) {
+  const { data: workspace } = useWorkspace(workspaceSlug);
   if (!workspace) {
     return (
       <div className="flex items-center justify-center min-h-[600px]">
@@ -95,10 +101,18 @@ export default function WorkspaceDetails({
     );
   }
 
+  console.log("w", workspace);
+
   const totalTasks =
-    workspace.projects?.reduce((sum, p) => sum + (p.taskCount ?? 0), 0) ?? 0;
+    workspace.projects?.reduce(
+      (sum: number, p: any) => sum + (p.taskCount ?? 0),
+      0
+    ) ?? 0;
   const totalUnread =
-    workspace.projects?.reduce((sum, p) => sum + (p.unreadCount ?? 0), 0) ?? 0;
+    workspace.projects?.reduce(
+      (sum: number, p: any) => sum + (p.unreadCount ?? 0),
+      0
+    ) ?? 0;
   const memberCount =
     workspace._count?.members || workspace.members?.length || 0;
 
@@ -239,7 +253,7 @@ export default function WorkspaceDetails({
             <CardContent className="p-6">
               {workspace.projects && workspace.projects.length > 0 ? (
                 <div className="space-y-3">
-                  {workspace.projects.map((proj) => (
+                  {workspace.projects.map((proj: Project) => (
                     <Link
                       key={proj.id}
                       href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
@@ -270,7 +284,7 @@ export default function WorkspaceDetails({
                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                   <CheckCircle2 className="h-3.5 w-3.5" />
                                   <span className="font-medium">
-                                    {proj.taskCount ?? 0}
+                                    {proj._count.tasks ?? 0}
                                   </span>
                                   <span>tasks</span>
                                 </div>
@@ -359,32 +373,34 @@ export default function WorkspaceDetails({
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-3">
-                  {workspace.members.slice(0, 8).map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                      <Avatar className="h-10 w-10 border">
-                        {member.user.image ? (
-                          <AvatarImage
-                            src={member.user.image}
-                            alt={member.user.name || "Member"}
-                          />
-                        ) : (
-                          <AvatarFallback className="text-sm">
-                            {member.user.name?.[0]?.toUpperCase() || "U"}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">
-                          {member.user.name || "Unknown"}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {member.role || "Member"}
+                  {workspace.members
+                    .slice(0, 8)
+                    .map((member: WorkspaceMember) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                        <Avatar className="h-10 w-10 border">
+                          {member.user.image ? (
+                            <AvatarImage
+                              src={member.user.image}
+                              alt={member.user.name || "Member"}
+                            />
+                          ) : (
+                            <AvatarFallback className="text-sm">
+                              {member.user.name?.[0]?.toUpperCase() || "U"}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">
+                            {member.user.name || "Unknown"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {member.role || "Member"}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
 
                 {workspace.members.length > 8 && (

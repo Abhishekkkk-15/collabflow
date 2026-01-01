@@ -79,7 +79,7 @@ const workspaceSlice = createSlice({
   name: "workspace",
   initialState,
   reducers: {
-    setWorkspaces(state, action: PayloadAction<TWorkspace[]>) {
+    setWorkspaces(state, action: PayloadAction<any[]>) {
       state.workspaces = action.payload;
       console.log("sk", state.workspaces);
     },

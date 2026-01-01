@@ -153,6 +153,18 @@ export class ProjectService {
           },
         },
       },
+      include: {
+        workspace: {
+          select: {
+            slug: true,
+          },
+        },
+        project: {
+          select: {
+            slug: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },

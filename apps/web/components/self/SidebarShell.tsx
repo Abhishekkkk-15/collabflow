@@ -28,11 +28,6 @@ import {
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useWorkspace, useWorkspaces } from "@/lib/redux/hooks/use-workspaces";
 import { TProject, TWorkspace } from "@/lib/redux/slices/workspace";
-import {
-  useRolesforProject,
-  useRolesforWs,
-  useUserRoles,
-} from "@/lib/redux/hooks/use-user";
 import { AUTHORIZED_ROLES, type PROJECT_ROLE_VALUES } from "@collabflow/types";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import Link from "next/link";
@@ -50,7 +45,6 @@ function SidebarShell({
     []
   );
   const workspaces = useWorkspaces();
-  let roles = useUserRoles();
 
   const project = workspaces
     .find((ws) => ws.slug == params.workspace?.toString())
@@ -58,12 +52,7 @@ function SidebarShell({
   const workspace = workspaces.find(
     (ws) => ws.slug == params.workspace?.toString()
   );
-  let userRolesForCurrentProject;
-  userRolesForCurrentProject = useRolesforProject(project?.id!);
-  const userRolesForCurrentWs = useRolesforWs(workspace?.id!);
-  const isAuthorized =
-    AUTHORIZED_ROLES.includes(userRolesForCurrentWs?.role as string) ||
-    AUTHORIZED_ROLES.includes(userRolesForCurrentProject?.role as string);
+
   function getActiveWorkspaceProjects() {
     let activeWs = workspaces!.find(
       (ws: TWorkspace) => ws.slug === params.workspace?.toString()
@@ -114,7 +103,7 @@ function SidebarShell({
                         onOpenChange={() =>
                           setOpenCreateProject(!openCreateProject)
                         }
-                        workspaceId={params.workspace?.toString()}
+                        workspaceId={params.workspace?.toString()!}
                       />
                     )}
                     <DropdownMenuContent

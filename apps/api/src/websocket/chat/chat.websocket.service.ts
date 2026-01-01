@@ -34,6 +34,7 @@ export class ChatWSService {
         body: `You got menthion in workspace by ${payload.user.name}`,
         event: 'MENTIOIN',
       });
+      payload.mentionedUser = null;
     }
     console.log('chat payload', payload);
 
