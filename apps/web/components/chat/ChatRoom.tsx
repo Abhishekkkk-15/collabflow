@@ -7,20 +7,26 @@ import ChatInput from "./ChatInput";
 import { ChatPageResponse, useChats } from "@/hooks/useChats";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSocket } from "../providers/SocketProvider";
+import { useProjectMembers } from "@/lib/react-query/useProjectMembers";
+import { User } from "next-auth";
 
 export default function ChatRoom({
   roomId,
-  members,
   user,
 }: {
-  user: any;
+  user: User;
   roomId: string;
-  members: any[];
 }) {
   const socket = useSocket();
   const queryClient = useQueryClient();
+  const [query, setQuery] = useState("");
   const [allMessages, setAllMessages] = useState<any[]>([]);
-
+  const { data: members = [], isLoading } = useProjectMembers(
+    roomId.split(":")[1],
+    query
+  );
+  console.log("members", members);
+  console.log("quer", query);
   const [page, setPage] = useState(1);
 
   const { data, isFetching } = useChats(roomId, page);
@@ -45,7 +51,6 @@ export default function ChatRoom({
     });
   }, [data?.messages]);
 
-  // join room + socket listeners
   useEffect(() => {
     if (!socket) return;
 
@@ -91,7 +96,7 @@ export default function ChatRoom({
 
   return (
     <div className="flex flex-col h-full border rounded-lg bg-background">
-      <ChatHeader roomId={roomId} members={members} />
+      <ChatHeader roomId={roomId} members={members!} />
 
       <ChatMessageList
         messages={allMessages}
@@ -102,10 +107,12 @@ export default function ChatRoom({
       />
 
       <ChatInput
+        setQuery={setQuery}
         user={user}
         members={members}
         roomId={roomId}
         socket={socket!}
+        isLoading={isLoading}
       />
     </div>
   );

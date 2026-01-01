@@ -3,6 +3,9 @@ import { auth } from "@/auth";
 import { cookies } from "next/headers";
 import { api } from "@/lib/api/api";
 import { User } from "next-auth";
+import getQueryClient from "@/lib/react-query/query-client";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { fetchProjectMembers } from "@/lib/api/project/members";
 
 async function page({
   params,
@@ -12,14 +15,14 @@ async function page({
   const { project, workspace } = await params;
   const session = await auth();
   const cookieStore = cookies();
-  const projectMembers = await api.get(`/project/${project}/members`, {
-    headers: {
-      Cookie: (await cookieStore).toString(),
-    },
-    withCredentials: true,
+  const queryClient = getQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ["project-members", project, ""],
+    queryFn: async () => fetchProjectMembers(project, 2),
   });
-  console.log("p", projectMembers.data);
   let userFromSession: User;
+
   if (session?.user) {
     userFromSession = {
       id: session.user.id,
@@ -30,11 +33,9 @@ async function page({
     };
   }
   return (
-    <ChatRoom
-      roomId={`project:${project}`}
-      user={userFromSession!}
-      members={projectMembers.data.members}
-    />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ChatRoom roomId={`project:${project}`} user={userFromSession!} />
+    </HydrationBoundary>
   );
 }
 

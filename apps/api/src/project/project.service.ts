@@ -212,29 +212,73 @@ export class ProjectService {
     return { message: 'Done' };
   }
 
-  async getProjectMembers(id: string, limit: number) {
+  async getProjectMembers(id: string, page = 1, limit = 10, query?: string) {
+    console.log(query);
     const project = await prisma.project.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
+      where: {
+        OR: [{ id }, { slug: id }],
+      },
       select: { id: true },
     });
-    if (!project) throw new BadRequestException("Project doesn't exit's");
-    const count = await prisma.projectMember.count({
-      where: {
-        projectId: project?.id,
-      },
-    });
-    const members = await prisma.projectMember.findMany({
-      where: {
-        projectId: project?.id,
-      },
-      include: {
-        user: {
-          select: { name: true, image: true, id: true, email: true },
+
+    if (!project) {
+      throw new BadRequestException("Project doesn't exist");
+    }
+
+    const skip = (page - 1) * limit;
+
+    const whereClause: any = {
+      projectId: project.id,
+    };
+
+    if (query) {
+      whereClause.user = {
+        OR: [
+          {
+            name: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            email: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      };
+    }
+
+    const [members, count] = await Promise.all([
+      prisma.projectMember.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: {
+          joinedAt: 'desc', // ✅ important for stable pagination
         },
-      },
-      take: limit,
-    });
-    if (!members) throw new NotFoundException('Members not found');
-    return { members, count };
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
+          },
+        },
+      }),
+
+      prisma.projectMember.count({
+        where: whereClause,
+      }),
+    ]);
+    return {
+      members,
+      count,
+      page,
+      totalPages: Math.ceil(count / limit),
+    };
   }
 }

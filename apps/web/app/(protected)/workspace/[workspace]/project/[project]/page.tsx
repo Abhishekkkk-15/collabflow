@@ -1,5 +1,7 @@
 import ProjectDetails from "@/components/project/ProjectDetails";
 import { api } from "@/lib/api/api";
+import { fetchProject } from "@/lib/api/project/fetchProjectDetails";
+import getQueryClient from "@/lib/react-query/query-client";
 import { Task } from "@prisma/client";
 import { Axios } from "axios";
 import { cookies } from "next/headers";
@@ -10,32 +12,17 @@ async function page({
   params: { project: string; workspace: string };
 }): Promise<any> {
   const { project } = await params;
-  const cookieStore = cookies();
 
-  async function fetchProject() {
-    try {
-      const res = await api.get(`/project?slug=${project}`, {
-        headers: {
-          Cookie: (await cookieStore).toString(),
-        },
-        withCredentials: true,
-      });
-      return res;
-    } catch (error) {
-      console.log("error", error);
-    }
-  }
+  const queryClient = getQueryClient();
 
-  let p = await fetchProject();
+  await queryClient.prefetchQuery({
+    queryKey: ["project", project],
+    queryFn: async () => fetchProject(project),
+  });
 
   return (
     <div>
-      <ProjectDetails
-        project={p?.data.project}
-        totalTasks={p?.data.totalTasks as number}
-        totalMembers={p?.data.totalMembers as number}
-        myTasks={p?.data.myTasks as Task[]}
-      />
+      <ProjectDetails slug={project} />
     </div>
   );
 }

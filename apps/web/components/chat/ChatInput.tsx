@@ -1,57 +1,82 @@
-import { useState, useEffect } from "react";
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import MentionDropdown from "./MentionDropdown";
 import { Input } from "@/components/ui/input";
 import { Socket } from "socket.io-client";
 import { v4 as uuidV4 } from "uuid";
+
 export default function ChatInput({
   user,
   members,
   roomId,
   socket,
+  setQuery,
+  isLoading,
 }: {
   user: any;
-  members: any;
-  roomId: any;
+  members: any[];
+  roomId: string;
   socket: Socket;
+  setQuery: (q: string) => void;
+  isLoading: boolean;
 }) {
   const [text, setText] = useState("");
   const [mentionOpen, setMentionOpen] = useState(false);
-  const [filteredMembers, setFilteredMembers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateQuery = (q: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setQuery(q);
+    }, 300);
+  };
+
+  const filteredMembers = useMemo(() => {
+    const atIndex = text.lastIndexOf("@");
+    if (atIndex === -1) return [];
+
+    const q = text.slice(atIndex + 1).toLowerCase();
+    if (!q) return members;
+
+    return members.filter((m) => m.user.name.toLowerCase().includes(q));
+  }, [text, members]);
+
   useEffect(() => {
     if (!socket) return;
+
     socket.emit("typing", {
-      payload: { roomId, userId: user.id, isTyping: text.length > 0 },
+      payload: {
+        roomId,
+        userId: user.id,
+        isTyping: text.length > 0,
+      },
     });
-  }, [text]);
+  }, [text, socket, roomId, user.id]);
 
   const handleChange = (val: string) => {
     setText(val);
 
-    const mentionIndex = val.lastIndexOf("@");
-    if (mentionIndex !== -1) {
-      const query = val.slice(mentionIndex + 1).toLowerCase();
-      console.log("query", query);
-      const matches = members.filter((m: any) =>
-        m.user.name.toLowerCase().includes(query)
-      );
-      console.log("object", matches);
-      setFilteredMembers(matches);
+    const atIndex = val.lastIndexOf("@");
+    if (atIndex !== -1) {
+      const q = val.slice(atIndex + 1);
+      updateQuery(q);
       setMentionOpen(true);
     } else {
       setMentionOpen(false);
+      setQuery("");
     }
   };
 
   const send = () => {
-    if (!text.trim()) return;
-    if (!socket) return;
-    console.log("socket", socket);
-    let clientMessageId = uuidV4();
+    if (!text.trim() || !socket) return;
+
     socket.emit("send", {
       payload: {
         roomId,
-        clientMessageId,
+        clientMessageId: uuidV4(),
         text,
         mentionedUser: selectedUser,
         user: {
@@ -62,9 +87,11 @@ export default function ChatInput({
         },
       },
     });
-    console.log("message", user);
+
     setText("");
     setMentionOpen(false);
+    setSelectedUser(null);
+    setQuery("");
   };
 
   return (
@@ -77,14 +104,14 @@ export default function ChatInput({
         className="pr-20"
       />
 
-      {mentionOpen && filteredMembers.length > 0 && (
+      {mentionOpen && filteredMembers.length > 0 && !isLoading && (
         <MentionDropdown
           members={filteredMembers}
           onSelect={(m: any) => {
             const lastAt = text.lastIndexOf("@");
             const updated = text.slice(0, lastAt + 1) + m.user.name + " ";
+
             setSelectedUser(m.user.id);
-            console.log("selected", m);
             setText(updated);
             setMentionOpen(false);
           }}

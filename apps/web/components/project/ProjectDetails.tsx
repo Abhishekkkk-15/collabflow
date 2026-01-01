@@ -22,6 +22,7 @@ import {
   MoveLeftIcon,
 } from "lucide-react";
 import { Task, TaskStatus, User } from "@prisma/client";
+import { useProject } from "@/lib/react-query/useProject";
 
 type Member = {
   user: User;
@@ -46,7 +47,7 @@ type Project = {
   updatedAt?: Date;
 };
 
-interface TaskWithWSP extends Task {
+export interface TaskWithWSP extends Task {
   workspace: {
     slug: string;
   };
@@ -55,21 +56,11 @@ interface TaskWithWSP extends Task {
   };
 }
 
-export default function ProjectDetails({
-  project: projectProp,
-  members: membersProp,
-  totalTasks,
-  totalMembers,
-  myTasks,
-}: {
-  project?: Project;
-  members?: Member[];
-  totalTasks: number;
-  totalMembers: number;
-  myTasks: TaskWithWSP[];
-}) {
-  const project = projectProp ?? ({} as Project);
-  const members = membersProp ?? project.members ?? [];
+export default function ProjectDetails({ slug }: { slug: string }) {
+  const { data, isLoading } = useProject(slug);
+  if (!data) return;
+  const project = data!.project ?? ({} as Project);
+  const members = data!.members ?? project.members ?? [];
   console.log(project);
 
   const priorityColor = {
@@ -190,7 +181,9 @@ export default function ProjectDetails({
                   <CheckCircle2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{totalTasks ?? 0}</div>
+                  <div className="text-2xl font-bold">
+                    {data.totalTasks ?? 0}
+                  </div>
                   <div className="text-xs text-muted-foreground">Tasks</div>
                 </div>
               </div>
@@ -293,7 +286,7 @@ export default function ProjectDetails({
                     Team Members
                   </CardTitle>
                   <Badge variant="secondary" className="text-sm">
-                    {totalMembers}
+                    {data.totalMembers}
                   </Badge>
                 </div>
               </CardHeader>
@@ -389,7 +382,7 @@ export default function ProjectDetails({
                 <span className="text-sm text-muted-foreground">
                   Total Tasks
                 </span>
-                <div className="text-2xl font-bold">{totalTasks ?? 0}</div>
+                <div className="text-2xl font-bold">{data.totalTasks ?? 0}</div>
               </div>
 
               <Separator />
@@ -449,7 +442,7 @@ export default function ProjectDetails({
               </CardContent>
             </Card>
           )}
-          {myTasks && myTasks.length > 0 && (
+          {data.myTasks && data.myTasks.length > 0 && (
             <Card className="shadow-sm">
               <CardHeader className="border-b bg-muted/30">
                 <div className="flex items-center justify-between">
@@ -457,12 +450,12 @@ export default function ProjectDetails({
                     <CheckCircle2 className="h-4 w-4" />
                     My Tasks
                   </CardTitle>
-                  <Badge variant="secondary">{myTasks.length}</Badge>
+                  <Badge variant="secondary">{data.myTasks.length}</Badge>
                 </div>
               </CardHeader>
 
               <CardContent className="p-4 space-y-3">
-                {myTasks.slice(0, 5).map((task) => (
+                {data.myTasks.slice(0, 5).map((task) => (
                   <div
                     key={task.id}
                     className="flex items-start gap-3 rounded-lg border p-3 hover:bg-muted/40 transition-colors">
