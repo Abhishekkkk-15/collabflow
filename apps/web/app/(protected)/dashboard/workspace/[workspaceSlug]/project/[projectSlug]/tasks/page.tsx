@@ -5,6 +5,7 @@ import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { api } from "@/lib/api/api";
 import { CircleArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { fetchTasks } from "@/lib/api/task/fetchTasks";
 
 async function page({
   params,
@@ -17,18 +18,7 @@ async function page({
 
   await queryClient.prefetchQuery({
     queryKey: ["tasks", { workspaceSlug, projectSlug, page: 1, query: "" }],
-    queryFn: async () => {
-      const res = await api.get(
-        `/task?wsSlug=${workspaceSlug}&pSlug=${projectSlug}&page=1&limit=10`,
-        {
-          headers: {
-            Cookie: (await cookieStore).toString(),
-          },
-          withCredentials: true,
-        }
-      );
-      return res.data;
-    },
+    queryFn: async () => fetchTasks(workspaceSlug, projectSlug),
   });
 
   return (

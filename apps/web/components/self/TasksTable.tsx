@@ -42,6 +42,7 @@ import getQueryClient from "@/lib/react-query/query-client";
 import { Spinner } from "../ui/spinner";
 import TaskDetailDialog from "../task/TaskDetailDialog";
 import Link from "next/link";
+import { fetchTasks } from "@/lib/api/task/fetchTasks";
 
 interface ExtendedTask extends Task {
   assignees: { user: User }[];
@@ -148,12 +149,7 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
   }, [query]);
   const { data, isFetching } = useQuery<TasksResponse, Error, TasksResponse>({
     queryKey: ["tasks", { workspace, project, page, debouncedQuery }],
-    queryFn: async () => {
-      const res = await api.get(
-        `/task?wsSlug=${workspace}&pSlug=${project}&page=${page}&limit=10&q=${debouncedQuery}`
-      );
-      return res.data;
-    },
+    queryFn: async () => fetchTasks(workspace, project),
     keepPreviousData: true,
   });
 
