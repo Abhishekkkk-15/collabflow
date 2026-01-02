@@ -21,12 +21,10 @@ export class WorkspaceService {
   async create(
     createWorkspaceDto: CreateWorkspaceDto,
     owner: User,
-  ): Promise<Workspace | undefined> {
+  ): Promise<string | undefined> {
     let workspace;
+    const slug = createSlug(createWorkspaceDto.slug || createWorkspaceDto.name);
     prisma.$transaction(async (tx) => {
-      const slug = createSlug(
-        createWorkspaceDto.slug || createWorkspaceDto.name,
-      );
       console.log('current user', owner);
       workspace = await tx.workspace.create({
         data: {
@@ -59,7 +57,7 @@ export class WorkspaceService {
         invitedBy: owner,
       });
     });
-    return workspace;
+    return slug!;
   }
 
   async findAllWSForOwnerAndMaintainer(user: User) {

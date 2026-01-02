@@ -23,15 +23,17 @@ import {
 import { Priority, ProjectStatus } from "@prisma/client";
 import { api } from "@/lib/api/api";
 import InviteMemberSheet from "@/components/workspace/InviteMemberSheet";
+import { createWorkspace } from "@/lib/api/workspace/createWorkspace";
+import { useRouter } from "next/navigation";
 
 export default function CreateWorkspace() {
-  console.log("Client component");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [validationIssues, setValidationIssues] = useState<z.ZodIssue[] | null>(
     null
   );
+  const navigation = useRouter();
   const [members, setMembers] = useState<
     {
       userId: string;
@@ -60,7 +62,6 @@ export default function CreateWorkspace() {
       };
 
       const parsed = WorkspaceSchema.safeParse(payload);
-      console.log("Parsed Data", parsed.data);
       if (!parsed.success) {
         setLoading(false);
         const issue = parsed.error.issues;
@@ -74,13 +75,11 @@ export default function CreateWorkspace() {
       }
 
       const dataToSend = parsed.data;
-      const res = await api.post("/workspace", dataToSend, {
-        withCredentials: true,
-      });
-      toast.success(`${res.data.name} Workspace created`, {
+      const res = await createWorkspace(dataToSend);
+      toast.success(`${dataToSend.name} Workspace created`, {
         position: "top-center",
-        richColors: true,
       });
+      navigation.push(`/workspace/${res.data}`);
     } catch (error: any) {
       console.log(error);
 

@@ -95,7 +95,6 @@ export function InviteMembers({
             pageParam ?? ""
           }&q=${debouncedQuery}`
         );
-        console.log("res", res.data);
         return res.data;
       },
       initialPageParam: null,

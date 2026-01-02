@@ -39,6 +39,7 @@ import { normalizeString } from "@/lib/slugToTitle";
 import { TWorkspace } from "@/lib/redux/slices/workspace";
 import { useSelector } from "react-redux";
 import { api } from "@/lib/api/api";
+import { handleCreateProject } from "@/lib/api/project/createProject";
 
 type ProjectInput = z.infer<typeof ProjectSchema>;
 
@@ -153,11 +154,9 @@ export function CreateProjectDialog({
         return;
       }
 
-      const res = await api.post("/project", parsed.data, {
-        withCredentials: true,
-      });
+      const res = await handleCreateProject(parsed.data);
 
-      toast.success(`Project "${res.data.name}" created`);
+      toast.success(`Project "${parsed.data.name}" created`);
 
       onOpenChange(false);
       setName("");

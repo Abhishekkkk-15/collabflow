@@ -23,10 +23,9 @@ import {
 import { Input } from "../ui/input";
 
 import { WorkspaceRole, User } from "@prisma/client";
-import { api } from "@/lib/api/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Spinner } from "../ui/spinner";
-import { AxiosResponse } from "axios";
+import { fetchUsersNotInWSorP } from "@/lib/api/workspace/fetchUsersNotInWSP";
 
 export type InviteEntry = {
   userId: string;
@@ -69,21 +68,14 @@ export default function InviteMemberSheet({
     useInfiniteQuery({
       queryKey: ["members", debouncedQuery],
       enabled: open,
-      queryFn: async ({ pageParam }) => {
-        let res: AxiosResponse;
-        if (currentPath == "WORKSPACE") {
-          res = await api.get(
-            `user/workspaces/${workspaceId}/users?limit=4&cursor=${
-              pageParam ?? ""
-            }&q=${debouncedQuery}&wsSlug=${slug}`
-          );
-          return res.data;
-        }
-        res = await api.get(
-          `user/project/${workspaceId}/users?limit=20&cursor=${pageParam}&q=${debouncedQuery}&wsSlug=${slug}`
-        );
-        return res.data;
-      },
+      queryFn: async ({ pageParam }) =>
+        fetchUsersNotInWSorP(
+          currentPath,
+          pageParam,
+          workspaceId,
+          debouncedQuery,
+          slug
+        ),
       initialPageParam: null,
       refetchOnMount: true,
       getNextPageParam: (lastPage) => {

@@ -47,10 +47,12 @@ import {
   useActiveProject,
   useWorkspace,
 } from "@/lib/redux/hooks/use-workspaces";
-
-// ----------------------------------------
-// CONSTANTS (mirrors your Prisma enums)
-// ----------------------------------------
+import { TaskSchema } from "@/lib/validator/taskSchema";
+import { handleAddTask } from "@/lib/api/task/addTask";
+import { ZodIssue } from "zod";
+import { toast } from "sonner";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { fetchProjectMembers } from "@/lib/api/project/members";
 
 const STATUSES: TaskStatus[] = [
   "TODO",
@@ -84,7 +86,6 @@ export default function AddTaskDialog({
 }: AddTaskDialogProps) {
   const [open, setOpen] = useState(false);
 
-  // Form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -93,47 +94,34 @@ export default function AddTaskDialog({
   const [dueDate, setDueDate] = useState<Date | undefined>();
 
   const [tags, setTags] = useState<TaskTag[]>([]);
-  const [members, setMembers] = useState<User[]>([]);
-  const [assignees, setAssignees] = useState<User[]>([]);
+  // const [members, setMembers] = useState<User[]>([]);
+  const [assignees, setAssignees] = useState<any[]>([]);
 
   const [openMemberSelect, setOpenMemberSelect] = useState(false);
   const [openTagSelect, setOpenTagSelect] = useState(false);
 
   const [loading, setLoading] = useState(false);
-
-  const taskTempId = uuidv4();
+  const [validationIssues, setValidationIssues] = useState<ZodIssue[]>();
   const { workspace } = useParams();
+
   const ws = useWorkspace(workspace?.toString());
   const proj = useActiveProject();
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
 
-  // ----------------------------------------
-  // Fetch project members
-  // ----------------------------------------
+  const { data, isFetched } = useQuery({
+    queryKey: ["project-members", debouncedQuery, projectId],
+    queryFn: async () => fetchProjectMembers(projectId, 10, 1, debouncedQuery),
+    enabled: !!projectId,
+  });
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.get(`/project/${projectId}/members`);
-        setMembers(res.data.members.map((m: any) => m.user));
-        console.log(res);
-      } catch (_) {}
-    })();
-  }, [projectId]);
-
-  // ----------------------------------------
-  // Toggle tags (multi-select)
-  // ----------------------------------------
-
+  console.log("data", data);
   function toggleTag(tag: TaskTag) {
     setTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   }
-
-  // ----------------------------------------
-  // Toggle assignees (multi-select)
-  // ----------------------------------------
-
+  console.log(query);
   function toggleAssignee(u: User) {
     setAssignees((prev) =>
       prev.some((x) => x.id === u.id)
@@ -152,18 +140,19 @@ export default function AddTaskDialog({
     setDueDate(undefined);
   }
 
-  // ----------------------------------------
-  // Handle submit
-  // ----------------------------------------
-
+  // const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 500);
+    return () => clearTimeout(t);
+  }, [query]);
   async function handleSubmit() {
     if (!title.trim()) {
       alert("Title is required");
       return;
     }
+    const taskTempId = uuidv4();
 
     setLoading(true);
-    console.log(ws);
     const payload = {
       id: taskTempId,
       title,
@@ -175,11 +164,21 @@ export default function AddTaskDialog({
       dueDate: dueDate ?? null,
       projectId: projectId,
     };
-
-    try {
-      const res = await api.post("/task", {
-        ...payload,
+    const parsed = TaskSchema.safeParse(payload);
+    if (!parsed.success) {
+      setValidationIssues(parsed.error.issues);
+      setLoading(false);
+      toast.error("Please correct the errors.", {
+        position: "top-center",
+        richColors: true,
+        duration: 3000,
       });
+      return;
+    }
+    const dataToSend = parsed.data;
+    if (!dataToSend) return;
+    try {
+      const res = await handleAddTask(dataToSend);
       console.log(res);
       onCreate?.(res.data);
       reset();
@@ -191,10 +190,6 @@ export default function AddTaskDialog({
       setLoading(false);
     }
   }
-
-  // ----------------------------------------
-  // UI
-  // ----------------------------------------
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -305,21 +300,25 @@ export default function AddTaskDialog({
               </PopoverTrigger>
 
               <PopoverContent className="p-2 w-full space-y-1">
-                {members.map((u) => {
-                  const selected = assignees.some((x) => x.id === u.id);
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                {data?.map((u: { user: User }) => {
+                  const selected = assignees.some((x) => x.id === u.user.id);
                   return (
                     <div
-                      key={u.id}
-                      onClick={() => toggleAssignee(u)}
+                      key={u.user.id}
+                      onClick={() => toggleAssignee(u.user)}
                       className={`flex items-center gap-3 px-2 py-2 cursor-pointer hover:bg-muted rounded ${
                         selected ? "bg-muted" : ""
                       }`}>
                       <Avatar className="h-7 w-7">
-                        <AvatarImage src={u.image ?? ""} />
-                        <AvatarFallback>{u.name?.[0]}</AvatarFallback>
+                        <AvatarImage src={u.user.image ?? ""} />
+                        <AvatarFallback>{u.user.name?.[0]}</AvatarFallback>
                       </Avatar>
 
-                      <div className="flex-1">{u.name}</div>
+                      <div className="flex-1">{u.user.name}</div>
 
                       <div
                         className={`h-4 w-4 border rounded-sm flex items-center justify-center ${
