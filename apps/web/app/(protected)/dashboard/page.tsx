@@ -59,6 +59,8 @@ import { CreateProjectDialog } from "@/components/self/CreateProjectDialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import AddTaskDialog from "@/components/task/AddTaskDialog";
 import { useRouter } from "next/navigation";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { fetchWorkspace } from "@/lib/api/workspace/dashboard.fetchData";
 type EWorkspace = Workspace & {
   projects: Project[];
   permissions: WorkspacePermission;
@@ -67,7 +69,12 @@ type Status = "DRAFT" | "isActive" | "PAUSED" | "COMPLETED" | "ARCHIVED";
 type Priority = "LOW" | "MEDIUM" | "HIGH";
 
 export default function WorkspaceDashboard() {
-  const [workspaces, setWorkspaces] = useState<EWorkspace[]>([]);
+  const { data: workspaces = [], isFetching: loading } = useQuery<EWorkspace[]>(
+    {
+      queryKey: ["dashboard"],
+      queryFn: async () => fetchWorkspace(),
+    }
+  );
 
   const [selectedWorkspace, setSelectedWorkspace] = useState<EWorkspace | null>(
     null
@@ -75,7 +82,6 @@ export default function WorkspaceDashboard() {
   const dispatch = useDispatch();
   const [projects, setProjects] = useState<Project[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [permissions, setPermissions] = useState<WorkspacePermission>();
   const [openCreateProjectDialog, setOpenCreateProjectDialog] = useState(false);
@@ -86,32 +92,15 @@ export default function WorkspaceDashboard() {
   const router = useRouter();
   const [isOwner, setIsOwner] = useState(false);
 
-  async function fetchWorkspace() {
-    try {
-      const res = await api.get("/workspace/dashboard");
-      console.log("dashboard : ", res);
-      setWorkspaces(res.data);
-      setSelectedWorkspace(res.data[0] ?? null);
-      dispatch(useWSs(res.data));
-    } catch (error: any) {
-      toast.error("Failed to load workspaces", error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    fetchWorkspace();
-  }, []);
+    setSelectedWorkspace(workspaces[0] ?? null);
+    dispatch(useWSs(workspaces));
+  }, [workspaces]);
 
   useEffect(() => {
     if (selectedWorkspace) {
       setProjects(selectedWorkspace?.projects);
-      setPermissions(selectedWorkspace.permissions);
-      // let roles = workspaceRoles.find(
-      //   (w) => w.workspaceId == selectedWorkspace?.id
-      // );
-      // console.log("ro", roles);
+      setPermissions((prev) => selectedWorkspace.permissions);
       setIsOwner(selectedWorkspace.ownerId == user.id);
     }
   }, [selectedWorkspace]);
@@ -127,7 +116,9 @@ export default function WorkspaceDashboard() {
     };
     try {
       await api.patch(`/workspace/${selectedWorkspace?.slug!}`, payload);
-      toast.success("Changes saved successfully");
+      toast.success("Changes saved successfully", {
+        position: "bottom-right",
+      });
     } catch (error) {
       toast.error("Failed to save changes");
     } finally {
@@ -144,6 +135,9 @@ export default function WorkspaceDashboard() {
           members,
         }
       );
+      toast.success("Successfully sent the invite", {
+        position: "bottom-right",
+      });
     } catch (error) {
       console.log("error while inviteing users in workspace");
     }
@@ -158,17 +152,21 @@ export default function WorkspaceDashboard() {
           members,
         }
       );
-      console.log(res);
+      toast.success("Successfully added new members to project", {
+        position: "bottom-right",
+      });
     } catch (error) {
       console.log("error while inviteing users in workspace");
     }
   };
 
   const handleDelete = async () => {
-    if (permissions?.canDeleteResources == false) return;
+    if (isOwner == false) return;
     try {
       await api.delete(`/workspace/${selectedWorkspace?.slug}`);
-      toast.info(selectedWorkspace?.name + " Workspace deleted successfully");
+      toast.success(
+        selectedWorkspace?.name + " Workspace deleted successfully"
+      );
     } catch (error) {
       toast.error(
         "Error Deleting workspace, Try again or check you permissions"
@@ -186,7 +184,7 @@ export default function WorkspaceDashboard() {
 
       console.log(id, selectedWorkspace?.id, new_role);
       await api.patch("/workspace/members/role", payload);
-      toast.info("Role changed");
+      toast.success("Role changed");
     } catch (error) {}
   };
 
@@ -196,6 +194,9 @@ export default function WorkspaceDashboard() {
       return toast.error("Not allowed");
     try {
       api.delete(`/workspace/members/${id}/remove`);
+      toast.success("Removed the project memebers", {
+        position: "bottom-right",
+      });
     } catch (error) {}
   };
 
@@ -203,15 +204,11 @@ export default function WorkspaceDashboard() {
     if (!isOwner) return toast.error("Not allowed");
     try {
       api.patch(`/workspace/${selectedWorkspace?.id}/permissions`, per);
-      toast.info("Permission changed");
+      toast.success("Permission changed");
     } catch (error) {
       toast.error("Error while changing permission");
     }
   };
-  // canCreateProject: boolean;
-  //     canInviteMembers: boolean;
-  //     canModifySettings: boolean;
-  //     canDeleteResources: boolean;
   type WorkspacePermissionKey =
     | "canCreateProject"
     | "canInviteMembers"
