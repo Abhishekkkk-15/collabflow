@@ -1,12 +1,9 @@
 "use client";
 
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Pencil, Forward } from "lucide-react";
-import { IProp } from "./WorkspaceDetails";
 
 interface WorkspaceHeaderProps {
-  workspace: IProp;
+  workspace: any;
   memberCount: number;
   isRestricted: boolean;
   onOpenEdit: () => void;
@@ -76,7 +73,6 @@ export default function WorkspaceHeader({
             </div>
           </div>
         </div>
-
       </div>
     </section>
   );

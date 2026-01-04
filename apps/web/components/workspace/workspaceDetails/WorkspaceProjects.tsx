@@ -1,11 +1,10 @@
 "use client";
 
-import { WorkspaceWithMeta } from "./WorkspaceDetails";
 import ProjectCard from "./ProjectCard";
 import { EmptyDemo } from "../../project/EmptyProjects";
 
 interface WorkspaceProjectsProps {
-  workspace: WorkspaceWithMeta;
+  workspace: any;
   isRestricted: boolean;
 }
 
@@ -30,7 +29,12 @@ export default function WorkspaceProjects({
         </div>
       ) : (
         <div className="border bg-card rounded-xl p-6 grid place-items-center">
-          {!isRestricted && <EmptyDemo />}
+          {!isRestricted && (
+            <EmptyDemo
+              disabled={workspace.project}
+              workspaceId={workspace.id}
+            />
+          )}
         </div>
       )}
     </section>

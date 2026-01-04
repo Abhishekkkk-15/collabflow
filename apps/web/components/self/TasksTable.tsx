@@ -150,7 +150,7 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
   const { data, isFetching } = useQuery<TasksResponse, Error, TasksResponse>({
     queryKey: ["tasks", { workspace, project, page, debouncedQuery }],
     queryFn: async () => fetchTasks(workspace, project),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
   });
 
   const filteredTasks = useMemo(() => {

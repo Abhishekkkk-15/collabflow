@@ -40,7 +40,7 @@ export function ProjectMembers({ members, project }: any) {
         ))}
       </div>
 
-      <InviteMembers roleType="PROJECT" workspaceId={project?.id} />
+      <InviteMembers roleType="PROJECT" slug={project?.id} />
     </div>
   );
 }

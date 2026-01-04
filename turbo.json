@@ -1,29 +1,26 @@
 {
+  "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**"]
+      "outputs": ["dist/**", ".next/**"],
+      "env": [
+        "DATABASE_URL",
+        "NEXTAUTH_URL",
+        "NEXTAUTH_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "AUTH_URL",
+        "AUTH_TRUST_HOST",
+        "RESEND_API_KEY",
+        "EMAIL_FROM",
+        "GITHUB_ID",
+        "GITHUB_SECRET"
+      ]
     },
     "dev": {
       "cache": false
     },
-    "lint": {},
-    "env": [
-       "AUTH_URL" ,
-"AUTH_TRUST_HOST" ,
-"RESEND_API_KEY", 
-"EMAIL_FROM", 
-"DATABASE_URL",
-"GOOGLE_CLIENT_ID", 
-"GOOGLE_CLIENT_SECRET", 
-"NEXTAUTH_URL", 
-"NEXTAUTH_SECRET", 
-"AUTH_URL", 
-"AUTH_TRUST_HOST", 
-"RESEND_API_KEY" ,
-"EMAIL_FROM" ,
-"DATABASE_URL" 
-      ]
+    "lint": {}
   }
 }
-

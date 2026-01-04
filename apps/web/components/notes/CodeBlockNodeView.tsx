@@ -67,7 +67,7 @@ export function CodeBlockNodeView({ node, updateAttributes }: any) {
       {/* Code */}
       <div className="overflow-x-auto">
         <pre className="m-0 px-4 py-3">
-          <NodeViewContent as="code" />
+          <NodeViewContent />
         </pre>
       </div>
     </NodeViewWrapper>

@@ -11,12 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { WorkspaceWithMeta } from "./WorkspaceDetails";
 
 interface TransferOwnerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workspace: WorkspaceWithMeta;
+  workspace: any;
   members: any[];
   onTransfer: (newOwnerId: string) => Promise<void> | void;
   loading?: boolean;

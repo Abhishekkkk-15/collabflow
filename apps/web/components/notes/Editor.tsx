@@ -59,21 +59,10 @@ const AutoLinkOnSpace = Extension.create({
 
         const url = match[1];
 
-        commands
-          .deleteRange({
-            from: from - url.length,
-            to: from,
-          })
-          .insertContent({
-            type: "text",
-            text: url,
-            marks: [
-              {
-                type: "link",
-                attrs: { href: url },
-              },
-            ],
-          });
+        commands.deleteRange({
+          from: from - url.length,
+          to: from,
+        });
 
         return false;
       },

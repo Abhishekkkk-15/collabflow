@@ -2,8 +2,11 @@ import Mention from "@tiptap/extension-mention";
 import { Editor, ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
 import { MentionList } from "./MentionList";
+export interface MentionListRef {
+  onKeyDown: (props: { event: KeyboardEvent }) => boolean;
+}
 const mentionRenderer = () => {
-  let component: ReactRenderer | null = null;
+  let component: ReactRenderer<MentionListRef> | null = null;
   let popup: any = null;
 
   return {
@@ -39,7 +42,11 @@ const mentionRenderer = () => {
     },
 
     onKeyDown(props: any) {
-      return component?.ref!.onKeyDown(props);
+      if (!component?.ref?.onKeyDown) {
+        return false;
+      }
+
+      return component?.ref?.onKeyDown(props);
     },
 
     onExit() {

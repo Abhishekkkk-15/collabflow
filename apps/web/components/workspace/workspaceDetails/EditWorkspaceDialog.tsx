@@ -12,13 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { WorkspaceWithMeta } from "./WorkspaceDetails";
-import { api } from "@/lib/api/api";
 
 interface EditWorkspaceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workspace: WorkspaceWithMeta;
+  workspace: any;
   onSave: (data: {
     name: string;
     slug: string;
