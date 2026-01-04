@@ -7,6 +7,23 @@
     "dev": {
       "cache": false
     },
-    "lint": {}
+    "lint": {},
+    "env": [
+       "AUTH_URL" ,
+"AUTH_TRUST_HOST" ,
+"RESEND_API_KEY", 
+"EMAIL_FROM", 
+"DATABASE_URL",
+"GOOGLE_CLIENT_ID", 
+"GOOGLE_CLIENT_SECRET", 
+"NEXTAUTH_URL", 
+"NEXTAUTH_SECRET", 
+"AUTH_URL", 
+"AUTH_TRUST_HOST", 
+"RESEND_API_KEY" ,
+"EMAIL_FROM" ,
+"DATABASE_URL" 
+      ]
   }
 }
+

@@ -26,6 +26,6 @@ export function useChats(roomId: string, page: number) {
       const res = await api.get(`/chat/${roomId}?page=${page}&limit=10`);
       return res.data as ChatPageResponse;
     },
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
   });
 }

@@ -5,8 +5,7 @@ import MentionDropdown from "./MentionDropdown";
 import { Input } from "@/components/ui/input";
 import { Socket } from "socket.io-client";
 import { v4 as uuidV4 } from "uuid";
-import { User } from "@prisma/client";
-
+import { User } from "next-auth";
 export default function ChatInput({
   user,
   members,

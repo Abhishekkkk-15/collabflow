@@ -10,6 +10,13 @@ export interface Member {
   role: string;
 }
 
+export type FuncOutput = {
+  members: Member[];
+  nextCursor?: string | null;
+  count?: number;
+  total?: number;
+};
+
 export function useMembers({
   path,
   slug,
@@ -25,11 +32,7 @@ export function useMembers({
   page?: number;
   cursor?: string | null;
 }) {
-  return useQuery<{
-    members: Member[];
-    nextCursor?: string | null;
-    count?: number;
-  }>({
+  return useQuery<FuncOutput>({
     queryKey: [
       "members",
       path,
@@ -47,6 +50,6 @@ export function useMembers({
         cursor,
       }),
     enabled: Boolean(slug),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
   });
 }

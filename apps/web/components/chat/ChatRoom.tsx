@@ -7,9 +7,7 @@ import ChatInput from "./ChatInput";
 import { ChatPageResponse, useChats } from "@/hooks/useChats";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSocket } from "../providers/SocketProvider";
-import { useProjectMembers } from "@/lib/react-query/useProjectMembers";
 import { User } from "next-auth";
-import { MembersPath } from "@/lib/api/common/fetchMembers";
 import { useMembers } from "@/lib/api/common/useMembers";
 
 export default function ChatRoom({
@@ -34,7 +32,7 @@ export default function ChatRoom({
   const [page, setPage] = useState(1);
 
   const { data, isFetching } = useChats(roomId, page);
-  const members = m?.members ?? [];
+  const members = m!.members ?? [];
   console.log("members", members);
 
   const messages = data?.messages ?? [];

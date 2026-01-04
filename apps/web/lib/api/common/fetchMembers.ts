@@ -1,4 +1,5 @@
 import { api } from "../api";
+import { FuncOutput } from "./useMembers";
 export type MembersPath = "WORKSPACE" | "PROJECT";
 
 type MembersQueryInput = {
@@ -20,7 +21,7 @@ export async function fetchMembers({
   cursor,
   limit = 10,
   page = 1,
-}: MembersQueryInput) {
+}: MembersQueryInput): Promise<FuncOutput> {
   if (path === "WORKSPACE") {
     const res = await api.get(`/workspace/${slug}/members`, {
       params: {
@@ -45,5 +46,6 @@ export async function fetchMembers({
     members: res.data.members,
     nextCursor: null,
     total: res.data.total ?? res.data.count,
+    count: res.data.total,
   };
 }
