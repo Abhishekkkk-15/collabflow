@@ -232,8 +232,8 @@ export class WorkspaceService {
     cursor: string,
     query: string,
   ) {
-    const ws = await prisma.workspace.findUnique({
-      where: { id },
+    const ws = await prisma.workspace.findFirst({
+      where: { OR: [{ id }, { slug: id }] },
       select: { id: true },
     });
     if (!limit) limit = 10;

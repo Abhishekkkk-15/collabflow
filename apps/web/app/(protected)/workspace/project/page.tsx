@@ -101,7 +101,6 @@ export default function CreateProjectPage() {
         return;
       }
 
-      // send to your API — adjust URL as needed
       const res = await axios.post(
         "http://localhost:3001/project",
         parsed.data,

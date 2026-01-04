@@ -30,13 +30,7 @@ async function page({
     };
   }
 
-  return (
-    <ChatRoom
-      roomId={`workspace:${workspace}`}
-      members={workspaceMembers.data.members}
-      user={userFromSession!}
-    />
-  );
+  return <ChatRoom roomId={`workspace:${workspace}`} user={userFromSession!} />;
 }
 
 export default page;

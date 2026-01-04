@@ -17,10 +17,10 @@ export default function ChatHeader({
       </div>
 
       <div className="flex -space-x-2">
-        {members.slice(0, 4).map((m) => (
+        {members?.slice(0, 4).map((m) => (
           <Avatar key={m.id} className="h-7 w-7 border">
-            <AvatarImage src={m.user.image} />
-            <AvatarFallback>{m.user.name[0]}</AvatarFallback>
+            <AvatarImage src={m.image} />
+            <AvatarFallback>{m.name[0]}</AvatarFallback>
           </Avatar>
         ))}
         {members.length > 4 && (

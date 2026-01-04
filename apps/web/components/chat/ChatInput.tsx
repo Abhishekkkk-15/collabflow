@@ -5,6 +5,7 @@ import MentionDropdown from "./MentionDropdown";
 import { Input } from "@/components/ui/input";
 import { Socket } from "socket.io-client";
 import { v4 as uuidV4 } from "uuid";
+import { User } from "@prisma/client";
 
 export default function ChatInput({
   user,
@@ -14,7 +15,7 @@ export default function ChatInput({
   setQuery,
   isLoading,
 }: {
-  user: any;
+  user: User;
   members: any[];
   roomId: string;
   socket: Socket;
@@ -41,7 +42,7 @@ export default function ChatInput({
     const q = text.slice(atIndex + 1).toLowerCase();
     if (!q) return members;
 
-    return members.filter((m) => m.user.name.toLowerCase().includes(q));
+    return members.filter((m) => m.name.toLowerCase().includes(q));
   }, [text, members]);
 
   useEffect(() => {
@@ -109,9 +110,9 @@ export default function ChatInput({
           members={filteredMembers}
           onSelect={(m: any) => {
             const lastAt = text.lastIndexOf("@");
-            const updated = text.slice(0, lastAt + 1) + m.user.name + " ";
+            const updated = text.slice(0, lastAt + 1) + m.name + " ";
 
-            setSelectedUser(m.user.id);
+            setSelectedUser(m.id);
             setText(updated);
             setMentionOpen(false);
           }}

@@ -9,6 +9,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSocket } from "../providers/SocketProvider";
 import { useProjectMembers } from "@/lib/react-query/useProjectMembers";
 import { User } from "next-auth";
+import { MembersPath } from "@/lib/api/common/fetchMembers";
+import { useMembers } from "@/lib/api/common/useMembers";
 
 export default function ChatRoom({
   roomId,
@@ -17,19 +19,23 @@ export default function ChatRoom({
   user: User;
   roomId: string;
 }) {
+  const [path, slug] = roomId.split(":") as ["workspace" | "project", string];
   const socket = useSocket();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [allMessages, setAllMessages] = useState<any[]>([]);
-  const { data: members = [], isLoading } = useProjectMembers(
-    roomId.split(":")[1],
-    query
-  );
-  console.log("members", members);
+  const { data: m, isLoading } = useMembers({
+    path: path == "workspace" ? "WORKSPACE" : "PROJECT",
+    slug,
+    query,
+    limit: 10,
+  });
   console.log("quer", query);
   const [page, setPage] = useState(1);
 
   const { data, isFetching } = useChats(roomId, page);
+  const members = m?.members ?? [];
+  console.log("members", members);
 
   const messages = data?.messages ?? [];
   const totalPages = data?.totalPages ?? 1;

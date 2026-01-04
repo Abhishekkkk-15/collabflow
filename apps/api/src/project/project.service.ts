@@ -256,7 +256,7 @@ export class ProjectService {
         skip,
         take: limit,
         orderBy: {
-          joinedAt: 'desc', // ✅ important for stable pagination
+          joinedAt: 'desc',
         },
         include: {
           user: {
@@ -274,8 +274,9 @@ export class ProjectService {
         where: whereClause,
       }),
     ]);
+    let users = members.map((m) => ({ ...m.user, role: m.role }));
     return {
-      members,
+      members: users,
       count,
       page,
       totalPages: Math.ceil(count / limit),

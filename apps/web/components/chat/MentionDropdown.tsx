@@ -19,11 +19,11 @@ export default function MentionDropdown({
           className="flex items-center gap-3 px-2 py-2 hover:bg-muted cursor-pointer rounded-md"
           onClick={() => onSelect(m)}>
           <Avatar className="h-8 w-8">
-            <AvatarImage src={m.user.image} />
-            <AvatarFallback>{m.user.name[0]}</AvatarFallback>
+            <AvatarImage src={m.image} />
+            <AvatarFallback>{m.name[0]}</AvatarFallback>
           </Avatar>
 
-          <div className="text-sm">{m.user.name}</div>
+          <div className="text-sm">{m.name}</div>
         </div>
       ))}
     </motion.div>

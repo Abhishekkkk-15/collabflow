@@ -304,21 +304,21 @@ export default function AddTaskDialog({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
-                {data?.map((u: { user: User }) => {
-                  const selected = assignees.some((x) => x.id === u.user.id);
+                {data?.map((u: User) => {
+                  const selected = assignees.some((x) => x.id === u.id);
                   return (
                     <div
-                      key={u.user.id}
-                      onClick={() => toggleAssignee(u.user)}
+                      key={u.id}
+                      onClick={() => toggleAssignee(u)}
                       className={`flex items-center gap-3 px-2 py-2 cursor-pointer hover:bg-muted rounded ${
                         selected ? "bg-muted" : ""
                       }`}>
                       <Avatar className="h-7 w-7">
-                        <AvatarImage src={u.user.image ?? ""} />
-                        <AvatarFallback>{u.user.name?.[0]}</AvatarFallback>
+                        <AvatarImage src={u.image ?? ""} />
+                        <AvatarFallback>{u.name?.[0]}</AvatarFallback>
                       </Avatar>
 
-                      <div className="flex-1">{u.user.name}</div>
+                      <div className="flex-1">{u.name}</div>
 
                       <div
                         className={`h-4 w-4 border rounded-sm flex items-center justify-center ${

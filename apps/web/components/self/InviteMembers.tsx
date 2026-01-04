@@ -91,7 +91,7 @@ export function InviteMembers({
           return res.data;
         }
         res = await api.get(
-          `workspace/${slug}/members?limit=${LIMIT}&cursor=${
+          `workspace/${slug}/members?limit=${LIMIT}&page=${
             pageParam ?? ""
           }&q=${debouncedQuery}`
         );

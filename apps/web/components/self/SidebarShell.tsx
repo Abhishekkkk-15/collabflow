@@ -84,10 +84,11 @@ function SidebarShell({
                   <DropdownMenu
                     open={dropDownOpen}
                     onOpenChange={setDropDownOpen}>
-                    {normalizeString(params.workspace?.toString()!) !== " " && (
+                    {normalizeString(params.workspace?.toString()! || "") !==
+                      "" && (
                       <DropdownMenuTrigger asChild>
                         <button className="flex items-center gap-5 text-sm font-medium border-0 ">
-                          {normalizeString(params.workspace?.toString()!)}
+                          {normalizeString(params.workspace?.toString()! || "")}
 
                           <ChevronRightIcon
                             className={`h-4 w-4 opacity-70 transition-transform duration-200 ${
@@ -119,14 +120,17 @@ function SidebarShell({
                           {normalizeString(p.slug)}
                         </DropdownMenuItem>
                       ))}
-                      <DropdownMenuItem
-                        className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
+                      {normalizeString(params.project?.toString()! || "") !==
+                        "" && (
+                        <DropdownMenuItem
+                          className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
           hover:bg-muted hover:text-foreground transition">
-                        <Link
-                          href={`/workspace/${params.workspace?.toString()}/tasks`}>
-                          Open Task
-                        </Link>
-                      </DropdownMenuItem>
+                          <Link
+                            href={`/workspace/${params.workspace?.toString()}/tasks`}>
+                            Open Task
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         className="flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer
           hover:bg-muted hover:text-foreground transition">
