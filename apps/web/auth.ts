@@ -12,7 +12,6 @@ import { MAGIC_LINK_TEMPLATE } from "./email-temp/magicLinktemplate";
 const resend = new Resend(process.env.RESEND_API_KEY);
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-
   providers: [
     ResendProvider({
       apiKey: process.env.RESEND_API_KEY!,
@@ -69,6 +68,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   jwt: {
     maxAge: 60 * 60 * 24 * 30,
+  },
+  cookies: {
+    sessionToken: {
+      name: "__Secure-next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        path: "/",
+      },
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
 });
