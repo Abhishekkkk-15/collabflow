@@ -28,7 +28,7 @@ export type DashboardData = {
 export const dashboardQueryOptions = {
   queryKey: ["dashboard", "me"],
   queryFn: async (): Promise<DashboardData> => {
-    const { data } = await api.get("user/dashboard/me", {});
+    const { data } = await api.get("user/dashboard/me");
     return data;
   },
 };

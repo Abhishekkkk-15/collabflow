@@ -21,7 +21,7 @@ export class CurrentMiddleaware implements NestMiddleware {
         req: req!,
         secret: process.env.NEXTAUTH_SECRET!,
       });
-      console.log("user's decpded value", req);
+      console.log("user's decpded value", req.headers, 'cookies');
       if (!decoded) {
         return next();
       }
