@@ -6,8 +6,8 @@ import { startEmailWorker } from "./email";
 import { startWorkspaceWorker } from "./workspace";
 import { startProjecteWorker } from "./project/index";
 // import { startNotificationWorker } from "./notification";
-export const connection = { host: "localhost", port: 6379 };
-export const redisPub = createClient({ url: "redis://localhost:6379" });
+export const connection = { url: process.env.REDIS_URL! };
+export const redisPub = createClient({ url: process.env.REDIS_URL! });
 import { startTaskWorker } from "./task/task.worker";
 import { startChatWorker } from "./chat";
 

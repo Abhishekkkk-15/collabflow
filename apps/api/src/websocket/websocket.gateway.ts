@@ -29,7 +29,7 @@ export class WebsocketGateway {
   async afterInit() {
     this.websocketService.setServer(this.io);
     this.chatSocketService.setServer(this.io);
-    const sub = createClient({ url: 'redis://localhost:6379' });
+    const sub = createClient({ url: process.env.REDIS_URL! });
     await sub.connect();
 
     await sub.subscribe('socket-events', (msg) => {
