@@ -4,6 +4,7 @@ import GitHub from "next-auth/providers/github";
 import Email from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import ResendProvider from "next-auth/providers/resend";
+import jwt from "jsonwebtoken";
 
 // import { prisma } from "@/lib/prisma";
 import { prisma } from "@collabflow/db";
@@ -45,16 +46,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 
   callbacks: {
-    async session({ session, user, token }) {
-      if (session.user) {
-        // session.user.id = user.id;
-        // session.user.role = (user as any).role;
-        session.user.role = token.role as string;
-        session.user.id = token.id as string;
-        session.accessToken = token;
-      }
-      return session;
-    },
     async jwt({ token, account, profile, user }) {
       if (user) {
         token.role = user.role;
@@ -62,23 +53,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return token;
     },
-  },
-  session: {
-    strategy: "jwt",
-    maxAge: 60 * 60 * 24 * 30,
-  },
-  jwt: {
-    maxAge: 60 * 60 * 24 * 30,
-  },
-  cookies: {
-    sessionToken: {
-      name: "__Secure-next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "none",
-        secure: true,
-        path: "/",
-      },
+    async session({ session, user, token }) {
+      if (session.user) {
+        // session.user.id = user.id;
+        // session.user.role = (user as any).role;
+        session.user.role = token.role as string;
+        session.user.id = token.id as string;
+
+        session.accessToken = jwt.sign(
+          {
+            sub: token.id,
+            id: token.id,
+            role: token.role,
+            image: token.email,
+            email: token.email,
+            name: token.email,
+          },
+          process.env.NEXTAUTH_SECRET!,
+          { expiresIn: "30d" }
+        );
+      }
+      return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
