@@ -168,7 +168,7 @@ export function AppSidebar({ ...props }: IExtendedProp) {
     console.log(activeWs.projects);
     setActiveWsProjects(activeWs.projects);
   }
-  if (props.w == null) return <SidebarSkeleton user={user} />;
+  if (props.w == null) return "loading";
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -189,7 +189,7 @@ export function AppSidebar({ ...props }: IExtendedProp) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {props.w.workspaces && <NavMain items={props.w.workspaces} />}
+        {props?.w?.workspaces && <NavMain items={props?.w?.workspaces} />}
 
         {/* <NavProjects projects={data.projects} /> */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
