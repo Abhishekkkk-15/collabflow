@@ -14,9 +14,13 @@ import { Queue } from 'bullmq';
 import { InviteWorkspaceDto } from './dto/invite.workspace.dto';
 import { ChangeRoleDto } from './dto/change-role';
 import { UpdatePermissinDto } from './dto/update-permission.dto';
+import { ChatService } from '../chat/chat.service';
 @Injectable()
 export class WorkspaceService {
-  constructor(@InjectQueue('workspaceQueue') private workspaceQueue: Queue) {}
+  constructor(
+    @InjectQueue('workspaceQueue') private workspaceQueue: Queue,
+    private readonly chatService: ChatService,
+  ) {}
 
   async create(
     createWorkspaceDto: CreateWorkspaceDto,
@@ -126,7 +130,7 @@ export class WorkspaceService {
     return { workspaces };
   }
 
-  async findOne(slug: string): Promise<Workspace> {
+  async findOne(slug: string, user?: User): Promise<any> {
     try {
       console.log('slug', slug);
       if (!slug) throw new BadRequestException('Slug not provided');
@@ -182,14 +186,18 @@ export class WorkspaceService {
           _count: {
             select: {
               members: true,
-              projects: true, // optional
+              projects: true,
             },
           },
         },
       });
-
+      const unReadCount = await this.chatService.getUnreadCount(
+        user?.id!,
+        `workspace:${workspace?.slug}`,
+      );
+      console.log('unread count', user?.id, unReadCount);
       if (!workspace) throw new NotFoundException('workspace not found');
-      return workspace;
+      return { ...workspace, unReadCount: unReadCount };
     } catch (error) {
       throw error;
     }

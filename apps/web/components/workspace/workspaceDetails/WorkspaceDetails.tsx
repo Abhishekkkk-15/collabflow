@@ -225,7 +225,9 @@ export default function WorkspaceDetails({
                   <MessageSquare className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{totalUnread}</div>
+                  <div className="text-2xl font-bold">
+                    {workspace.unReadCount}
+                  </div>
                   <div className="text-xs text-muted-foreground">Unread</div>
                 </div>
               </div>

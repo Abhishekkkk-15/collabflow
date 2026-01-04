@@ -110,6 +110,7 @@ export default function ChatRoom({
         hasNextPage={hasNextPage}
         isFetching={isFetching}
         onLoadMore={() => hasNextPage && setPage((p) => p + 1)}
+        roomId={roomId}
       />
 
       <ChatInput

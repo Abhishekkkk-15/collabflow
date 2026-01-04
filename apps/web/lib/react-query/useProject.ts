@@ -10,6 +10,7 @@ export interface ProjectResponse {
   totalMembers: number;
   myTasks: TaskWithWSP[];
   members: Member[];
+  unReadCount: number;
 }
 
 type Member = {

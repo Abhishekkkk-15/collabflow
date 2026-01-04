@@ -1,5 +1,5 @@
 import WorkspaceDetails from "@/components/workspace/workspaceDetails/WorkspaceDetails";
-import { fetchWorkspaceDetails } from "@/lib/api/workspace/fetchWorkspaceDetails";
+import { fetchWorkspaceDetailsServer } from "@/lib/api/workspace/fetchWorkspaceDetails.server";
 import getQueryClient from "@/lib/react-query/query-client";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
@@ -13,7 +13,7 @@ export default async function Page({
 
   await queryClient.prefetchQuery({
     queryKey: ["workspace", workspaceSlug],
-    queryFn: () => fetchWorkspaceDetails(workspaceSlug),
+    queryFn: () => fetchWorkspaceDetailsServer(workspaceSlug),
   });
 
   return (

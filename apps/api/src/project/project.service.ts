@@ -11,10 +11,14 @@ import { createSlug } from '../common/utils/slug-helper';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import type { User } from '@prisma/client';
+import { ChatService } from '../chat/chat.service';
 
 @Injectable()
 export class ProjectService {
-  constructor(@InjectQueue('projectQueue') private projectQueue: Queue) {}
+  constructor(
+    @InjectQueue('projectQueue') private projectQueue: Queue,
+    private readonly chatService: ChatService,
+  ) {}
   async create(dto: CreateProjectDto, user: User) {
     try {
       return prisma.$transaction(async (tx) => {
@@ -172,13 +176,17 @@ export class ProjectService {
     if (!project) {
       throw new NotFoundException('Project not found');
     }
-
+    const unReadCount = await this.chatService.getUnreadCount(
+      user?.id!,
+      `project:${project?.slug}`,
+    );
     return {
       project,
       totalMembers: project._count.members,
       totalTasks: project._count.tasks,
       membersPreview: project.members,
       myTasks,
+      unReadCount,
     };
   }
 

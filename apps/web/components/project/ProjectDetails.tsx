@@ -204,7 +204,7 @@ export default function ProjectDetails({ slug }: { slug: string }) {
                 </div>
                 <div>
                   <div className="text-2xl font-bold">
-                    {project.unreadCount ?? 0}
+                    {data.unReadCount ?? 0}
                   </div>
                   <div className="text-xs text-muted-foreground">Unread</div>
                 </div>

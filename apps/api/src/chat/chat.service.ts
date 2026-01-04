@@ -7,7 +7,6 @@ import { parseRoomId } from '../common/utils/parserRoomId';
 export class ChatService {
   async getMessages(roomId: string, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    console.log('fetching', page, roomId);
 
     const { slug } = parseRoomId(roomId);
     const [messages, total] = await prisma.$transaction([
@@ -79,6 +78,7 @@ export class ChatService {
   }
 
   async getUnreadCount(userId: string, roomKey: string) {
+    const { slug } = parseRoomId(roomKey);
     const readState = await prisma.chatReadState.findUnique({
       where: {
         userId_roomKey: { userId, roomKey },
@@ -87,7 +87,7 @@ export class ChatService {
 
     return prisma.chatMessage.count({
       where: {
-        slug: roomKey,
+        slug: slug,
         createdAt: {
           gt: readState?.lastReadAt ?? new Date(0),
         },

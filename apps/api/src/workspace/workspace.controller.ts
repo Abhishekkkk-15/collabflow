@@ -47,8 +47,9 @@ export class WorkspaceController {
     return this.workspaceService.findAll(req.user.id);
   }
   @Get(':slug')
-  findOne(@Param('slug') slug: string) {
-    return this.workspaceService.findOne(slug);
+  @UseGuards(AuthGuard)
+  findOne(@Param('slug') slug: string, @CurrentUser() user: User) {
+    return this.workspaceService.findOne(slug, user);
   }
 
   @Get(':id/members')

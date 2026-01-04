@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import ChatMessageItem from "./ChatMessageItem";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api/api";
 
 export default function ChatMessageList({
   messages,
@@ -8,22 +9,52 @@ export default function ChatMessageList({
   onLoadMore,
   isFetching,
   hasNextPage,
+  roomId,
 }: {
   messages: any[];
   user: any;
   onLoadMore: () => void;
   isFetching: boolean;
   hasNextPage: boolean;
+  roomId: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const hasMarkedReadRef = useRef(false);
 
-  // 🔑 track WHY messages changed
   const loadingOlderRef = useRef(false);
+  async function markAsRead(roomKey: string) {
+    await api.patch(`/chat/read/${roomKey}`);
+  }
+  useEffect(() => {
+    if (!bottomRef.current) return;
 
-  /* ---------------------------------------
-     Auto-scroll ONLY for new realtime messages
-  ---------------------------------------- */
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasMarkedReadRef.current) {
+          hasMarkedReadRef.current = true;
+          markAsRead(roomId);
+        }
+      },
+      {
+        threshold: 1.0,
+      }
+    );
+
+    observer.observe(bottomRef.current);
+
+    return () => observer.disconnect();
+  }, [messages.length]);
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+
+    if (lastMessage.sender?.id !== user.id) {
+      hasMarkedReadRef.current = false;
+    }
+  }, [messages, user.id]);
+
   useEffect(() => {
     if (loadingOlderRef.current) return;
 
@@ -39,9 +70,6 @@ export default function ChatMessageList({
     }
   }, [messages]);
 
-  /* ---------------------------------------
-     Reset flag after fetch completes
-  ---------------------------------------- */
   useEffect(() => {
     if (!isFetching) {
       loadingOlderRef.current = false;
@@ -58,7 +86,7 @@ export default function ChatMessageList({
             disabled={isFetching}
             className="text-muted-foreground"
             onClick={() => {
-              loadingOlderRef.current = true; // 🔒 prevent auto-scroll
+              loadingOlderRef.current = true;
               onLoadMore();
             }}>
             {isFetching ? "Loading…" : "Load older messages"}
