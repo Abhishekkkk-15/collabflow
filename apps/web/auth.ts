@@ -65,9 +65,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             sub: token.id,
             id: token.id,
             role: token.role,
-            image: token.email,
+            image: token.image,
             email: token.email,
-            name: token.email,
+            name: token.name,
           },
           process.env.NEXTAUTH_SECRET!,
           { expiresIn: "30d" }
@@ -75,6 +75,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 60 * 60 * 24 * 30,
   },
   secret: process.env.NEXTAUTH_SECRET,
 });

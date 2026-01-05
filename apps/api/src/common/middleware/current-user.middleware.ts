@@ -17,17 +17,9 @@ interface TExtendedReqest extends Request {
 
 @Injectable()
 export class CurrentMiddleaware implements NestMiddleware {
-  async use(req: TExtendedReqest, res: Response, next: NextFunction) {
+  async use(req: any, res: Response, next: NextFunction) {
     try {
-      // const decoded = await getToken({
-      //   req: req!,
-      //   secret: process.env.NEXTAUTH_SECRET!,
-      // });
-      // console.log("user's decpded value", req.headers, 'cookies');
-      // if (!decoded) {
-      //   return next();
-      // }
-      const authHeader = req.headers.get('authorization');
+      const authHeader = req.headers.authorization;
 
       if (!authHeader?.startsWith('Bearer ')) {
         return next();

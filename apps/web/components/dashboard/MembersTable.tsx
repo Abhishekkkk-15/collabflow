@@ -47,7 +47,7 @@ export default function MembersTable({
       queryFn: async ({ pageParam }) => {
         console.log("pageParam", pageParam);
         const res = await api.get(
-          `workspace/${workspaceSlug}/members?limit=${LIMIT}&cursor=${
+          `api/proxy/workspace/${workspaceSlug}/members?limit=${LIMIT}&cursor=${
             pageParam ?? ""
           }&q=${debouncedQuery}`
         );
