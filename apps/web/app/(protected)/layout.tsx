@@ -11,22 +11,21 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = cookies();
-
   const session = await auth();
-  console.log("for protected", session);
   if (session == null) {
     redirect("/login");
   }
   let userRoles = null;
+  const BASE = process.env.NEXT_PUBLIC_API_URL!;
   try {
-    const res = await api.get(`/user/roles`, {
+    const res = await fetch(`${BASE}/api/proxy/user/roles`, {
       headers: {
         Cookie: (await cookieStore).toString(),
       },
-      withCredentials: true,
     });
-    userRoles = res?.data ?? null;
+    userRoles = res?.json() ?? null;
   } catch (err) {
+    throw err;
     console.log("Could not fetch user roles:");
   }
 

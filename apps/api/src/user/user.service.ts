@@ -127,11 +127,15 @@ export class UserService {
     if (!wsExist) throw new NotFoundException('Project not found');
     const users = await prisma.user.findMany({
       where: {
-        NOT: {
-          projectMemberships: {
-            some: {
-              projectId: pId,
-            },
+        workspaceMemberships: {
+          some: {
+            workspaceId: wsExist.id,
+          },
+        },
+
+        projectMemberships: {
+          none: {
+            projectId: pId,
           },
         },
         ...(query?.trim()

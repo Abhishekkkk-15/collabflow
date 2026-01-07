@@ -60,13 +60,17 @@ export default function InviteMemberSheet({
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   // const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  console.log("ws", workspaceId);
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query), 500);
     return () => clearTimeout(t);
   }, [query]);
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ["members", debouncedQuery],
+      queryKey: [
+        currentPath == "WORKSPACE" ? "workspace-members" : "project-members",
+        slug,
+      ],
       enabled: open,
       queryFn: async ({ pageParam }) =>
         fetchUsersNotInWSorP(
@@ -241,12 +245,12 @@ export default function InviteMemberSheet({
               );
             })}
             <div ref={ref} className="h-12"></div>
+            {isFetching && (
+              <div className="flex justify-center items-center">
+                <Spinner />
+              </div>
+            )}
           </div>
-          {isFetching && (
-            <div className="flex justify-center items-center">
-              <Spinner />
-            </div>
-          )}
           {/* ACTION BUTTONS */}
           <div className="flex justify-end gap-2">
             <Button

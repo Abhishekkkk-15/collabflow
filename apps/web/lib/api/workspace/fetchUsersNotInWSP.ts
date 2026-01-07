@@ -11,14 +11,14 @@ export async function fetchUsersNotInWSorP(
   let res: AxiosResponse;
   if (type == "WORKSPACE") {
     res = await api.get(
-      `user/workspaces/${id}/users?limit=${limit}&cursor=${
+      `/api/proxy/user/workspaces/${id}/users?limit=${limit}&cursor=${
         pageParam ?? ""
       }&q=${q}&wsSlug=${slug}`
     );
     return res.data;
   }
   res = await api.get(
-    `user/project/${id}/users?limit=${limit}&cursor=${pageParam}&q=${q}&wsSlug=${slug}`
+    `/api/proxy/user/project/${id}/users?limit=${limit}&cursor=${pageParam}&q=${q}&wsSlug=${slug}`
   );
   return res.data;
 }

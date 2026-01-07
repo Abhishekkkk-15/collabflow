@@ -18,6 +18,6 @@ type Payload = {
 };
 
 export const handleCreateProject = async (payload: Payload) =>
-  await api.post("/project", payload, {
+  await api.post("/api/proxy/project", payload, {
     withCredentials: true,
   });

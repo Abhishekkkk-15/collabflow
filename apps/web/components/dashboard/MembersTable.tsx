@@ -47,7 +47,7 @@ export default function MembersTable({
       queryFn: async ({ pageParam }) => {
         console.log("pageParam", pageParam);
         const res = await api.get(
-          `workspace/${workspaceSlug}/members?limit=${LIMIT}&cursor=${
+          `/api/proxy/workspace/${workspaceSlug}/members?limit=${LIMIT}&cursor=${
             pageParam ?? ""
           }&q=${debouncedQuery}`
         );
@@ -151,7 +151,7 @@ export default function MembersTable({
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="min-h-28">
             {members.map((member) => (
               <tr key={member.id} className="border-t hover:bg-muted/20">
                 <td className="p-3">
@@ -240,12 +240,12 @@ export default function MembersTable({
             )}
           </tbody>
         </table>
+        {isFetching && (
+          <div className="flex justify-center items-center">
+            <Spinner />
+          </div>
+        )}
       </div>
-      {isFetching && (
-        <div className="text-center text-xs text-muted-foreground pb-4">
-          <Spinner />
-        </div>
-      )}
     </div>
   );
 }

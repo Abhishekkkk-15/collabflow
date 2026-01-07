@@ -86,12 +86,14 @@ export function InviteMembers({
         let res;
         if (roleType == "WORKSPACE") {
           res = await api.get(
-            `/user?limit=${LIMIT}&cursor=${pageParam ?? ""}&q=${debouncedQuery}`
+            `/api/proxy/user?limit=${LIMIT}&cursor=${
+              pageParam ?? ""
+            }&q=${debouncedQuery}`
           );
           return res.data;
         }
         res = await api.get(
-          `workspace/${slug}/members?limit=${LIMIT}&page=${
+          `/api/proxy/workspace/${slug}/members?limit=${LIMIT}&page=${
             pageParam ?? ""
           }&q=${debouncedQuery}`
         );

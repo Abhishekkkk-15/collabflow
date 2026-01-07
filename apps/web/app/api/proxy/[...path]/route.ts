@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 
-const API = "http://localhost:3001";
+const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function handler(
   req: Request,
@@ -11,7 +11,6 @@ async function handler(
   const paths = await params;
   console.log("paths", paths);
   if (!session) {
-    console.log("not authenticaled", session);
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -20,7 +19,6 @@ async function handler(
   const search = incomingUrl.search;
   const backendUrl = `${API}/${paths.path.join("/")}${search}`;
 
-  console.log("url", backendUrl);
   const res = await fetch(backendUrl, {
     method: req.method,
     headers: {
@@ -44,4 +42,4 @@ async function handler(
   });
 }
 
-export { handler as GET, handler as POST, handler as PUT, handler as DELETE };
+export { handler as GET, handler as POST, handler as PATCH, handler as DELETE };

@@ -76,11 +76,12 @@ interface WorkspaceDetailsProps {
 export default function WorkspaceDetails({
   userRole = "MEMBER",
   workspaceSlug,
+  workspace,
 }: {
   userRole: string;
   workspaceSlug: string;
+  workspace: any;
 }) {
-  const { data: workspace } = useWorkspace(workspaceSlug);
   if (!workspace) {
     return (
       <div className="flex items-center justify-center min-h-[600px]">

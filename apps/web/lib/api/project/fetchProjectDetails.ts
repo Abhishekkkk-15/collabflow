@@ -1,11 +1,10 @@
-import { api } from "../api";
+const BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export async function fetchProject(slug: string) {
-  const res = await api.get(`/project?slug=${slug}`, {
+  const res = await fetch(`${BASE}/api/proxy/project?slug=${slug}`, {
     headers: {
       Cookie: (await cookieStore).toString(),
     },
-    withCredentials: true,
   });
-  return res.data;
+  return res.json();
 }

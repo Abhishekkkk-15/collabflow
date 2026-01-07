@@ -115,7 +115,10 @@ export default function WorkspaceDashboard() {
       priority: selectedWorkspace?.priority,
     };
     try {
-      await api.patch(`/workspace/${selectedWorkspace?.slug!}`, payload);
+      await api.patch(
+        `/api/proxy/workspace/${selectedWorkspace?.slug!}`,
+        payload
+      );
       toast.success("Changes saved successfully", {
         position: "bottom-right",
       });
@@ -130,7 +133,7 @@ export default function WorkspaceDashboard() {
     if (permissions?.canInviteMembers == false) return;
     try {
       await api.post(
-        `/invite/workspace/${selectedWorkspace?.id}?wsSlug=${selectedWorkspace?.slug}`,
+        `/api/proxy/invite/workspace/${selectedWorkspace?.id}?wsSlug=${selectedWorkspace?.slug}`,
         {
           members,
         }
@@ -147,7 +150,7 @@ export default function WorkspaceDashboard() {
     if (permissions?.canInviteMembers == false) return;
     try {
       let res = await api.post(
-        `/invite/project/${selectedProject?.id}?wsSlug=${selectedWorkspace?.slug}`,
+        `/api/proxy/invite/project/${selectedProject?.id}?wsSlug=${selectedWorkspace?.slug}`,
         {
           members,
         }
@@ -163,7 +166,7 @@ export default function WorkspaceDashboard() {
   const handleDelete = async () => {
     if (isOwner == false) return;
     try {
-      await api.delete(`/workspace/${selectedWorkspace?.slug}`);
+      await api.delete(`/api/proxy/workspace/${selectedWorkspace?.slug}`);
       toast.success(
         selectedWorkspace?.name + " Workspace deleted successfully"
       );
@@ -183,7 +186,7 @@ export default function WorkspaceDashboard() {
       };
 
       console.log(id, selectedWorkspace?.id, new_role);
-      await api.patch("/workspace/members/role", payload);
+      await api.patch("/api/proxy/workspace/members/role", payload);
       toast.success("Role changed");
     } catch (error) {}
   };
@@ -193,7 +196,7 @@ export default function WorkspaceDashboard() {
     if (permissions?.canInviteMembers == false || isOwner == false)
       return toast.error("Not allowed");
     try {
-      api.delete(`/workspace/members/${id}/remove`);
+      api.delete(`/api/proxy/workspace/members/${id}/remove`);
       toast.success("Removed the project memebers", {
         position: "bottom-right",
       });
@@ -203,7 +206,10 @@ export default function WorkspaceDashboard() {
   const handleChangePermission = async (per: Partial<WorkspacePermission>) => {
     if (!isOwner) return toast.error("Not allowed");
     try {
-      api.patch(`/workspace/${selectedWorkspace?.id}/permissions`, per);
+      api.patch(
+        `/api/proxy/workspace/${selectedWorkspace?.id}/permissions`,
+        per
+      );
       toast.success("Permission changed");
     } catch (error) {
       toast.error("Error while changing permission");
@@ -701,7 +707,7 @@ export default function WorkspaceDashboard() {
                           </Button>
                           <InviteMemberSheet
                             workspaceId={selectedProject.id}
-                            slug={selectedProject.slug}
+                            slug={selectedWorkspace.slug!}
                             currentPath="PROJECT"
                             open={openInviteMemberInP}
                             onOpenChange={setOpenInviteMembersInP}

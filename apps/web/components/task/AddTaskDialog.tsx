@@ -53,6 +53,7 @@ import { ZodIssue } from "zod";
 import { toast } from "sonner";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { fetchProjectMembers } from "@/lib/api/project/members";
+import { Spinner } from "../ui/spinner";
 
 const STATUSES: TaskStatus[] = [
   "TODO",
@@ -109,13 +110,12 @@ export default function AddTaskDialog({
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState(query);
 
-  const { data, isFetched } = useQuery({
+  const { data, isFetched, isFetching } = useQuery({
     queryKey: ["project-members", debouncedQuery, projectId],
     queryFn: async () => fetchProjectMembers(projectId, 10, 1, debouncedQuery),
     enabled: !!projectId,
   });
 
-  console.log("data", data);
   function toggleTag(tag: TaskTag) {
     setTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
@@ -142,7 +142,7 @@ export default function AddTaskDialog({
 
   // const loadMoreRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(query), 500);
+    const t = setTimeout(() => setDebouncedQuery(query), 1000);
     return () => clearTimeout(t);
   }, [query]);
   async function handleSubmit() {
@@ -301,6 +301,7 @@ export default function AddTaskDialog({
 
               <PopoverContent className="p-2 w-full space-y-1">
                 <Input
+                  placeholder="Seach members"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
@@ -331,6 +332,11 @@ export default function AddTaskDialog({
                     </div>
                   );
                 })}
+                {isFetching && (
+                  <div className="flex justify-center items-center">
+                    <Spinner />
+                  </div>
+                )}
               </PopoverContent>
             </Popover>
           </div>

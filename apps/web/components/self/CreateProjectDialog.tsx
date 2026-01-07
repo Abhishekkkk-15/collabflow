@@ -156,7 +156,7 @@ export function CreateProjectDialog({
 
       const res = await handleCreateProject(parsed.data);
 
-      toast.success(`Project "${parsed.data.name}" created`);
+      toast.success(`Project created`);
 
       onOpenChange(false);
       setName("");
@@ -170,7 +170,7 @@ export function CreateProjectDialog({
     } catch (err: any) {
       console.error("Create project error", err);
       const msg = err?.response?.data?.message ?? "Failed to create project";
-      toast.error(msg);
+      toast.error("Error while creating new project");
     } finally {
       setLoading(false);
     }

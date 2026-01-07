@@ -7,7 +7,7 @@ export async function fetchProjectMembers(
   query = ""
 ) {
   const res = await api.get(
-    `/project/${slug}/members?limit=${limit}&page=${page}&q=${query}`
+    `/api/proxy/project/${slug}/members?limit=${limit}&page=${page}&q=${query}`
   );
   return res.data.members;
 }
