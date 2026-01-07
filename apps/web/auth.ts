@@ -4,7 +4,7 @@ import GitHub from "next-auth/providers/github";
 import Email from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import ResendProvider from "next-auth/providers/resend";
-
+import jwt from "jsonwebtoken";
 // import { prisma } from "@/lib/prisma";
 import { prisma } from "@collabflow/db";
 import { Resend } from "resend";
@@ -52,6 +52,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // session.user.role = (user as any).role;
         session.user.role = token.role as string;
         session.user.id = token.id as string;
+        session.accessToken = jwt.sign(
+          {
+            sub: token.id,
+            id: token.id,
+            role: token.role,
+            image: token.image || token.picture,
+            email: token.email,
+            name: token.name,
+          },
+          process.env.NEXTAUTH_SECRET!,
+          { expiresIn: "30d" }
+        );
       }
       return session;
     },

@@ -61,7 +61,7 @@ function SidebarShell({
   }
   useEffect(() => {
     getActiveWorkspaceProjects();
-  });
+  }, [fetchedWorkspaces]);
   return (
     <>
       <SidebarProvider>

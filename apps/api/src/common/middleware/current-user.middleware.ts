@@ -2,6 +2,7 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { getToken } from 'next-auth/jwt';
 import { config } from 'dotenv';
 import { NextFunction, Response } from 'express';
+import jwt from 'jsonwebtoken';
 config();
 
 interface TExtendedReqest extends Request {
@@ -15,15 +16,19 @@ interface TExtendedReqest extends Request {
 
 @Injectable()
 export class CurrentMiddleaware implements NestMiddleware {
-  async use(req: TExtendedReqest, res: Response, next: NextFunction) {
+  async use(req: any, res: Response, next: NextFunction) {
     try {
-      const decoded = await getToken({
-        req: req!,
-        secret: process.env.NEXTAUTH_SECRET!,
-      });
+      if (!req.headers.authorization) {
+        console.log('Authorization token not provided');
+        next();
+      }
+      const token = req.headers.authorization.split('Bearer ')[1];
+      console.log(token);
+      const decoded: any = jwt.verify(token, process.env.NEXTAUTH_SECRET!);
       if (!decoded) {
         return next();
       }
+      console.log(decoded);
       const user = {
         id: decoded.id as string,
         role: decoded.role as string,

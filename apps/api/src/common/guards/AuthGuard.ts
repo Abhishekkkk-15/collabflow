@@ -6,10 +6,8 @@ config();
 export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest();
-    const tokenCookie =
-      req.cookies['authjs.session-token'] ||
-      req.cookies['__Secure-authjs.session-token'];
-    if (!tokenCookie) return false;
+    const user = req.user;
+    if (!user) return false;
     return true;
   }
 }

@@ -83,7 +83,7 @@ export default function NotificationDropdown() {
 
   async function fetchNotification() {
     const notification: Notif[] & { actor: User } = (
-      await api.get("/notification")
+      await api.get("/api/proxy/notification")
     ).data;
     console.log("notiif", notification);
     return notification;
