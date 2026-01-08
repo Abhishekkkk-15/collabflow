@@ -1,9 +1,5 @@
 import ProjectDetails from "@/components/project/ProjectDetails";
-import { api } from "@/lib/api/api";
-import { fetchProject } from "@/lib/api/project/fetchProjectDetails";
-import getQueryClient from "@/lib/react-query/query-client";
-import { Task } from "@prisma/client";
-import { Axios } from "axios";
+import { serverFetch } from "@/lib/api/server-fetch";
 import { cookies } from "next/headers";
 
 async function page({
@@ -12,17 +8,20 @@ async function page({
   params: { project: string; workspace: string };
 }): Promise<any> {
   const { project } = await params;
+  const BASE = process.env.NEXT_PUBLIC_API_URL;
 
-  const queryClient = getQueryClient();
+  const cookieStore = cookies();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["project", project],
-    queryFn: async () => fetchProject(project),
-  });
-
+  // const res = await fetch(`${BASE}/api/proxy/project?slug=${project}`, {
+  //   headers: {
+  //     Cookie: (await cookieStore).toString(),
+  //   },
+  // });
+  const res = await serverFetch(`project?slug=${project}`);
+  const data = await res.json();
   return (
     <div>
-      <ProjectDetails slug={project} />
+      <ProjectDetails slug={project} data={data} />
     </div>
   );
 }

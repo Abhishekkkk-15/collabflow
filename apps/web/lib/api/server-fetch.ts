@@ -1,20 +1,12 @@
 "use server";
+import { auth } from "@/auth";
 import { cookies } from "next/headers";
-
-export async function serverFetch<T>(url: string): Promise<T> {
+export async function serverFetch(url: string) {
   const cookieHeader = cookies();
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${url}`, {
+  return await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/proxy${url}`, {
     headers: {
       Cookie: (await cookieHeader).toString(),
     },
-    credentials: "include",
     cache: "no-store",
   });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch server data");
-  }
-
-  return res.json();
 }

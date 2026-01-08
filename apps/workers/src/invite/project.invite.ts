@@ -2,16 +2,12 @@ import { Queue, Worker } from "bullmq";
 import { redisPub } from "../";
 import { connection } from "../";
 import { prisma } from "@collabflow/db";
-import { NotificationType, ProjectRole } from "@collabflow/types";
+import { ProjectRole } from "@collabflow/types";
 import type { Project, User } from "@prisma/client";
 import { transformSocketToNotification } from "../lib/notifPayload";
 import { EmailJobData } from "../email";
 import { EmailType } from "../email/email.types";
-
-export const projectInviteQueue = new Queue("projectInviteQueue", {
-  connection,
-});
-const emailQueue = new Queue("emailQueue", { connection });
+import { createQueue } from "../config/queueFunc";
 
 type ProjectMemberPayload = {
   projectId: string;
@@ -112,7 +108,8 @@ process.on("SIGTERM", async () => {
  * }
  */
 export function startProjectInviteWorker() {
-  const worker = new Worker(
+  const emailQueue = createQueue("emailQueue");
+  new Worker(
     "projectInviteQueue",
     async (job) => {
       const { project, members, invitedBy } = job.data as {
@@ -191,12 +188,8 @@ export function startProjectInviteWorker() {
         })
       );
     },
-    { connection, concurrency: 1 }
+    { connection, concurrency: 5 }
   );
-
-  worker.on("failed", (job, err) => {
-    console.error("project-invite worker failed", job?.id, err);
-  });
 
   console.log("project-invite.worker running");
 }

@@ -8,7 +8,8 @@
     "baseUrl": ".",
     "paths": {
       "@collabflow/db": ["../../packages/db"],
-      "@collabflow/types": ["../../packages/types"]
+      "@collabflow/types": ["../../packages/types"],
+      "src":["./"]
     }
   },
   "include": ["src"]

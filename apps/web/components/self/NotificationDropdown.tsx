@@ -136,7 +136,7 @@ export default function NotificationDropdown() {
   async function markAllRead() {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     try {
-      await api.patch("/notification");
+      await api.patch("/api/proxy/notification");
     } catch (error) {
       console.log("error");
     }
@@ -144,7 +144,7 @@ export default function NotificationDropdown() {
 
   async function clearAll() {
     let ids = notifications.map((n) => n.id);
-    await api.delete("/notification", {
+    await api.delete("/api/proxy/notification", {
       data: {
         ids,
       },
@@ -170,7 +170,7 @@ export default function NotificationDropdown() {
 
     setActionLoadingId(n.id);
     try {
-      await api.post("/invite/accept", {
+      await api.post("/api/proxy/invite/accept", {
         notificationId: n.id,
         workspaceId: (n.meta as any)?.workspaceId,
       });
@@ -189,7 +189,7 @@ export default function NotificationDropdown() {
 
     setActionLoadingId(n.id);
     try {
-      await api.delete(`/invite/reject/${n.id}`);
+      await api.delete(`/api/proxy/invite/reject/${n.id}`);
 
       toast.info("Invite rejected");
       setNotifications((prev) => prev.filter((i) => i.id !== n.id));

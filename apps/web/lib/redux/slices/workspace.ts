@@ -1,6 +1,4 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { api } from "@/lib/api/api";
-import { stat } from "fs";
 
 export type TProject = {
   id: string;

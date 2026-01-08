@@ -1,6 +1,6 @@
-import { Queue, Worker } from "bullmq";
-import { projectInviteQueue } from "../invite/project.invite";
+import { Worker } from "bullmq";
 import { connection } from "../index";
+import { createQueue } from "../config/queueFunc";
 
 export function startProjecteWorker() {
   new Worker(
@@ -13,7 +13,7 @@ export function startProjecteWorker() {
       }));
 
       console.log(jobs);
-
+      const projectInviteQueue = createQueue("projectInviteQueue");
       await projectInviteQueue.addBulk(jobs);
       console.log(`Fan-out: ${jobs.length} invites created}`);
     },

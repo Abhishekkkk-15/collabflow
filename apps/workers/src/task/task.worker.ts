@@ -1,11 +1,13 @@
-import { Queue, Worker } from "bullmq";
+import { Worker } from "bullmq";
 import { connection, redisPub } from "../index";
 import { transformSocketToNotification } from "../lib/notifPayload";
 import { EmailJobData } from "../email";
 import { Project, Task, TaskAssignee, User, Workspace } from "@prisma/client";
 import { EmailType } from "../email/email.types";
-const emailQueue = new Queue("emailQueue", { connection });
+import { createQueue } from "../config/queueFunc";
+
 export async function startTaskWorker() {
+  const emailQueue = createQueue("emailQueue");
   console.log("task worker started");
   new Worker(
     "taskQueue",
@@ -47,7 +49,7 @@ export async function startTaskWorker() {
             taskTitle: task.title,
             projectName: project.name,
             assignedBy: assignedBy.name,
-            taskUrl: `http://localhost:3000/workspace/${workspace.slug}/project/${project.slug}/tasks`,
+            taskUrl: `${process.env.BACKEND_URL}/workspace/${workspace.slug}/project/${project.slug}/tasks`,
           },
         } as EmailJobData);
         noto.push(not);

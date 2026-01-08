@@ -5,6 +5,7 @@ export async function fetchProject(slug: string) {
     headers: {
       Cookie: (await cookieStore).toString(),
     },
+    cache: "no-store",
   });
   return res.json();
 }

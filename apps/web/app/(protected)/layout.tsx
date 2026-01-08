@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import ClientSessionSync from "@/components/helper/ClientSessionSync";
 import SocketProvider from "@/components/providers/SocketProvider";
 import { api } from "@/lib/api/api";
+import { serverFetch } from "@/lib/api/server-fetch";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -18,15 +19,16 @@ export default async function ProtectedLayout({
   let userRoles = null;
   const BASE = process.env.NEXT_PUBLIC_API_URL!;
   try {
-    const res = await fetch(`${BASE}/api/proxy/user/roles`, {
-      headers: {
-        Cookie: (await cookieStore).toString(),
-      },
-    });
+    // const res = await fetch(`${BASE}/api/proxy/user/roles`, {
+    //   headers: {
+    //     Cookie: (await cookieStore).toString(),
+    //   },
+    // });
+    const res = await serverFetch("/user/roles");
     userRoles = res?.json() ?? null;
   } catch (err) {
-    throw err;
     console.log("Could not fetch user roles:");
+    throw err;
   }
 
   return (

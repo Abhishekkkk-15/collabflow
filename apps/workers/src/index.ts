@@ -1,19 +1,19 @@
-import {} from "bullmq";
-import { createClient } from "redis";
 import { startInviteWorker } from "./invite/workspace.invite";
 import { startProjectInviteWorker } from "./invite/project.invite";
 import { startEmailWorker } from "./email";
 import { startWorkspaceWorker } from "./workspace";
 import { startProjecteWorker } from "./project/index";
 // import { startNotificationWorker } from "./notification";
-export const connection = { url: process.env.REDIS_URL! };
-export const redisPub = createClient({ url: process.env.REDIS_URL! });
+
 import { startTaskWorker } from "./task/task.worker";
 import { startChatWorker } from "./chat";
+import { redis } from "./config/resdis";
+
+export const connection = redis;
+export const redisPub = redis;
 
 async function main() {
   try {
-    await redisPub.connect();
     console.log("Starting all workers in single process…");
 
     startInviteWorker();
@@ -23,13 +23,10 @@ async function main() {
     startProjecteWorker();
     startTaskWorker();
     startChatWorker();
-    //   startNotificationWorker();
+    // startNotificationWorker();
   } catch (error) {
     console.log("error");
   }
-  redisPub.on("error", (err) => console.error("worker redis error", err));
-  redisPub.on("connect", () => console.log("worker redis connected"));
-
   console.log("All workers started!");
 }
 

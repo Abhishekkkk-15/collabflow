@@ -21,7 +21,7 @@ import {
   MoveRight,
   MoveLeftIcon,
 } from "lucide-react";
-import { Task, TaskStatus, User } from "@prisma/client";
+import { Task, TaskStatus, User, Workspace } from "@prisma/client";
 import { useProject } from "@/lib/react-query/useProject";
 
 type Member = {
@@ -55,13 +55,24 @@ export interface TaskWithWSP extends Task {
     slug: string;
   };
 }
-
-export default function ProjectDetails({ slug }: { slug: string }) {
-  const { data, isLoading } = useProject(slug);
+export interface ProjectResponse {
+  project: any;
+  totalTasks: number;
+  totalMembers: number;
+  myTasks: TaskWithWSP[];
+  members: Member[];
+  unReadCount: number;
+}
+export default function ProjectDetails({
+  slug,
+  data,
+}: {
+  slug: string;
+  data: any;
+}) {
   if (!data) return;
   const project = data!.project ?? ({} as Project);
   const members = data!.members ?? project.members ?? [];
-  console.log(project);
 
   const priorityColor = {
     LOW: "secondary",
@@ -292,35 +303,37 @@ export default function ProjectDetails({ slug }: { slug: string }) {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-3">
-                  {visibleMembers.map((member) => (
-                    <div
-                      key={member.user.id}
-                      className="flex items-center gap-3  p-1 rounded-lg hover:bg-muted/50 transition-colors">
-                      <Avatar className="h-10 w-10 border">
-                        {member.user.image ? (
-                          <AvatarImage
-                            src={member.user.image!}
-                            alt={member.user.name!}
-                          />
-                        ) : (
-                          <AvatarFallback className="text-sm">
-                            {member.user.name?.[0]?.toUpperCase() || "U"}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">
-                          {member.user.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {member.role
-                            ? member.role.charAt(0).toUpperCase() +
-                              member.role.slice(1)
-                            : "Member"}
+                  {visibleMembers.map(
+                    (member: { user: User; role: string }) => (
+                      <div
+                        key={member.user.id}
+                        className="flex items-center gap-3  p-1 rounded-lg hover:bg-muted/50 transition-colors">
+                        <Avatar className="h-10 w-10 border">
+                          {member.user.image ? (
+                            <AvatarImage
+                              src={member.user.image!}
+                              alt={member.user.name!}
+                            />
+                          ) : (
+                            <AvatarFallback className="text-sm">
+                              {member.user.name?.[0]?.toUpperCase() || "U"}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">
+                            {member.user.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {member.role
+                              ? member.role.charAt(0).toUpperCase() +
+                                member.role.slice(1)
+                              : "Member"}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
 
                 {remainingMembers > 0 && (
@@ -455,45 +468,51 @@ export default function ProjectDetails({ slug }: { slug: string }) {
               </CardHeader>
 
               <CardContent className="p-4 space-y-3">
-                {data.myTasks.slice(0, 5).map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-start gap-3 rounded-lg border p-3 hover:bg-muted/40 transition-colors">
-                    {/* Priority indicator */}
-                    <span
-                      className={`mt-1 h-2.5 w-2.5 rounded-full ${
-                        priorityDot[task.priority]
-                      }`}
-                    />
-                    <Link
-                      href={`/workspace/${task.workspace.slug}/project/${task.project.slug}/tasks/${task.id}`}>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium truncate">
-                            {task.title}
-                          </p>
-                          <Badge
-                            variant={statusColor[task.status] || "default"}
-                            className="text-[10px] px-1.5 py-0">
-                            {task.status.replace("_", " ")}
-                          </Badge>
-                        </div>
-                        {task.dueDate && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(task.dueDate).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                              }
+                {data.myTasks
+                  .slice(0, 5)
+                  .map(
+                    (
+                      task: Task & { workspace: Workspace; project: Project }
+                    ) => (
+                      <div
+                        key={task.id}
+                        className="flex items-start gap-3 rounded-lg border p-3 hover:bg-muted/40 transition-colors">
+                        {/* Priority indicator */}
+                        <span
+                          className={`mt-1 h-2.5 w-2.5 rounded-full ${
+                            priorityDot[task.priority]
+                          }`}
+                        />
+                        <Link
+                          href={`/workspace/${task.workspace.slug}/project/${task.project.slug}/tasks/${task.id}`}>
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium truncate">
+                                {task.title}
+                              </p>
+                              <Badge
+                                variant={statusColor[task.status] || "default"}
+                                className="text-[10px] px-1.5 py-0">
+                                {task.status.replace("_", " ")}
+                              </Badge>
+                            </div>
+                            {task.dueDate && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(task.dueDate).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                  }
+                                )}
+                              </div>
                             )}
                           </div>
-                        )}
+                        </Link>
                       </div>
-                    </Link>
-                  </div>
-                ))}
+                    )
+                  )}
 
                 {project?.workspaceSlug && (
                   <Link

@@ -13,6 +13,6 @@ type Payload = {
   projectId: string;
 };
 export const handleAddTask = async (payload: Payload) =>
-  await api.post("/task", {
+  await api.post("/api/proxy//task", {
     ...payload,
   });

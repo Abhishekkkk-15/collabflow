@@ -28,12 +28,10 @@ export default function ChatRoom({
     query,
     limit: 10,
   });
-  console.log("quer", query);
   const [page, setPage] = useState(1);
 
   const { data, isFetching } = useChats(roomId, page);
   const members = m!.members ?? [];
-  console.log("members", members);
 
   const messages = data?.messages ?? [];
   const totalPages = data?.totalPages ?? 1;

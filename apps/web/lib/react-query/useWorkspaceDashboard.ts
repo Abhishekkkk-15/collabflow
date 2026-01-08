@@ -11,7 +11,7 @@ export function useWorkspaceDashboard() {
   return useQuery<EWorkspace[]>({
     queryKey: ["workspace-dashboard"],
     queryFn: async () => {
-      const res = await api.get("/workspace/dashboard");
+      const res = await api.get("/api/proxy/workspace/dashboard");
       return res.data;
     },
     staleTime: 60 * 1000, // 1 min

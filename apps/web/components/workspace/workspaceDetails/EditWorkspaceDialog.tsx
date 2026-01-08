@@ -61,12 +61,6 @@ export default function EditWorkspaceDialog({
 
   async function handleSubmit() {
     if (!name.trim()) return;
-    // try {
-    //   const res = await api.patch("/workspace", { name, description });
-    //   console.log("res", res);
-    // } catch (error) {
-    //   console.log(error);
-    // }
     await onSave({
       name: name.trim(),
       slug: slugify(slug || name),

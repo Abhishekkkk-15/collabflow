@@ -23,7 +23,7 @@ export async function fetchMembers({
   page = 1,
 }: MembersQueryInput): Promise<FuncOutput> {
   if (path === "WORKSPACE") {
-    const res = await api.get(`/workspace/${slug}/members`, {
+    const res = await api.get(`/api/proxy/workspace/${slug}/members`, {
       params: {
         limit,
         cursor: cursor ?? "",

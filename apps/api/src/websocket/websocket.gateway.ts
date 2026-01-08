@@ -9,8 +9,10 @@ import { CreateWebsocketDto } from './dto/create-websocket.dto';
 import { UpdateWebsocketDto } from './dto/update-websocket.dto';
 import { Server, Socket } from 'socket.io';
 import { prisma } from '@collabflow/db';
-import { createClient } from 'redis';
+// import { createClient } from 'redis';
+import {} from 'ioredis';
 import { ChatWSService } from './chat/chat.websocket.service';
+import { redisSub } from '../common/config/redis.pubsub';
 
 @WebSocketGateway({
   cors: {
@@ -29,12 +31,16 @@ export class WebsocketGateway {
   async afterInit() {
     this.websocketService.setServer(this.io);
     this.chatSocketService.setServer(this.io);
-    const sub = createClient({ url: process.env.REDIS_URL! });
-    await sub.connect();
+    const sub = redisSub;
+    // await sub.connect();
+    await sub.subscribe('socket-events');
 
-    await sub.subscribe('socket-events', (msg) => {
-      const { event, room, payload } = JSON.parse(msg);
-      console.log('socket evets', event, room, payload);
+    sub.on('message', (channel, message) => {
+      if (!message) return; // safety guard
+
+      const { event, room, payload } = JSON.parse(message);
+
+      console.log('socket events', event, room, payload);
       this.io.to(room).emit(event, { event, payload });
     });
   }

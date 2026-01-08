@@ -5,9 +5,7 @@ import { NotificationType, WorkspaceRole } from "@collabflow/types";
 import { prisma } from "@collabflow/db";
 import { User, Workspace } from "@prisma/client";
 import { EmailType } from "../email/email.types";
-
-export const inviteQueue = new Queue("inviteQueue", { connection });
-const emailQueue = new Queue("emailQueue", { connection });
+import { createQueue } from "../config/queueFunc";
 
 type TMember = {
   userId: string;
@@ -96,6 +94,7 @@ type WorkspaceMemberPayload = {
 // });
 
 export function startInviteWorker() {
+  const emailQueue = createQueue("emailQueue");
   const worker = new Worker(
     "inviteQueue",
     async (job) => {
@@ -171,7 +170,7 @@ export function startInviteWorker() {
         })
       );
     },
-    { connection, concurrency: 1 }
+    { connection, concurrency: 5 }
   );
 
   worker.on("failed", (job, err) => {

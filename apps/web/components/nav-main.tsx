@@ -39,22 +39,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function NavMain({ items }: { items: TWorkspace[] }) {
-  if (items.length === 0)
-    return (
-      <div className="flex flex-col gap-1 pl-4 pr-2">
-        <Skeleton className="h-7 w-full rounded-md" />
-        <Skeleton className="h-7 w-full rounded-md" />
-        <Skeleton className="h-7 w-full rounded-md" />
-        <Skeleton className="h-7 w-full rounded-md" />
-      </div>
-    );
-
   const dispatch = useAppDispatch();
   useEffect(() => {
     console.log("swesddas : ", items);
     dispatch(setWorkspaces(items));
   });
-
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Workspaces</SidebarGroupLabel>

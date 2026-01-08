@@ -1,6 +1,7 @@
 export async function fetchWorkspaceDetailsClient(workspaceSlug: string) {
-  const res = await fetch(`/api/workspace/${workspaceSlug}`, {
+  const res = await fetch(`/api/proxy/workspace/${workspaceSlug}`, {
     credentials: "include",
+    cache: "no-store",
   });
 
   if (!res.ok) {

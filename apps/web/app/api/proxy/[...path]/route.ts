@@ -1,15 +1,15 @@
 import { auth } from "@/auth";
-
-const API = process.env.NEXT_PUBLIC_API_URL!;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+const API = process.env.NEXT_PUBLIC_BACKEND_URL!;
 
 async function handler(
   req: Request,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const session = await auth();
-  console.log("PROXY HIT:", params);
   const paths = await params;
-  console.log("paths", paths);
+  console.log("PROXY HIT:", req.url);
   if (!session) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }

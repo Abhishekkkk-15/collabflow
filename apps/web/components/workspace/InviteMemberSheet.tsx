@@ -107,25 +107,6 @@ export default function InviteMemberSheet({
     observer.observe(ref.current);
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage]);
-
-  // async function fetchNonMembersP() {
-  //   try {
-  //     const res = await api.get(
-  //       `user/project/${workspaceSlug}/users?limit=20&page=1`
-  //     );
-
-  //     console.log(res);
-
-  //     if (Array.isArray(res.data)) {
-  //       setNonMembers(res.data);
-  //     } else {
-  //       setNonMembers([]);
-  //     }
-  //   } catch (e) {
-  //     console.error("Failed fetching non-members", e);
-  //   }
-  // }
-
   useEffect(() => {
     if (open) {
       setInviteSelected([]);

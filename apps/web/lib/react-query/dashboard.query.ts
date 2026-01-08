@@ -28,10 +28,10 @@ export type DashboardData = {
 export const dashboardQueryOptions = {
   queryKey: ["dashboard", "me"],
   queryFn: async (): Promise<DashboardData> => {
-    const { data } = await api.get("user/dashboard/me", {});
+    const { data } = await api.get("/api/proxy/user/dashboard/me", {});
     return data;
   },
 };
 export async function fetchDashboardServer() {
-  return serverFetch("/user/dashboard/me");
+  return serverFetch("/api/proxy/user/dashboard/me");
 }

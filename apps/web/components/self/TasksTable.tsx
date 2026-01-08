@@ -177,7 +177,7 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
   async function handleDelete(taskId: string) {
     try {
       if (checkedTasks.length > 0) {
-        await api.delete(`/task/multi`, {
+        await api.delete(`/api/proxy/task/multi`, {
           data: {
             ids: checkedTasks,
           },
@@ -191,7 +191,7 @@ export default function TasksTable({ project, workspace }: TasksTableProps) {
         return;
       }
       if (taskId == "") return;
-      await api.delete(`/task/${taskId}`);
+      await api.delete(`/api/proxy/task/${taskId}`);
       toast.success("Task deleted");
 
       queryClient.invalidateQueries({

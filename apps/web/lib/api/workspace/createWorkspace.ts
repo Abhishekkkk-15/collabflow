@@ -17,7 +17,7 @@ type Payload = {
 };
 
 export async function createWorkspace(payload: Payload) {
-  return await api.post("/workspace", payload, {
+  return await api.post("/api/proxy/workspace", payload, {
     withCredentials: true,
   });
 }

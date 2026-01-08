@@ -10,6 +10,7 @@ import {
   LifeBuoy,
   Map,
   PieChart,
+  Plus,
   Send,
   Settings2,
   SquareTerminal,
@@ -34,6 +35,8 @@ import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { Workspace } from "@collabflow/types";
 import { SidebarSkeleton } from "../skelaton/SidebarSkeleton";
 import Link from "next/link";
+import { Card, CardContent } from "./card";
+import { Button } from "./button";
 
 const data = {
   user: {
@@ -152,6 +155,7 @@ interface IExtendedProp extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ ...props }: IExtendedProp) {
+  console.log("ws", props.w);
   const params = useParams();
   const activeWorkspace = params.workspace?.toString();
   const activeProject = params.project?.toString();
@@ -161,14 +165,15 @@ export function AppSidebar({ ...props }: IExtendedProp) {
   const user = useAppSelector((s: any) => s.user.user);
 
   function getActiveWorkspaceProjects() {
-    if (!props.w || props.w.workspaces == null) return;
-    let activeWs = props.w.workspaces.find(
-      (ws: TWorkspace) => ws.slug === activeWorkspace
+    if (!props.w || props?.w.workspaces == null) return;
+    let activeWs = props?.w.workspaces.find(
+      (ws: TWorkspace) => ws?.slug === activeWorkspace
     ) as TWorkspace;
     console.log(activeWs.projects);
-    setActiveWsProjects(activeWs.projects);
+    if (props.w) {
+      setActiveWsProjects(activeWs?.projects);
+    }
   }
-  if (props.w == null) return <SidebarSkeleton user={user} />;
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -189,7 +194,24 @@ export function AppSidebar({ ...props }: IExtendedProp) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {props.w.workspaces && <NavMain items={props.w.workspaces} />}
+        {props.w?.workspaces ? (
+          <NavMain items={props.w.workspaces} />
+        ) : (
+          <div>
+            <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
+              <div className="text-muted-foreground text-sm">
+                No workspace created yet
+              </div>
+
+              <Link href="/workspace/add">
+                <Button variant="default" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Workspace
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* <NavProjects projects={data.projects} /> */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />

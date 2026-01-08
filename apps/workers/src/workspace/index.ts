@@ -1,8 +1,11 @@
-import { Queue, Worker } from "bullmq";
-import { inviteQueue } from "../invite/workspace.invite";
+import { Worker } from "bullmq";
+// import { inviteQueue } from "../invite/workspace.invite";
 import { connection } from "../index";
+import { createQueue } from "../config/queueFunc";
 
 export function startWorkspaceWorker() {
+  console.log("workspace.worker running");
+  const inviteQueue = createQueue("inviteQueue");
   new Worker(
     "workspaceQueue",
     async (job) => {
@@ -19,7 +22,7 @@ export function startWorkspaceWorker() {
     },
     {
       connection,
+      concurrency: 5,
     }
   );
-  console.log("workspace.worker running");
 }

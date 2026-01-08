@@ -21,10 +21,11 @@ export default function ChatMessageList({
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const hasMarkedReadRef = useRef(false);
+  const BASE = process.env.NEXT_PUBLIC_API_URL!;
 
   const loadingOlderRef = useRef(false);
   async function markAsRead(roomKey: string) {
-    await api.patch(`/chat/read/${roomKey}`);
+    await api.patch(`${BASE}/api/proxy/chat/read/${roomKey}`);
   }
   useEffect(() => {
     if (!bottomRef.current) return;

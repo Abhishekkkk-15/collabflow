@@ -11,6 +11,8 @@ export type EmailJobData = {
 };
 
 export function startEmailWorker() {
+  console.log("Email worker running");
+
   new Worker(
     "emailQueue",
     async (job) => {
@@ -41,6 +43,4 @@ export function startEmailWorker() {
       lockDuration: 60_000,
     }
   );
-
-  console.log("Email worker running");
 }

@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
+import { redis } from '../common/config/redis.pubsub';
 @Module({
   imports: [
     BullModule.forRoot({
-      connection: { url: process.env.REDIS_URL! },
+      connection: redis,
+      telemetry: undefined,
     }),
     BullModule.registerQueue(
       { name: 'workspaceQueue' },
