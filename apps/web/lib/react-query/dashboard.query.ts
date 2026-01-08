@@ -33,5 +33,5 @@ export const dashboardQueryOptions = {
   },
 };
 export async function fetchDashboardServer() {
-  return serverFetch("/api/proxy/user/dashboard/me");
+  return serverFetch("/user/dashboard/me");
 }

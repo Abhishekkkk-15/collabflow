@@ -1,7 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { dashboardQueryOptions } from "@/lib/react-query/dashboard.query";
+import {
+  DashboardData,
+  dashboardQueryOptions,
+} from "@/lib/react-query/dashboard.query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Bell, Calendar, CheckCircle2, Flame } from "lucide-react";
@@ -11,13 +14,15 @@ import { Project, Task, Workspace } from "@prisma/client";
 interface TaskWithWsP extends Task {
   project: Project;
   workspace: Workspace;
+  data: any;
 }
-export default function DashboardClient({ user }: { user?: User }) {
-  const { data, isLoading } = useQuery(dashboardQueryOptions);
-  if (isLoading || !data) {
-    return <div className="p-6 text-muted-foreground">Loading dashboard…</div>;
-  }
-
+export default function DashboardClient({
+  user,
+  data,
+}: {
+  user?: User;
+  data: any;
+}) {
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div>
@@ -51,7 +56,7 @@ export default function DashboardClient({ user }: { user?: User }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {data?.recentActivities?.map((a) => (
+              {data?.recentActivities?.map((a: any) => (
                 <div key={a.id} className="text-sm">
                   <p>{a.message}</p>
                   <span className="text-xs text-muted-foreground">
