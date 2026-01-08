@@ -17,7 +17,7 @@ async function page({
   //     Cookie: (await cookieStore).toString(),
   //   },
   // });
-  const res = await serverFetch(`project?slug=${project}`);
+  const res = await serverFetch(`/project?slug=${project}`);
   const data = await res.json();
   return (
     <div>
