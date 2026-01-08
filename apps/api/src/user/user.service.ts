@@ -119,17 +119,17 @@ export class UserService {
     cursor: string,
     query: string,
   ) {
-    const wsExist = await prisma.project.findUnique({
+    const pExist = await prisma.project.findUnique({
       where: {
         id: pId,
       },
     });
-    if (!wsExist) throw new NotFoundException('Project not found');
+    if (!pExist) throw new NotFoundException('Project not found');
     const users = await prisma.user.findMany({
       where: {
         workspaceMemberships: {
           some: {
-            workspaceId: wsExist.id,
+            workspaceId: pExist.workspaceId,
           },
         },
 

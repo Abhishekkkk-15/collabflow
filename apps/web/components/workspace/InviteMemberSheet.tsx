@@ -87,7 +87,7 @@ export default function InviteMemberSheet({
       },
     });
   const members = data?.pages.flatMap((page) => page.users) ?? [];
-
+  console.log("memee", members, data);
   useEffect(() => {
     if (!ref.current || !hasNextPage) return;
 

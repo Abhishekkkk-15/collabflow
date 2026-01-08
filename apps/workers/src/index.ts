@@ -8,10 +8,12 @@ import { startProjecteWorker } from "./project/index";
 import { startTaskWorker } from "./task/task.worker";
 import { startChatWorker } from "./chat";
 import { redis } from "./config/resdis";
-
+import { app } from "./express-server/server";
+import { config } from "dotenv";
+config();
 export const connection = redis;
 export const redisPub = redis;
-
+const server = app;
 async function main() {
   try {
     console.log("Starting all workers in single process…");
@@ -31,3 +33,7 @@ async function main() {
 }
 
 main();
+const port = process.env.PORT;
+server.listen(port, () => {
+  console.log(`Worker's service started on PORT ${port}`);
+});

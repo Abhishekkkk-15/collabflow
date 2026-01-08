@@ -298,7 +298,7 @@ export class WorkspaceService {
     const nextCursor =
       members.length > 0 ? members[members.length - 1].id : null;
 
-    let users = members.map((m) => ({ ...m.user, role: m.role }));
+    let users = members.map((m) => ({ ...m.user, role: m.role, _id: m.id }));
     return { members: users, hasNextPage, nextCursor, totalPage: count };
   }
 
@@ -322,11 +322,12 @@ export class WorkspaceService {
         userId: dto.id,
       },
     });
-
-    console.log(ws, dto, m);
+    // if (!m)
+    //   throw new NotFoundException('This user is not member of the workspace');
+    console.log('Changing role :', dto.role, dto.id, user);
     await prisma.workspaceMember.update({
       where: {
-        id: m!.id,
+        id: dto!.id,
       },
       data: {
         role: dto.role,

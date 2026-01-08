@@ -23,7 +23,9 @@ export function useChats(roomId: string, page: number) {
   return useQuery<ChatPageResponse>({
     queryKey: ["chats", roomId, page],
     queryFn: async () => {
-      const res = await api.get(`/chat/${roomId}?page=${page}&limit=10`);
+      const res = await api.get(
+        `/api/proxy/chat/${roomId}?page=${page}&limit=10`
+      );
       return res.data as ChatPageResponse;
     },
     placeholderData: (prev) => prev,

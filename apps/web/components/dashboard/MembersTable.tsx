@@ -60,6 +60,7 @@ export default function MembersTable({
       },
     });
   const members = data?.pages.flatMap((page) => page.members) ?? [];
+  console.log("data from ddf", data);
   const scrollParentRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!ref.current || !hasNextPage) return;
@@ -190,7 +191,7 @@ export default function MembersTable({
                         <div
                           key={role}
                           className="px-3 py-2 text-sm hover:bg-muted cursor-pointer"
-                          onClick={() => handleRoleChange(member.id, role)}>
+                          onClick={() => handleRoleChange(member._id, role)}>
                           {role}
                         </div>
                       ))}

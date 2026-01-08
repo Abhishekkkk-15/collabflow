@@ -49,7 +49,7 @@ export function useMembers({
         page,
         cursor,
       }),
-    enabled: Boolean(slug),
+    enabled: true,
     placeholderData: (prev) => prev,
   });
 }

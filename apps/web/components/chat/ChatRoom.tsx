@@ -9,6 +9,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSocket } from "../providers/SocketProvider";
 import { User } from "next-auth";
 import { useMembers } from "@/lib/api/common/useMembers";
+import { CollabFlowLoader } from "../loaders/CollabFlowLoader";
+import { Spinner } from "../ui/spinner";
 
 export default function ChatRoom({
   roomId,
@@ -22,12 +24,13 @@ export default function ChatRoom({
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [allMessages, setAllMessages] = useState<any[]>([]);
-  const { data: m, isLoading } = useMembers({
+  const { data: m = { members: [] }, isLoading } = useMembers({
     path: path == "workspace" ? "WORKSPACE" : "PROJECT",
     slug,
     query,
     limit: 10,
   });
+  console.log("c", m);
   const [page, setPage] = useState(1);
 
   const { data, isFetching } = useChats(roomId, page);
@@ -95,6 +98,12 @@ export default function ChatRoom({
       socket.off("message", onMessage);
     };
   }, [socket, roomId, page, queryClient]);
+  if (isFetching)
+    return (
+      <div className="flex justify-center py-3">
+        <Spinner />
+      </div>
+    );
 
   return (
     <div className="flex flex-col h-full border rounded-lg bg-background">

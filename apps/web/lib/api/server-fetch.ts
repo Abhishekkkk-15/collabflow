@@ -6,6 +6,7 @@ export async function serverFetch(url: string) {
     headers: {
       Cookie: (await cookieHeader).toString(),
     },
+    method: "GET",
     cache: "no-store",
   });
 }

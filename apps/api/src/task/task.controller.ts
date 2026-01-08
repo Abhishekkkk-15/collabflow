@@ -31,8 +31,9 @@ export class TaskController {
     @Query('limit') limit: string,
     @Query('page') page: string,
     @Query('q') query: string,
+    @CurrentUser() user: User,
   ) {
-    return this.taskService.findAll(wsSlug, pSlug, +limit, +page, query);
+    return this.taskService.findAll(wsSlug, pSlug, +limit, +page, query, user);
   }
 
   @Get(':id')

@@ -34,7 +34,7 @@ export async function fetchMembers({
     return res.data;
   }
 
-  const res = await api.get(`/project/${slug}/members`, {
+  const res = await api.get(`/api/proxy/project/${slug}/members`, {
     params: {
       limit,
       page,
