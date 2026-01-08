@@ -9,19 +9,8 @@ async function page({
 }: {
   params: { workspace: string; project: string };
 }) {
-  const BASE = process.env.NEXT_PUBLIC_API_URL!;
   const { project, workspace } = await params;
   const session = await auth();
-  const cookieStore = cookies();
-  const workspaceMembers = await api.get(
-    `${BASE}/workspace/${workspace}/members`,
-    {
-      headers: {
-        Cookie: (await cookieStore).toString(),
-      },
-      withCredentials: true,
-    }
-  );
 
   let userFromSession: User;
   if (session?.user) {

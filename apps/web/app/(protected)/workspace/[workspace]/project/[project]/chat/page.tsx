@@ -6,6 +6,7 @@ import { User } from "next-auth";
 import getQueryClient from "@/lib/react-query/query-client";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { fetchProjectMembers } from "@/lib/api/project/members";
+import { serverFetch } from "@/lib/api/server-fetch";
 
 async function page({
   params,
@@ -19,7 +20,13 @@ async function page({
 
   await queryClient.prefetchQuery({
     queryKey: ["project-members", project, ""],
-    queryFn: async () => fetchProjectMembers(project, 2),
+    queryFn: async () => {
+      const res = serverFetch(
+        `project/${project}/members?limit=${10}&page=${1}&q=`
+      );
+      const data = (await res).json();
+      return data;
+    },
   });
   let userFromSession: User;
 

@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CollabFlow",
   description: "CollabFlow a collabrative notion app",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -27,11 +30,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // const session = await auth();
+  const session = await auth();
 
-  // if (session) {
-  //   redirect("/workspace");
-  // }
+  if (session) {
+    redirect("/workspace");
+  }
   return (
     <html lang="en">
       <body

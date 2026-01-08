@@ -182,7 +182,7 @@ export function AppSidebar({ ...props }: IExtendedProp) {
             <SidebarMenuButton size="lg" asChild>
               <Link href="/workspace">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Command className="size-4" />
+                  <svg href="/icno.svg" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">CollabFlow</span>

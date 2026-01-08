@@ -2,7 +2,18 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+@keyframes slow-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 
+.collabflow-spin {
+  animation: slow-spin 6s linear infinite;
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
