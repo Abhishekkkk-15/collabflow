@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import ClientSessionSync from "@/components/helper/ClientSessionSync";
 import SocketProvider from "@/components/providers/SocketProvider";
-import { api } from "@/lib/api/api";
 import { serverFetch } from "@/lib/api/server-fetch";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -25,7 +24,7 @@ export default async function ProtectedLayout({
     //   },
     // });
     const res = await serverFetch("/user/roles");
-    userRoles = res?.json() ?? null;
+    userRoles = (await res?.json()) ?? null;
   } catch (err) {
     console.log("Could not fetch user roles:");
     throw err;

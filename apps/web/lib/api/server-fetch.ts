@@ -1,5 +1,4 @@
 "use server";
-import { auth } from "@/auth";
 import { cookies } from "next/headers";
 export async function serverFetch(url: string) {
   const cookieHeader = cookies();
