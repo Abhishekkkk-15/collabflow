@@ -4,8 +4,9 @@
 **Collabflow** is a modern collaborative workspace platform designed for teams to manage workspaces, projects, tasks, and real-time collaboration efficiently.  
 It focuses on scalability, real-time updates, and clean architecture using modern web technologies.
 
-
-![Logo](https://res.cloudinary.com/dha7ofrer/image/upload/v1767956502/icon_zue5em.svg)
+<p align="center">
+<img src="https://res.cloudinary.com/dha7ofrer/image/upload/v1767956502/icon_zue5em.svg" alt="logo" width="400">
+</p>
 
 
 ## Demo
