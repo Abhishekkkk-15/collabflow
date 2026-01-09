@@ -1,9 +1,7 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -119,12 +117,10 @@ export default function WorkspaceDetails({
 
   return (
     <div className="space-y-8 pb-8">
-      {/* Hero Section */}
       <Card className="overflow-hidden border-2 shadow-sm">
         <div className="bg-gradient-to-br ">
           <CardContent className="p-8">
             <div className="flex flex-col lg:flex-row gap-8 items-start">
-              {/* Workspace Icon & Title */}
               <div className="flex gap-6 items-start flex-1">
                 <div className="relative shrink-0">
                   <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-700 to-slate-600 dark:from-slate-100 dark:via-slate-300 dark:to-slate-400 flex items-center justify-center shadow-xl ring-4 ring-background">
@@ -185,7 +181,6 @@ export default function WorkspaceDetails({
               </div>
             </div>
 
-            {/* Stats Bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60">
                 <div className="h-10 w-10 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center">
@@ -238,9 +233,7 @@ export default function WorkspaceDetails({
       </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Main Content */}
         <div className="xl:col-span-2 space-y-6">
-          {/* Projects Section */}
           <Card className="shadow-sm">
             <CardHeader className="border-b bg-muted/30">
               <div className="flex items-center justify-between">
@@ -259,7 +252,7 @@ export default function WorkspaceDetails({
                   {workspace.projects.map((proj: Project) => (
                     <Link
                       key={proj.id}
-                      href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
+                      href={`/workspace/${workspace.slug}/project/${proj.slug}`}
                       className="block group">
                       <Card className="border-2 hover:border-primary/50 hover:shadow-md transition-all duration-200">
                         <CardContent className="p-5">
@@ -325,9 +318,7 @@ export default function WorkspaceDetails({
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Workspace Owner */}
           {workspace.owner && (
             <Card className="shadow-sm">
               <CardHeader className="border-b bg-muted/30">
@@ -360,7 +351,6 @@ export default function WorkspaceDetails({
             </Card>
           )}
 
-          {/* Team Members */}
           {workspace.members && workspace.members.length > 0 && (
             <Card className="shadow-sm">
               <CardHeader className="border-b bg-muted/30">
@@ -405,7 +395,7 @@ export default function WorkspaceDetails({
                       </div>
                     ))}
                 </div>
-
+                // todo: add members list
                 {workspace.members.length > 8 && (
                   <>
                     <Separator className="my-4" />
@@ -421,7 +411,6 @@ export default function WorkspaceDetails({
             </Card>
           )}
 
-          {/* Workspace Info */}
           <Card className="shadow-sm">
             <CardHeader className="border-b bg-muted/30">
               <CardTitle className="text-base flex items-center gap-2">

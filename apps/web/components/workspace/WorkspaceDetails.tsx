@@ -140,7 +140,7 @@ export default function WorkspaceDetails({
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
               <Link
-                href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
+                href={`/workspace/${workspace.slug}/proeject/${proj.slug}`}
                 className="font-semibold text-base hover:text-primary transition-colors line-clamp-1">
                 {proj.name}
               </Link>
@@ -164,13 +164,13 @@ export default function WorkspaceDetails({
                 <PopoverContent className="w-48 p-1" align="end">
                   <div className="flex flex-col text-sm">
                     <Link
-                      href={`/dashboard/${workspace.slug}/${proj.slug}/tasks`}
+                      href={`/workspace/${workspace.slug}/project/${proj.slug}/tasks`}
                       className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded-sm transition-colors">
                       <CheckSquare className="h-4 w-4" />
                       Open Tasks
                     </Link>
                     <Link
-                      href={`/dashboard/${workspace.slug}/${proj.slug}/chat`}
+                      href={`/workspace/${workspace.slug}/project/${proj.slug}/chat`}
                       className="flex items-center gap-2 px-3 py-2 hover:bg-accent rounded-sm transition-colors">
                       <MessageSquare className="h-4 w-4" />
                       Open Chat
