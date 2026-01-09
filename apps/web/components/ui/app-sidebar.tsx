@@ -37,6 +37,7 @@ import { SidebarSkeleton } from "../skelaton/SidebarSkeleton";
 import Link from "next/link";
 import { Card, CardContent } from "./card";
 import { Button } from "./button";
+import { useWorkspaces } from "@/lib/redux/hooks/use-workspaces";
 
 const data = {
   user: {
@@ -155,7 +156,6 @@ interface IExtendedProp extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ ...props }: IExtendedProp) {
-  console.log("ws", props.w);
   const params = useParams();
   const activeWorkspace = params.workspace?.toString();
   const activeProject = params.project?.toString();
@@ -163,7 +163,6 @@ export function AppSidebar({ ...props }: IExtendedProp) {
     []
   );
   const user = useAppSelector((s: any) => s.user.user);
-
   function getActiveWorkspaceProjects() {
     if (!props.w || props?.w.workspaces == null) return;
     let activeWs = props?.w.workspaces.find(
@@ -195,7 +194,11 @@ export function AppSidebar({ ...props }: IExtendedProp) {
       </SidebarHeader>
       <SidebarContent>
         {props.w?.workspaces ? (
-          <NavMain items={props.w.workspaces} />
+          <NavMain
+            items={props.w.workspaces}
+            activeWSSlug={activeWorkspace!}
+            activeProject={activeProject!}
+          />
         ) : (
           <div>
             <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">

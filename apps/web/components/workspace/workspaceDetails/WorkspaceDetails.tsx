@@ -368,9 +368,9 @@ export default function WorkspaceDetails({
                 <div className="space-y-3">
                   {workspace.members
                     .slice(0, 8)
-                    .map((member: WorkspaceMember) => (
+                    .map((member: WorkspaceMember, idx: number) => (
                       <div
-                        key={member.id}
+                        key={idx}
                         className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                         <Avatar className="h-10 w-10 border">
                           {member.user.image ? (
@@ -395,7 +395,7 @@ export default function WorkspaceDetails({
                       </div>
                     ))}
                 </div>
-                // todo: add members list
+                {/* // todo: add members list */}
                 {workspace.members.length > 8 && (
                   <>
                     <Separator className="my-4" />

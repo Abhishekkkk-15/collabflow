@@ -44,26 +44,37 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreateWorkspaceDialog } from "./workspace/CreateWorkspaceDialog";
 
-export function NavMain({ items }: { items: TWorkspace[] }) {
+export function NavMain({
+  items,
+  activeWSSlug,
+  activeProject,
+}: {
+  items: TWorkspace[];
+  activeWSSlug: string;
+  activeProject: string;
+}) {
   const dispatch = useAppDispatch();
-  const [openCreteWorkspace, setOpenCreteWorkspace] = useState(false);
+  const [workspaces, setworkspaces] = useState(items || []);
   useEffect(() => {
     dispatch(setWorkspaces(items));
-  });
+  }, [workspaces]);
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="flex items-center justify-between">
         <span>Workspaces</span>
 
-        <CreateWorkspaceDialog />
+        <CreateWorkspaceDialog onCreate={setworkspaces} />
       </SidebarGroupLabel>
 
       <SidebarMenu>
-        {items?.map((item: TWorkspace) => (
+        {workspaces?.map((item: TWorkspace) => (
           <Collapsible key={item?.id} asChild>
             <SidebarMenuItem>
               {/* Workspace Button */}
-              <SidebarMenuButton asChild tooltip={item?.name}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item?.name}
+                isActive={item.slug == activeWSSlug}>
                 <Link href={`/workspace/${item?.slug}`}>
                   <AppWindow />
                   <span>
@@ -89,7 +100,9 @@ export function NavMain({ items }: { items: TWorkspace[] }) {
                         <SidebarMenuSubItem
                           key={subItem?.id}
                           className="group flex items-center justify-between">
-                          <SidebarMenuSubButton asChild>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={activeProject == subItem.slug}>
                             <Link
                               href={`/workspace/${item?.slug}/project/${subItem?.slug}`}>
                               <span>{subItem?.name}</span>

@@ -120,7 +120,9 @@ const workspaceSlice = createSlice({
       const ws = state.workspaces.find(
         (w) => w.id === action.payload.workspaceId
       );
-      if (ws) ws.projects.push(action.payload.project);
+      if (ws?.projects) {
+        if (ws) ws.projects.push(action.payload.project);
+      }
     },
 
     updateProjectInWorkspace(
@@ -134,7 +136,7 @@ const workspaceSlice = createSlice({
       const ws = state.workspaces.find(
         (w) => w.id === action.payload.workspaceId
       );
-      if (!ws) return;
+      if (!ws || !ws.projects) return;
 
       ws.projects = ws.projects.map((p) =>
         p.id === action.payload.projectId ? { ...p, ...action.payload.data } : p
@@ -148,7 +150,7 @@ const workspaceSlice = createSlice({
       const ws = state.workspaces.find(
         (w) => w.id === action.payload.workspaceId
       );
-      if (!ws) return;
+      if (!ws || !ws.projects) return;
 
       ws.projects = ws.projects.filter(
         (p) => p.id !== action.payload.projectId

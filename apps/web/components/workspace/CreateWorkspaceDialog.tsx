@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Dispatch, SetStateAction, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -32,11 +32,17 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { useAddWorkspace } from "@/lib/redux/hooks/use-workspaces";
+import { addWorkspace, TWorkspace } from "@/lib/redux/slices/workspace";
+import { useSession } from "next-auth/react";
 
-export function CreateWorkspaceDialog() {
+export function CreateWorkspaceDialog({
+  onCreate,
+}: {
+  onCreate: Dispatch<SetStateAction<any>>;
+}) {
   const dispath = useAppDispatch();
   const router = useRouter();
-
+  const session = useSession();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -58,7 +64,14 @@ export function CreateWorkspaceDialog() {
   const [validationIssues, setValidationIssues] = useState<z.ZodIssue[] | null>(
     null
   );
-
+  function handleReset() {
+    setName("");
+    setSlug("");
+    setDescription("");
+    setMembers([]);
+    setStatus("isActive");
+    setPriority("MEDIUM");
+  }
   const handleSubmit = async () => {
     try {
       setLoading(true);
@@ -83,9 +96,45 @@ export function CreateWorkspaceDialog() {
       const res = await createWorkspace(parsed.data);
 
       toast.success(`${parsed.data.name} workspace created`);
-      setOpen(false);
-      useAddWorkspace(res.data);
-      router.push(`/workspace/${res.data}`);
+      const user = session.data?.user!;
+
+      const newWs = {
+        id: String(Math.random()),
+        name: payload.name,
+        owner: {
+          id: user.id,
+          email: user.email!,
+          image: user.image!,
+          name: user.name!,
+        },
+        ownerId: user?.id!,
+        projects: [],
+        slug: res.data,
+      };
+
+      console.log(newWs);
+      onCreate((prev: any) => [
+        ...prev,
+        {
+          id: String(Math.random()),
+          name: payload.name,
+          owner: {
+            id: user.id,
+            email: user.email!,
+            image: user.image!,
+            name: user.name!,
+          },
+          ownerId: user?.id!,
+          projects: [],
+          slug: res.data,
+        },
+      ]);
+
+      setTimeout(() => {
+        setOpen(false);
+        handleReset();
+        router.push(`/workspace/${res.data}`);
+      }, 1000);
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? "Something went wrong");
     } finally {

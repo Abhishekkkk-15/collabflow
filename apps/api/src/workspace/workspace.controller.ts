@@ -89,7 +89,7 @@ export class WorkspaceController {
   }
 
   @Delete(':slug')
-  deleteWorkspace(@Param('slug') slug: string) {
-    this.workspaceService.remove(slug);
+  deleteWorkspace(@Param('slug') slug: string, @CurrentUser() user: User) {
+    this.workspaceService.remove(slug, user);
   }
 }

@@ -61,7 +61,7 @@ export class WorkspaceService {
         invitedBy: owner,
       });
     });
-    return slug!;
+    return slug;
   }
 
   async findAllWSForOwnerAndMaintainer(user: User) {
@@ -219,9 +219,10 @@ export class WorkspaceService {
     }
   }
 
-  async remove(slug: string) {
+  async remove(slug: string, user: User) {
     try {
-      const ws = await this.findOne(slug);
+      console.log('user', user);
+      const ws = await this.findOne(slug, user);
       if (!ws) throw new NotFoundException('Workspace not found');
       await prisma.workspace.delete({
         where: {

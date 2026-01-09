@@ -27,10 +27,15 @@ import {
 } from "@radix-ui/react-dropdown-menu";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useWorkspace, useWorkspaces } from "@/lib/redux/hooks/use-workspaces";
-import { TProject, TWorkspace } from "@/lib/redux/slices/workspace";
+import {
+  setWorkspaces,
+  TProject,
+  TWorkspace,
+} from "@/lib/redux/slices/workspace";
 import { AUTHORIZED_ROLES, type PROJECT_ROLE_VALUES } from "@collabflow/types";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import Link from "next/link";
+import { useDispatch } from "react-redux";
 function SidebarShell({
   children,
   fetchedWorkspaces,
@@ -39,29 +44,22 @@ function SidebarShell({
   fetchedWorkspaces: any;
 }) {
   const params = useParams();
+  const [workspaces, setworkspaces] = useState<any[]>([]);
   const [openCreateProject, setOpenCreateProject] = useState(false);
   const [dropDownOpen, setDropDownOpen] = useState<boolean>(false);
   const [activeWsProjects, setActiveWsProjects] = React.useState<TProject[]>(
     []
   );
-  const workspaces = useWorkspaces();
-
-  const project = workspaces
-    .find((ws) => ws.slug == params.workspace?.toString())
-    ?.projects.find((p) => p.slug == params.project?.toString());
-  const workspace = workspaces.find(
-    (ws) => ws.slug == params.workspace?.toString()
-  );
-
-  function getActiveWorkspaceProjects() {
-    let activeWs = workspaces!.find(
-      (ws: TWorkspace) => ws.slug === params.workspace?.toString()
-    ) as TWorkspace;
-    setActiveWsProjects(activeWs?.projects);
-  }
+  const dispatch = useDispatch();
+  const workspaceFromRedux = useWorkspaces();
   useEffect(() => {
-    getActiveWorkspaceProjects();
-  }, [fetchedWorkspaces]);
+    if (workspaceFromRedux) {
+      setWorkspaces(workspaceFromRedux);
+    } else {
+      setWorkspaces(fetchedWorkspaces);
+    }
+    dispatch(setWorkspaces(fetchedWorkspaces));
+  }, [fetchedWorkspaces, dispatch]);
   return (
     <>
       <SidebarProvider>

@@ -69,12 +69,15 @@ type Status = "DRAFT" | "isActive" | "PAUSED" | "COMPLETED" | "ARCHIVED";
 type Priority = "LOW" | "MEDIUM" | "HIGH";
 
 export default function WorkspaceDashboard() {
-  const { data: workspaces = [], isFetching: loading } = useQuery<EWorkspace[]>(
-    {
-      queryKey: ["dashboard"],
-      queryFn: async () => fetchWorkspace(),
-    }
-  );
+  const {
+    data: workspaces = [],
+    refetch,
+    isFetching: loading,
+  } = useQuery<EWorkspace[]>({
+    queryKey: ["dashboard"],
+    queryFn: async () => fetchWorkspace(),
+    staleTime: 0,
+  });
 
   const [selectedWorkspace, setSelectedWorkspace] = useState<EWorkspace | null>(
     null
@@ -167,9 +170,12 @@ export default function WorkspaceDashboard() {
     if (isOwner == false) return;
     try {
       await api.delete(`/api/proxy/workspace/${selectedWorkspace?.slug}`);
+      workspaces.filter((ws) => selectedWorkspace?.slug != ws.slug);
+
       toast.success(
         selectedWorkspace?.name + " Workspace deleted successfully"
       );
+      await refetch();
     } catch (error) {
       toast.error(
         "Error Deleting workspace, Try again or check you permissions"
