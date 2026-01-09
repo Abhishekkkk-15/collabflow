@@ -1,4 +1,93 @@
 
+# CollabFlow
+
+**Collabflow** is a modern collaborative workspace platform designed for teams to manage workspaces, projects, tasks, and real-time collaboration efficiently.  
+It focuses on scalability, real-time updates, and clean architecture using modern web technologies.
+
+
+![Logo](https://res.cloudinary.com/dha7ofrer/image/upload/v1767956502/icon_zue5em.svg)
+
+
+## Demo
+
+https://collabflow.abhishekkkk.in
+
+
+## ✨ Features
+
+- 🏢 **Workspace Management**
+  - Create and manage multiple workspaces
+  - Invite members with role-based access
+
+- 📁 **Project Management**
+  - Create projects inside workspaces
+  - Assign users to specific projects
+
+- ✅ **Task Management**
+  - Create, update, and delete tasks
+  - Task activity tracking
+  - Status-based workflow
+
+- ⚡ **Real-time Processing**
+  - Background workers using **BullMQ**
+  - Redis-powered job queues
+
+- 🔐 **Authentication & Authorization**
+  - Secure user authentication
+  - Workspace & project-level access control
+
+- 🧩 **Scalable Architecture**
+  - Worker services separated from API
+  - Clean modular backend structure
+
+
+## 🛠 Tech Stack
+
+### 💻 Frontend
+- **Next.js**
+- **React**
+- **TypeScript**
+- **Tailwind CSS**
+- **ShadCN UI**
+- **Tanstack Query**
+
+### ⚙️ Backend
+- **Nestjs**
+- **Prisma**
+- **PostgreSQL (NeonDB)**
+- **Redis**
+
+### 🛠️ Background Jobs
+- **BullMQ**
+- Dedicated worker services
+
+### 🌐 DevOps & Deployment
+- **Render** (API & workers)
+- **Vercel** (Frontend)
+
+
+## 🧠 Architecture Overview 
+```bash
+User → Next.js Web App
+        ↓
+API (NestJS)
+        ↓
+PostgreSQL (NeonDB)
+        ↓
+Redis Queue (BullMQ)
+        ↓
+Background Workers
+        ↓
+Emails / Async Jobs
+```
+
+### Key Principles
+
+- API is **stateless** and horizontally scalable
+- Workers run as **independent services**
+- Redis is shared between **API & workers**
+- Background jobs are handled via **BullMQ**
+- Prisma is centralized via `@collabflow/db`
 ## 🧩 Monorepo Setup & Installation
 Collabflow uses a **monorepo workspace architecture** to manage frontend, backend, and worker services in a single repository.
 
@@ -133,3 +222,17 @@ pnpm --filter workers start
 ```bash
 pnpm build
 ```
+## Authors
+
+- [@abhishekkkk-15](https://www.github.com/abhishekkkk-15)
+
+
+**Abhishek Jangid**
+
+- Backend-focused Full Stack Developer
+
+🔗 LinkedIn: https://www.linkedin.com/in/abhishek-jangid-3532b1323
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
+
