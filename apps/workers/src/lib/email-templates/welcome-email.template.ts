@@ -21,7 +21,7 @@ export function WELCOME_EMAIL_TEMPLATE(
 
           <tr>
             <td align="center">
-              <img src="https://your-cdn.com/collabflow-logo.png" width="40" height="40" style="border-radius:8px" />
+              <img src="https://res.cloudinary.com/dha7ofrer/image/upload/v1767956502/icon_zue5em.svg" width="40" height="40" style="border-radius:8px" />
             </td>
           </tr>
 

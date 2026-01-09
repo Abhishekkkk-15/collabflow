@@ -51,7 +51,7 @@ export function WORKSPACE_INVITE_TEMPLATE(
             <tr>
               <td align="center" style="padding-top:8px">
                 <img
-                  src="https://your-cdn.com/collabflow-logo.png"
+                  src="https://res.cloudinary.com/dha7ofrer/image/upload/v1767956502/icon_zue5em.svg"
                   width="40"
                   height="40"
                   alt="CollabFlow"
@@ -100,7 +100,11 @@ export function WORKSPACE_INVITE_TEMPLATE(
                   <tr>
                     <td align="right" width="45%">
                       <img
-                        src="${inviterAvatar}"
+                        src="${
+                          inviterAvatar
+                            ? inviterAvatar
+                            : "https://res.cloudinary.com/dha7ofrer/image/upload/v1767956502/icon_zue5em.svg"
+                        }"
                         width="56"
                         height="56"
                         alt="Inviter"

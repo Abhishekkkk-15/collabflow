@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 function CollabFlowLanding({
@@ -53,14 +53,19 @@ export default function Home({
   isAuthenticated: boolean;
 }) {
   const navigate = useRouter();
-  if (!isAuthenticated) {
-    navigate.push("/workspace");
-  }
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate.push("/workspace");
+    }
+  }, [isAuthenticated, navigate]);
   return <CollabFlowLanding isAuthenticated={isAuthenticated} />;
 }
 
 /* ---------------- FLOATING ORBS BACKGROUND ---------------- */
 function FloatingOrbs() {
+  if (typeof window !== "undefined" && window.innerWidth < 1024) {
+    return null; // disable on mobile & small screens
+  }
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
       {[...Array(15)].map((_, i) => (

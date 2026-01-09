@@ -18,7 +18,7 @@ export function SYSTEM_NOTIFICATION_TEMPLATE(
 
           <tr>
             <td align="center">
-              <img src="https://your-cdn.com/collabflow-logo.png" width="40" />
+              <img src="https://res.cloudinary.com/dha7ofrer/image/upload/v1767956502/icon_zue5em.svg" width="40" />
             </td>
           </tr>
 
