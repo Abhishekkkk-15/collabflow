@@ -22,57 +22,61 @@ export class TaskService {
   ) {}
 
   async create(dto: CreateTaskDto, user: User) {
-    const project = await prisma.project.findFirst({
-      where: {
-        OR: [{ id: dto.projectId! }, { slug: dto.projectId! }],
-      },
-    });
-    const task = await prisma.$transaction(async (tx) => {
-      if (!project) throw new NotFoundException('Project not found');
-      const task = await tx.task.create({
-        data: {
-          title: dto.title,
-          description: dto.description,
-          tags: dto.tags as any,
-          status: dto.status as TaskStatus,
-          priority: dto.priority,
-          dueDate: dto.dueDate,
-          creatorId: user.id,
-          workspaceId: project.workspaceId,
-          projectId: project.id,
-          assignees: {
-            createMany: {
-              data: dto.assignedTo.map((u: any) => ({ userId: u.id })),
+    try {
+      const project = await prisma.project.findFirst({
+        where: {
+          OR: [{ id: dto.projectId! }, { slug: dto.projectId! }],
+        },
+      });
+      const task = await prisma.$transaction(async (tx) => {
+        if (!project) throw new NotFoundException('Project not found');
+        const task = await tx.task.create({
+          data: {
+            title: dto.title,
+            description: dto.description,
+            tags: dto.tags as any,
+            status: dto.status as TaskStatus,
+            priority: dto.priority,
+            dueDate: dto.dueDate,
+            creatorId: user.id,
+            workspaceId: project.workspaceId,
+            projectId: project.id,
+            assignees: {
+              createMany: {
+                data: dto.assignedTo.map((u: any) => ({ userId: u.id })),
+              },
             },
           },
-        },
-        include: {
-          assignees: {
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  image: true,
-                  id: true,
+          include: {
+            assignees: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    image: true,
+                    id: true,
+                  },
                 },
               },
             },
           },
-        },
-      });
+        });
 
+        return task;
+      });
+      await this.taskQueue.add('task:notify', {
+        workspaceId: task.workspaceId,
+        projectId: task.projectId,
+        assignedBy: user,
+        assignedTo: dto.assignedTo,
+        task: task,
+        project: project,
+        workspace: await this.wsService.findOneById(task.workspaceId),
+      });
       return task;
-    });
-    await this.taskQueue.add('task:notify', {
-      workspaceId: task.workspaceId,
-      projectId: task.projectId,
-      assignedBy: user,
-      assignedTo: dto.assignedTo,
-      task: task,
-      project: project,
-      workspace: await this.wsService.findOneById(task.workspaceId),
-    });
-    return task;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async findAll(

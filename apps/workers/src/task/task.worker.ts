@@ -8,6 +8,7 @@ import { createQueue } from "../config/queueFunc";
 
 export async function startTaskWorker() {
   const emailQueue = createQueue("emailQueue");
+  const notificationQueue = createQueue("notificationQueue");
   console.log("task worker started");
   new Worker(
     "taskQueue",
@@ -31,15 +32,19 @@ export async function startTaskWorker() {
       } = await job.data;
 
       const noto = [];
-      assignedTo.forEach(async (t) => {
-        let not = transformSocketToNotification(
+
+      for (const t of assignedTo) {
+        console.log("id", t.id);
+
+        const not = transformSocketToNotification(
           { ...task, event: "TASK_ASSIGNED" },
           {
-            workspace: workspace,
+            workspace,
             invitedBy: assignedBy,
             recipientUserId: t.id,
           }
         );
+
         await emailQueue.add("send:email", {
           to: t.email,
           type: EmailType.TASK_ASSIGNED,
@@ -49,13 +54,29 @@ export async function startTaskWorker() {
             taskTitle: task.title,
             projectName: project.name,
             assignedBy: assignedBy.name,
-            taskUrl: `${process.env.BACKEND_URL}/workspace/${workspace.slug}/project/${project.slug}/tasks`,
+            taskUrl: `${process.env.NEXT_PUBLIC_API_URL}/workspace/${workspace.slug}/project/${project.slug}/tasks/${task.id}`,
           },
         } as EmailJobData);
+        await notificationQueue.add("save:notification", {
+          actor: assignedBy.id,
+          link: `${process.env.NEXT_PUBLIC_API_URL}/workspace/${workspace.slug}/project/${project.slug}/tasks/${task.id}`,
+          body: task.description,
+          type: "TASK_ASSIGNED",
+          workspace,
+          project,
+          to: t.id,
+          title: `Task Assigned ${task.title} in Project ${assignedBy.name}`,
+        });
+        // actor, link, body, title, workspace, project, type, to
+        console.log("nott", not);
         noto.push(not);
-      });
+      }
 
-      noto.forEach(async (n) => {
+      console.log("git here", noto);
+
+      for (const n of noto) {
+        console.log("userId", n.userId);
+
         await redisPub.publish(
           "socket-events",
           JSON.stringify({
@@ -64,7 +85,7 @@ export async function startTaskWorker() {
             payload: n,
           })
         );
-      });
+      }
 
       //   await redisPub.publish("socket-events", {});
     },

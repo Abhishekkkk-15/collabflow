@@ -94,9 +94,9 @@ export function transformSocketToNotification(
   }
 
   // helper to build link (adjust your route patterns)
-  const workspaceLink = workspaceSlug ? `/workspaces/${workspaceSlug}` : null;
+  const workspaceLink = workspaceSlug ? `/workspace/${workspaceSlug}` : null;
   const chatLink = workspaceSlug
-    ? `/dashboard/${workspaceSlug}/chat`
+    ? `/workspace/${workspaceSlug}/chat`
     : workspaceLink;
 
   // default title/body per event
