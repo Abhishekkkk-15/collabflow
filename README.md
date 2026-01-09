@@ -5,7 +5,7 @@
 It focuses on scalability, real-time updates, and clean architecture using modern web technologies.
 
 
-![Logo](https://res.cloudinary.com/dha7ofrer/image/upload/v1767956502/icon_zue5em.svg)
+<img src="https://res.cloudinary.com/dha7ofrer/image/upload/v1767956502/icon_zue5em.svg" alt="logo" width="300">
 
 
 ## Demo
