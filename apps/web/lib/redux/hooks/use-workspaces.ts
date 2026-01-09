@@ -1,8 +1,12 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import type { TWorkspace, TProject } from "../slices/workspace";
-import { useAppSelector } from "../hooks";
+import {
+  type TWorkspace,
+  type TProject,
+  addWorkspace,
+} from "../slices/workspace";
+import { useAppDispatch, useAppSelector } from "../hooks";
 
 /**
  * Get all workspaces from Redux
@@ -45,4 +49,9 @@ export function useActiveProject(): TProject | undefined {
   const projectSlug = params.project?.toString();
   const activeWS = useActiveWorkspace();
   return activeWS?.projects?.find((p) => p.slug === projectSlug);
+}
+
+export function useAddWorkspace(payload: any) {
+  const dispath = useAppDispatch();
+  dispath(addWorkspace(payload));
 }

@@ -1,6 +1,11 @@
 "use client";
 
-import { ChevronRight, MoreHorizontalIcon, AppWindow } from "lucide-react";
+import {
+  ChevronRight,
+  MoreHorizontalIcon,
+  AppWindow,
+  Plus,
+} from "lucide-react";
 
 import {
   Collapsible,
@@ -23,7 +28,7 @@ import {
 import { Skeleton } from "./ui/skeleton";
 import Link from "next/link";
 import { useAppDispatch } from "@/lib/redux/hooks";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import {
   TProject,
@@ -37,16 +42,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CreateWorkspaceDialog } from "./workspace/CreateWorkspaceDialog";
 
 export function NavMain({ items }: { items: TWorkspace[] }) {
   const dispatch = useAppDispatch();
+  const [openCreteWorkspace, setOpenCreteWorkspace] = useState(false);
   useEffect(() => {
-    console.log("swesddas : ", items);
     dispatch(setWorkspaces(items));
   });
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
+      <SidebarGroupLabel className="flex items-center justify-between">
+        <span>Workspaces</span>
+
+        <CreateWorkspaceDialog />
+      </SidebarGroupLabel>
 
       <SidebarMenu>
         {items?.map((item: TWorkspace) => (
