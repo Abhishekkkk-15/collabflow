@@ -8,8 +8,19 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { Task, TaskPriority, TaskStatus, TaskTag } from "@prisma/client";
-
+import {
+  Task,
+  TaskActivity,
+  TaskPriority,
+  TaskStatus,
+  TaskTag,
+  User,
+} from "@prisma/client";
+import { UpdateTaskDialog } from "./UpdateTaskDialog";
+import { useSession } from "next-auth/react";
+interface ETaskActivity extends TaskActivity {
+  user: User;
+}
 interface TaskDetailPageProps {
   task: Task & {
     creator: { id: string; name: string | null; image: string | null };
@@ -18,6 +29,7 @@ interface TaskDetailPageProps {
     }[];
     project?: { id: string; name: string } | null;
     workspace: { id: string; name: string };
+    activities: ETaskActivity[];
   };
 }
 
@@ -37,11 +49,15 @@ const priorityColor: Record<TaskPriority, string> = {
 };
 
 export default function TaskDetailPage({ task }: TaskDetailPageProps) {
+  const session = useSession();
+  const currentUserId = session.data?.user?.id;
   const assignees = useMemo(() => task.assignees ?? [], [task.assignees]);
-
+  const isAssignedUser = useMemo(
+    () => task.assignees.some((a) => a.user.id === currentUserId),
+    [task.assignees, currentUserId]
+  );
   return (
     <div className=" max-w-7xl px-4 py-8">
-      {/* HEADER (GitHub-style) */}
       <header className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge className={statusColor[task.status]}>
@@ -75,11 +91,8 @@ export default function TaskDetailPage({ task }: TaskDetailPageProps) {
 
       <Separator className="my-6" />
 
-      {/* MAIN LAYOUT */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* LEFT — CONTENT (Conversation-style) */}
         <main className="lg:col-span-3 space-y-6">
-          {/* Author block */}
           <div className="flex items-start gap-3">
             <Avatar className="h-8 w-8">
               <AvatarImage src={task.creator.image ?? ""} />
@@ -106,16 +119,34 @@ export default function TaskDetailPage({ task }: TaskDetailPageProps) {
               </div>
             </div>
           </div>
-
-          {/* Activity placeholder */}
+          {isAssignedUser && (
+            <UpdateTaskDialog taskId={task.id} currentStatus={task.status} />
+          )}
           <div className="border rounded-md p-4 text-sm text-muted-foreground">
-            Activity timeline will appear here.
+            <section className="space-y-4">
+              {task.activities.map((a) => (
+                <div key={a.id} className="text-sm">
+                  <span className="font-medium">
+                    {a.user?.name ?? "Someone"}
+                  </span>{" "}
+                  updated <span className="font-medium">{a.field}</span>{" "}
+                  {a.oldValue && `from "${a.oldValue}"`}{" "}
+                  {a.newValue && `to "${a.newValue}"`}
+                  <div className="text-xs text-muted-foreground">
+                    {format(new Date(a.createdAt), "PPP p")}
+                  </div>
+                </div>
+              ))}
+              {task.activities.length == 0 && (
+                <div className="border rounded-md p-4 text-sm text-muted-foreground">
+                  Activity timeline will appear here.
+                </div>
+              )}
+            </section>
           </div>
         </main>
 
-        {/* RIGHT — SIDEBAR (Metadata panel) */}
         <aside className="space-y-6 text-sm">
-          {/* Assignees */}
           <section className="space-y-2">
             <h4 className="font-medium text-muted-foreground">Assignees</h4>
 
@@ -135,7 +166,6 @@ export default function TaskDetailPage({ task }: TaskDetailPageProps) {
 
           <Separator />
 
-          {/* Due date */}
           <section className="space-y-1">
             <h4 className="font-medium text-muted-foreground">Due date</h4>
             <div className="flex items-center gap-2">
@@ -150,7 +180,6 @@ export default function TaskDetailPage({ task }: TaskDetailPageProps) {
 
           <Separator />
 
-          {/* Created */}
           <section className="space-y-1">
             <h4 className="font-medium text-muted-foreground">Created</h4>
             <div className="flex items-center gap-2">

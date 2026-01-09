@@ -151,7 +151,6 @@ export class TaskService {
         },
       },
     });
-    console.log('tasks', tasks);
     return {
       tasks,
       page,
@@ -195,6 +194,11 @@ export class TaskService {
           select: {
             id: true,
             name: true,
+          },
+        },
+        activities: {
+          include: {
+            user: true,
           },
         },
       },

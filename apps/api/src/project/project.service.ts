@@ -209,14 +209,13 @@ export class ProjectService {
     }
   }
 
-  async remove(slug: string) {
-    const proj = await (await this.findOne('', slug)).project;
-    if (!proj) throw new NotFoundException('Not found');
-    await prisma.project.delete({
+  async remove(id: string) {
+    const proj = await prisma.project.delete({
       where: {
-        id: proj.id,
+        id,
       },
     });
+
     return { message: 'Done' };
   }
 

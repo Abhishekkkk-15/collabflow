@@ -79,10 +79,14 @@ export class WorkspaceController {
   updateWorkspace(
     @Param('slug') slug: string,
     @Body() body: { name?: string; description?: string },
+    @CurrentUser() user: User,
   ) {
-    return this.workspaceService.update(slug, body);
+    return this.workspaceService.update(slug, body, user);
   }
-
+  @Patch('/visible/:id')
+  handleVisibility(@Param('id') id: string, @CurrentUser() user: User) {
+    this.workspaceService.handleVisibility(id, user);
+  }
   @Delete(`/members/:id/remove/`)
   handleRemoveMember(@Param('id') id: string) {
     return this.workspaceService.removeMember(id);

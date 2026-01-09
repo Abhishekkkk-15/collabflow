@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
@@ -132,8 +133,8 @@ export class WorkspaceService {
 
   async findOne(slug: string, user?: User): Promise<any> {
     try {
-      console.log('slug', slug);
       if (!slug) throw new BadRequestException('Slug not provided');
+
       const workspace = await prisma.workspace.findUnique({
         where: { slug },
         include: {
@@ -191,6 +192,18 @@ export class WorkspaceService {
           },
         },
       });
+      if (workspace?.isPrivate) {
+        const isMember = await prisma.workspace.findFirst({
+          where: {
+            members: {
+              some: {
+                userId: user?.id,
+              },
+            },
+          },
+        });
+        if (!isMember) throw new ForbiddenException('Workspace is private');
+      }
       const unReadCount = await this.chatService.getUnreadCount(
         user?.id!,
         `workspace:${workspace?.slug}`,
@@ -203,9 +216,9 @@ export class WorkspaceService {
     }
   }
 
-  async update(slug: string, uDto: UpdateWorkspaceDto) {
+  async update(slug: string, uDto: UpdateWorkspaceDto, user: User) {
     try {
-      const ws = await this.findOne(slug);
+      const ws = await this.findOne(slug, user);
       if (!ws) throw new NotFoundException('Workspace not found');
       const { members, ...rest } = uDto;
       return await prisma.workspace.update({
@@ -304,7 +317,7 @@ export class WorkspaceService {
   }
 
   async findOneById(id: string) {
-    return await prisma.workspace.findUnique({
+    const workspace = await prisma.workspace.findUnique({
       where: {
         id,
       },
@@ -312,6 +325,8 @@ export class WorkspaceService {
         permissions: true,
       },
     });
+
+    return workspace;
   }
 
   async changeRoles(dto: ChangeRoleDto, user: User) {
@@ -354,5 +369,22 @@ export class WorkspaceService {
         id,
       },
     });
+  }
+
+  async handleVisibility(id: string, user: User) {
+    const workspace = await this.findOneById(id);
+    if (!workspace || workspace.ownerId != user.id) {
+      throw new UnauthorizedException('Not authorized to perform this task');
+    }
+    console.log(workspace.isPrivate, !workspace.isPrivate);
+    await prisma.workspace.update({
+      where: {
+        id,
+      },
+      data: {
+        isPrivate: !workspace.isPrivate,
+      },
+    });
+    return { success: true };
   }
 }

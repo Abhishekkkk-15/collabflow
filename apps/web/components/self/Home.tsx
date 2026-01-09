@@ -41,7 +41,7 @@ function CollabFlowLanding({
       <DetailedShowcase />
       <WorkflowSection />
       <Testimonials />
-      <PricingSection />
+      {/* <PricingSection /> */}
       <FinalCTA isAuthenticated={isAuthenticated} />
     </main>
   );
@@ -478,16 +478,15 @@ function MockCard({
 /* ---------------- STATS SECTION ---------------- */
 function StatsSection() {
   const stats = [
-    { value: "10k+", label: "Active Users", icon: <Users /> },
     { value: "99.9%", label: "Uptime", icon: <Activity /> },
-    { value: "50M+", label: "Tasks Completed", icon: <CheckCircle2 /> },
+    { value: "100k+", label: "Tasks Completed", icon: <CheckCircle2 /> },
     { value: "150+", label: "Countries", icon: <Globe /> },
   ];
 
   return (
     <section className="py-20 border-y bg-gradient-to-b from-muted/50 to-background">
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}

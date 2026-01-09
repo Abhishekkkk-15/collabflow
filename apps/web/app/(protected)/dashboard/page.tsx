@@ -94,7 +94,7 @@ export default function WorkspaceDashboard() {
   const user = useUser();
   const router = useRouter();
   const [isOwner, setIsOwner] = useState(false);
-
+  const [isPrivate, setIsPrivate] = useState(false);
   useEffect(() => {
     setSelectedWorkspace(workspaces[0] ?? null);
     dispatch(useWSs(workspaces));
@@ -103,13 +103,14 @@ export default function WorkspaceDashboard() {
   useEffect(() => {
     if (selectedWorkspace) {
       setProjects(selectedWorkspace?.projects);
+      setIsPrivate((prev) => selectedWorkspace.isPrivate);
       setPermissions((prev) => selectedWorkspace.permissions);
       setIsOwner(selectedWorkspace.ownerId == user.id);
     }
   }, [selectedWorkspace]);
 
   const handleSave = async () => {
-    if (hasWorkspacePermission("canModifySettings")) return;
+    if (!hasWorkspacePermission("canModifySettings")) return;
     setSaving(true);
     const payload = {
       name: selectedWorkspace?.name,
@@ -133,7 +134,7 @@ export default function WorkspaceDashboard() {
   };
 
   const handleInvite = async (members: InviteEntry[]) => {
-    if (permissions?.canInviteMembers == false) return;
+    if (!hasWorkspacePermission("canInviteMembers")) return;
     try {
       await api.post(
         `/api/proxy/invite/workspace/${selectedWorkspace?.id}?wsSlug=${selectedWorkspace?.slug}`,
@@ -148,9 +149,16 @@ export default function WorkspaceDashboard() {
       console.log("error while inviteing users in workspace");
     }
   };
-
+  const handleDeleteProject = async (slug: string) => {
+    if (!hasWorkspacePermission("canDeleteResources")) return;
+    await api.delete(
+      `/api/proxy/project/${slug}?wsSlug=${selectedWorkspace?.slug}`
+    );
+    toast.success("Project deleted successfully");
+    router.refresh();
+  };
   const handleProjectInvite = async (members: InviteEntry[]) => {
-    if (permissions?.canInviteMembers == false) return;
+    if (!hasWorkspacePermission("canInviteMembers")) return;
     try {
       let res = await api.post(
         `/api/proxy/invite/project/${selectedProject?.id}?wsSlug=${selectedWorkspace?.slug}`,
@@ -184,6 +192,7 @@ export default function WorkspaceDashboard() {
   };
 
   const handleChangeRole = async (id: string, new_role: WorkspaceRole) => {
+    if (!isOwner) return;
     try {
       const payload = {
         id: id,
@@ -191,14 +200,13 @@ export default function WorkspaceDashboard() {
         role: new_role,
       };
 
-      console.log(id, selectedWorkspace?.id, new_role);
       await api.patch("/api/proxy/workspace/members/role", payload);
       toast.success("Role changed");
     } catch (error) {}
   };
 
   const handleRemoveMember = async (id: string) => {
-    console.log("p", !permissions?.canInviteMembers, !isOwner);
+    if (!hasWorkspacePermission("canInviteMembers")) return;
     if (permissions?.canInviteMembers == false || isOwner == false)
       return toast.error("Not allowed");
     try {
@@ -220,6 +228,12 @@ export default function WorkspaceDashboard() {
     } catch (error) {
       toast.error("Error while changing permission");
     }
+  };
+
+  const handleVisibility = async (id: string) => {
+    if (!isOwner) return;
+    await api.patch(`/api/proxy/workspace/visible/${id}`);
+    toast.success("Visibility Changed");
   };
   type WorkspacePermissionKey =
     | "canCreateProject"
@@ -267,7 +281,7 @@ export default function WorkspaceDashboard() {
   return (
     <div>
       <div
-        className="relative md:top-16 md:left-6 left-4 top-8"
+        className="relative md:top-16 md:left-6 left-4 top-8 h-10 w-10"
         onClick={() => router.back()}>
         <CircleArrowLeft />
       </div>
@@ -521,13 +535,8 @@ export default function WorkspaceDashboard() {
                     </div>
                     <Switch
                       disabled={!hasWorkspacePermission("canModifySettings")}
-                      checked={selectedWorkspace.isActive}
-                      onCheckedChange={(v) =>
-                        setSelectedWorkspace({
-                          ...selectedWorkspace,
-                          isActive: v,
-                        })
-                      }
+                      onClick={() => handleVisibility(selectedWorkspace.id)}
+                      defaultChecked={isPrivate}
                     />
                   </div>
                 </CardContent>
@@ -728,15 +737,13 @@ export default function WorkspaceDashboard() {
 
                     {/* ---------- FOOTER ACTIONS ---------- */}
                     <div className="border-t px-6 py-4 space-y-2">
-                      <Button variant="outline" size="sm" className="w-full">
-                        Project settings
-                      </Button>
-
                       <Button
                         variant="destructive"
                         size="sm"
-                        className="w-full">
-                        Archive project
+                        className="w-full"
+                        disabled={!hasWorkspacePermission("canDeleteResources")}
+                        onClick={() => handleDeleteProject(selectedProject.id)}>
+                        Delete Project
                       </Button>
                     </div>
                   </>

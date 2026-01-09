@@ -52,10 +52,10 @@ export class ProjectController {
     return this.projectService.create(createProjectDto, user);
   }
 
-  @Delete(':slug')
+  @Delete(':id')
   @UseGuards(WsAuthorizationGuard)
-  deleteProject(@Param('slug') slug: string) {
-    return this.projectService.remove(slug);
+  deleteProject(@Param('id') id: string) {
+    return this.projectService.remove(id);
   }
 
   // @Get(':id')

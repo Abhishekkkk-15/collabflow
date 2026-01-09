@@ -149,6 +149,7 @@ export default function NotificationDropdown() {
         ids,
       },
     });
+    setNotifications([]);
   }
 
   function onNotifClick(n: Notif) {

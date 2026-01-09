@@ -94,7 +94,7 @@ model Workspace {
   notifications Notification[]
 
   tasks Task[]
-
+  isPrivate Boolean @default(false)
   permissions WorkspacePermission? 
 
   @@index([ownerId])
