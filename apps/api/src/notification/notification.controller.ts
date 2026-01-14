@@ -9,7 +9,6 @@ import {
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { CurrentUser } from '../common/decorator/current-user.decorator';
 import type { User } from '@prisma/client';
 
